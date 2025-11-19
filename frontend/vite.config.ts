@@ -17,6 +17,7 @@ export default defineConfig({
         navigateFallbackDenylist: [
           /^\/api/, 
           /^\/admin/,
+          /^\/files/,
         ],
         runtimeCaching: [
           {
