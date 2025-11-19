@@ -87,6 +87,12 @@ def spa_public(request: HttpRequest):
         raise Http404
     
 
+def index(request: HttpRequest):
+    context = {
+        'BASE_API_URL': settings.BASE_URL + '/api'
+    }
+    return render(request, 'main/base.html', context)    
+
 
 def setup(request: HttpRequest):
     is_db_exists = "main_absensi" in connection.introspection.table_names()

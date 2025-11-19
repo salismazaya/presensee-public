@@ -14,10 +14,11 @@ urlpatterns = [
 ]
 
 if not settings.DEBUG:
-    from main.views import spa_assets, spa_public
+    from main.views import spa_assets, spa_public, index
 
     urlpatterns.extend([
         # path untuk serve assets react
+        re_path(r"^index.html/?$", index),
         re_path(r"^assets/.*$", spa_assets),
         re_path(r"^public/.*$", spa_public),
         # re_path(r"^registerSW\.js/?$", spa_public),

@@ -16,7 +16,7 @@ import MintaAbsensiKelas from "./routes/MintaRekapKelas";
 import { useEffect } from "react";
 import { getVersion } from "./helpers/api";
 import serviceWorkerUtils from "./helpers/serviceWorker";
-import InstallPWA from "./components/InstallPWA";
+// import InstallPWA from "./components/InstallPWA";
 
 function App() {
   useEffect(() => {
@@ -30,7 +30,6 @@ function App() {
           return;
         }
 
-        console.log(currentVersion, latestVersion)
         if (currentVersion != latestVersion) {
           localStorage.setItem("VERSION", latestVersion);
           serviceWorkerUtils.unregister();
@@ -97,7 +96,7 @@ function App() {
           </Routes>
         </BrowserRouter>
 
-        <InstallPWA />
+        {/* <InstallPWA /> */}
       </>
     </SharedDataContextConsumer>
   );
