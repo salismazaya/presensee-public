@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- {% block head %} -->
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/public/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="robots"
+      content="noindex, nofollow, noarchive, nosnippet, noodp, noydir"
+    />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="bingbot" content="noindex, nofollow" />
+    <meta name="google" content="notranslate" />
+
+    <title>Presensee</title>
+    <!-- {% endblock %} -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const baseApiUrl = "{{ BASE_API_URL }}";
+
+      sessionStorage.setItem("DJANGO_API_BASE_URL", baseApiUrl);
+    </script>
+    <script src="/sql-wasm.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

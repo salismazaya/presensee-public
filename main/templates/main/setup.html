@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Setup Prerensee</title>
+    <style>
+      /* Reset dasar */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      /* Kartu Container */
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+      }
+
+      /* Input Group */
+      .input-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
+
+      input:focus {
+        border-color: #007bff;
+        outline: none;
+      }
+
+      /* Tombol */
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 1rem;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      /* Pesan Error/Sukses */
+      .message {
+        text-align: center;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        min-height: 20px;
+      }
+
+      .error {
+        color: #dc3545;
+      }
+
+      .success {
+        color: #28a745;
+      }
+      .error-msg {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 4px;
+        display: block;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+
+        <h2>Buat Akun Admin</h2>
+
+        {% if form.non_field_errors %}
+        <div class="message error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="input-group">
+          <label for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }} {% if form.username.errors %}
+          <span class="error-msg">{{ form.username.errors.0 }}</span>
+          {% endif %}
+        </div>
+
+        <div class="input-group">
+          <label for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }} {% if form.password.errors %}
+          <span class="error-msg">{{ form.password.errors.0 }}</span>
+          {% endif %}
+        </div>
+
+        <div class="input-group">
+          <label for="{{ form.confirm_password.id_for_label }}"
+            >Konfirmasi Password</label
+          >
+          {{ form.confirm_password }} {% if form.confirm_password.errors %}
+          <span class="error-msg">{{ form.confirm_password.errors.0 }}</span>
+          {% endif %}
+        </div>
+
+        <button type="submit">Setup</button>
+      </form>
+    </div>
+  </body>
+</html>

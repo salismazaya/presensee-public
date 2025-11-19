@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid black;
+        border-collapse: collapse;
+      }
+      table {
+        width: 100%;
+      }
+      .absen-point {
+        font-size: 17px;
+        text-align: center;
+        width: 20px;
+      }
+      .rekap-point {
+        width: 20px;
+        text-align: center;
+        font-size: 17px;
+      }
+
+      .alfa-color {
+        color: firebrick;
+      }
+
+      .izin-sakit-color {
+        color: goldenrod;
+      }
+
+      .bolos-color {
+        color: crimson;
+      }
+
+      .odd-color {
+        background-color: aliceblue;
+      }
+
+      .even-color {
+        background-color: white;
+      }
+
+      .number-point {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <center>
+      <h2>REKAP ABSENSI BULANAN</h2>
+    </center>
+    <span>Bulan: <span id="bulan"></span></span><br>
+    <span>Kelas: <span id="kelas"></span></span><br>
+    <span>Tanggal Dibuat: <span id="tanggal_dibuat"></span></span><br>
+
+    <table>
+      <tr>
+        <th rowspan="2" style="width: 30px;">No</th>
+        <th rowspan="2">Nama</th>
+        <th colspan="4">Total</th>
+        <th colspan="31">Tanggal</th>
+      </tr>
+      <tr>
+        <td class="rekap-point alfa-color">A</td>
+        <td class="rekap-point izin-sakit-color">S</td>
+        <td class="rekap-point izin-sakit-color">I</td>
+        <td class="rekap-point bolos-color">B</td>
+
+        <td class="absen-point">1</td>
+        <td class="absen-point">2</td>
+        <td class="absen-point">3</td>
+        <td class="absen-point">4</td>
+        <td class="absen-point">5</td>
+        <td class="absen-point">6</td>
+        <td class="absen-point">7</td>
+        <td class="absen-point">8</td>
+        <td class="absen-point">9</td>
+        <td class="absen-point">10</td>
+        <td class="absen-point">11</td>
+        <td class="absen-point">12</td>
+        <td class="absen-point">13</td>
+        <td class="absen-point">14</td>
+        <td class="absen-point">15</td>
+        <td class="absen-point">16</td>
+        <td class="absen-point">17</td>
+        <td class="absen-point">18</td>
+        <td class="absen-point">19</td>
+        <td class="absen-point">20</td>
+        <td class="absen-point">21</td>
+        <td class="absen-point">22</td>
+        <td class="absen-point">23</td>
+        <td class="absen-point">24</td>
+        <td class="absen-point">25</td>
+        <td class="absen-point">26</td>
+        <td class="absen-point">27</td>
+        <td class="absen-point">28</td>
+        <td class="absen-point">29</td>
+        <td class="absen-point">30</td>
+        <td class="absen-point">31</td>
+      </tr>
+      
+    </table>
+  </body>
+</html>

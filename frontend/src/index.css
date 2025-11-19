@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: emerald --default, dark --prefersdark;
+}
+
+@plugin "daisyui/theme" {
+  name: "emerald";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(92% 0 0);
+  --color-base-200: oklch(87% 0.006 286.286);
+  --color-base-300: oklch(87% 0.01 258.338);
+  --color-base-content: oklch(35.519% 0.032 262.988);
+  --color-primary: oklch(69% 0.17 162.48);
+  --color-primary-content: oklch(95% 0.037 318.852);
+  --color-secondary: oklch(61.302% 0.202 261.294);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(72.772% 0.149 33.2);
+  --color-accent-content: oklch(97% 0.014 343.198);
+  --color-neutral: oklch(35.519% 0.032 262.988);
+  --color-neutral-content: oklch(98.462% 0.001 247.838);
+  --color-info: oklch(72.06% 0.191 231.6);
+  --color-info-content: oklch(97% 0.014 343.198);
+  --color-success: oklch(64.8% 0.15 160);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(84.71% 0.199 83.87);
+  --color-warning-content: oklch(0% 0 0);
+  --color-error: oklch(44% 0.177 26.899);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 0;
+}
+
+
+body {
+  @apply bg-base-200 min-h-screen h-max;
+}
