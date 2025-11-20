@@ -17,6 +17,8 @@ import { useEffect } from "react";
 import { getVersion } from "./helpers/api";
 import serviceWorkerUtils from "./helpers/serviceWorker";
 // import InstallPWA from "./components/InstallPWA";
+import { ToastContainer } from 'react-toastify';
+
 
 function App() {
   useEffect(() => {
@@ -97,6 +99,7 @@ function App() {
         </BrowserRouter>
 
         {/* <InstallPWA /> */}
+        <ToastContainer />
       </>
     </SharedDataContextConsumer>
   );

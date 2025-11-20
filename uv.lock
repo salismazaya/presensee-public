@@ -10,6 +10,7 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "dj-database-url" },
     { name = "django" },
+    { name = "django-cacheops" },
     { name = "django-cors-headers" },
     { name = "django-jazzmin" },
     { name = "django-ninja" },
@@ -30,6 +31,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
     { name = "dj-database-url", specifier = ">=2.2.0" },
     { name = "django", specifier = "==4.2.*" },
+    { name = "django-cacheops", specifier = ">=7.2" },
     { name = "django-cors-headers", specifier = ">=4.5.0" },
     { name = "django-jazzmin", specifier = ">=3.0.1" },
     { name = "django-ninja", specifier = ">=1.4.3" },
@@ -234,6 +236,20 @@ wheels = [
 ]
 
 [[package]]
+name = "django-cacheops"
+version = "7.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "funcy" },
+    { name = "redis" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/92/9df8a60ee959c214705ec3d3ccf80820097672a0260b149cf2751e818086/django_cacheops-7.2.tar.gz", hash = "sha256:cbc11cc0321295a3644e27bcb26940f08cb9c2e71d3ee506cbcff0bdda1a9f33", size = 72751 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/e0/cad1eca0d388ac9f0a75f785599a10acf62ecb6bbb7947da72c04461539c/django_cacheops-7.2-py2.py3-none-any.whl", hash = "sha256:c3b4399474919e62aa91bbd97e7b68cfc50e8cb4384d743bde686c37fe8c010b", size = 45116 },
+]
+
+[[package]]
 name = "django-cors-headers"
 version = "4.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -278,6 +294,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/0c/24d1332d85ec949a77c2e9422b682724026004df8d919a202073ebdc0276/dotenv_cli-3.4.1.tar.gz", hash = "sha256:8357511e041eda48b6a9f310d416cbfcee4aaeef7f66b2cb817031ac15de3c2d", size = 9390 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/bb/90dc3d9babb1ec8effebd379bce95966b3f9830306efd4578189e2e3a520/dotenv_cli-3.4.1-py3-none-any.whl", hash = "sha256:69f8ee14788d9cf611de022746a6486a87ccc672e95b73eb333e887e904e0053", size = 7113 },
+]
+
+[[package]]
+name = "funcy"
+version = "2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/b8/c6081521ff70afdff55cd9512b2220bbf4fa88804dae51d1b57b4b58ef32/funcy-2.0.tar.gz", hash = "sha256:3963315d59d41c6f30c04bc910e10ab50a3ac4a225868bfa96feed133df075cb", size = 537931 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/08/c2409cb01d5368dcfedcbaffa7d044cc8957d57a9d0855244a5eb4709d30/funcy-2.0-py2.py3-none-any.whl", hash = "sha256:53df23c8bb1651b12f095df764bfb057935d49537a56de211b098f4c79614bb0", size = 30891 },
 ]
 
 [[package]]

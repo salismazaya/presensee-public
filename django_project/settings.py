@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cacheops',
 ]
 
 MIDDLEWARE = [
@@ -173,3 +174,9 @@ JAZZMIN_SETTINGS = {
 }
 
 REDIS_URL = os.environ.get('REDIS_URL')
+
+CACHEOPS_REDIS = REDIS_URL
+
+CACHEOPS = {
+    'main.*': {'ops': ('fetch', 'get', 'count', 'exists'), 'timeout': 60 * 60 * 12},
+}

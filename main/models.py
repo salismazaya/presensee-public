@@ -23,9 +23,38 @@ class User(AbstractUser):
         return display_name
 
 
+class KelasQuerySet(models.QuerySet):
+    def own(self, user_id: int):
+        return (
+            self
+            .annotate(
+                _type_user = models.Subquery(
+                    User.objects.filter(pk = user_id).values('type')[:1],
+                    output_field = models.CharField()
+                )
+            )
+            .filter(
+                models.Q(wali_kelas__pk = user_id) | \
+                models.Q(sekretaris__in = [user_id]) | \
+                models.Q(_type_user = User.TypeChoices.KESISWAAN)
+            )
+        )
+
+
+class KelasManager(models.Manager):
+    def get_queryset(self):
+        return KelasQuerySet(self.model, using = self._db)
+    
+    def own(self, user_id: int):
+        return self.get_queryset().own(user_id)
+
+
 class Kelas(models.Model):
+    extra_objects = KelasManager()
+    objects = models.Manager()
+    
     class Meta:
-        verbose_name = verbose_name_plural = "Kelas"
+        verbose_name = verbose_name_plural = "Kelas"    
 
     name = models.CharField(verbose_name = 'Nama Kelas', max_length = 50, unique = True)
     wali_kelas = models.OneToOneField(User, on_delete = models.PROTECT, null = True, blank = True, related_name = 'wali_kelas')
@@ -41,7 +70,7 @@ class Siswa(models.Model):
         verbose_name = verbose_name_plural = "Siswa"
 
     fullname = models.CharField(verbose_name = 'Nama Lengkap', max_length = 50)
-    kelas = models.ForeignKey(Kelas, on_delete = models.PROTECT)
+    kelas = models.ForeignKey(Kelas, on_delete = models.PROTECT, related_name = 'siswas')
 
     def __str__(self):
         return self.fullname

@@ -4,7 +4,7 @@
 
 > **Sistem Absensi Modern dengan Arsitektur Offline-First — cepat, ringan, dan tetap jalan meskipun tanpa internet.**
 
-[![Django](https://img.shields.io/badge/Django-4.x-green)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-4.2-green)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-Bundler-purple)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)

@@ -405,3 +405,75 @@ def get_bulan_absensi(request: HttpRequest):
         })
 
     return {'data': hasil}
+
+
+@api.get('/absensi', response = {404: ErrorSchema, 200: SuccessSchema})
+def get_absensies(request: HttpRequest, date: str, kelas_id: int):
+    # TODO: handle error parsing
+    date = dateutil_parser.parse(date).date()
+    kelas = (
+        Kelas.extra_objects
+            .own(request.auth.pk)
+            .filter(pk = kelas_id)
+            .first()
+    )
+
+    if kelas is None:
+        return 404, {"detail": "kelas tidak ditemukan"}
+
+    result = {}
+
+    siswas = kelas.siswas.all()
+    for siswa in siswas:
+        absensi = Absensi.objects.filter(
+            date = date,
+            siswa__pk = siswa.pk
+        ).first()
+
+        if absensi:
+            result[siswa.pk] = absensi.status
+        else:
+            result[siswa.pk] = None
+    
+    return {'data': result}
+
+
+@api.get('/absensi/complete', response = {400: ErrorSchema, 200: SuccessSchema})
+def get_absensi_complete(request: HttpRequest, kelas_id: int, dates: str):
+    dates = dates.split(',')
+
+    if len(dates) >= 32:
+        return 400, {'detail': 'terlalu banyak input tanggal'}
+
+    total_siswa = (
+        Siswa.objects
+            .filter(
+                kelas__pk = kelas_id
+            )
+            .count()
+    )
+
+    result = {}
+
+    for date in dates:
+        try:
+            date_obj = dateutil_parser.parse(date)
+        except ValueError:
+            return 400, {'detail': 'gagal parsing %s' % date}
+
+        total_absensi = (
+            Absensi.objects
+                .filter(
+                    siswa__kelas__pk = kelas_id
+                )
+                .filter(
+                    date = date_obj
+                ).count()
+        )
+
+        is_complete = total_absensi == total_siswa
+
+        result[date] = is_complete
+
+    return {'data': result}
+        
