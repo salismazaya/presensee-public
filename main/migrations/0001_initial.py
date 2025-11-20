@@ -7,7 +7,7 @@ import django.utils.timezone
 from django.conf import settings
 from django.db import migrations, models
 
-import main.models
+# import main.models
 
 
 class Migration(migrations.Migration):
@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True)),
                 ('is_staff', models.BooleanField(default=False)),
                 ('type', models.CharField(choices=[('wali_kelas', 'Wali Kelas'), ('kesiswaan', 'Kesiswaan'), ('sekretaris', 'Sekretaris')], max_length=20, null=True)),
-                ('token', models.CharField(default=main.models._get_random_string, editable=False, max_length=50)),
+                ('token', models.CharField(null=True, editable=False, max_length=50)),
                 ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
                 ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
             ],

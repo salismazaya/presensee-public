@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import {
   getAbsensies,
   getSiswa,
+  insertConflictAbsensi,
   refreshRemoteDatabase,
   type AbsensiProps,
   type SiswaProps,
@@ -23,6 +24,7 @@ import Rekap from "../components/Rekap";
 import useLastRefresh from "../hooks/useLastRefresh";
 import { useEffect, useState } from "react";
 import useKelas from "../hooks/useKelas";
+import ConflictsList from "../components/ConflictsList";
 
 export default function Dashboard() {
   const db = useDatabase();
@@ -123,7 +125,8 @@ export default function Dashboard() {
     if (token && db) {
       setIsLoading(true);
       try {
-        await uploadDatabase(token);
+        const response = await uploadDatabase(token);
+
         clearStagingDatabase();
         await refreshRemoteDatabase({
           db,
@@ -132,11 +135,28 @@ export default function Dashboard() {
         refreshLocalDatabase();
         setLastRefresh(new Date().getTime());
 
-        Swal.fire({
-          title: "Upload Berhasil!",
-          text: "Semua data telah disinkronisasi.",
-          icon: "success",
-        });
+        if (response.conflicts.length == 0) {
+          Swal.fire({
+            title: "Upload Berhasil!",
+            text: "Semua data telah disinkronisasi.",
+            icon: "success",
+          });
+        } else {
+          response.conflicts.forEach((conflict) => {
+            insertConflictAbsensi(conflict);
+          });
+
+          Swal.fire({
+            title: "Upload Berhasil!",
+            text: "Data telah disinkronisasi.",
+            icon: "success",
+            iconColor: "blue",
+          }).finally(() => {
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+          });
+        }
       } catch (e: any) {
         Swal.fire({
           title: "Upload Gagal",
@@ -272,7 +292,11 @@ export default function Dashboard() {
             )}
 
             <Link
-              to={user?.type == "kesiswaan" ? "/minta-rekap-kelas" : "/minta-rekap"}
+              to={
+                user?.type == "kesiswaan"
+                  ? "/minta-rekap-kelas"
+                  : "/minta-rekap"
+              }
               className="btn bg-base-100 border-base-300 hover:bg-base-200 hover:border-primary shadow-sm h-auto py-3 flex flex-col gap-1"
             >
               <svg
@@ -295,6 +319,8 @@ export default function Dashboard() {
               </span>
             </Link>
           </div>
+
+          <ConflictsList />
 
           {/* Info Terakhir Update */}
           <div className="flex justify-end px-2">

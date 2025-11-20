@@ -59,6 +59,7 @@ class AbsensiAdmin(admin.ModelAdmin):
     list_display = ('id', 'date', 'siswa', 'kelas', 'status')
     list_filter = ('date', 'siswa__kelas', 'status')
     search_fields = ('siswa__fullname',)
+    # readonly_fields = ('created_at', 'updated_at')
 
     def has_delete_permission(self, request, obj = None):
         return False

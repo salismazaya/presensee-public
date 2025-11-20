@@ -1,11 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
-from django.utils.crypto import get_random_string
-
-
-def _get_random_string():
-    return get_random_string(20)
 
 
 class User(AbstractUser):
@@ -18,7 +13,7 @@ class User(AbstractUser):
     is_active = models.BooleanField(default = True)
     is_staff = models.BooleanField(default = False)
     type = models.CharField(choices = TypeChoices.choices, max_length = 20, null = True)
-    token = models.CharField(max_length = 50, default = _get_random_string, editable = False)
+    token = models.CharField(max_length = 50, null = True, blank = True, editable = False)
 
     def __str__(self):
         display_name = self.username
@@ -80,6 +75,9 @@ class Absensi(models.Model):
     date = models.DateField(default = timezone.now, verbose_name = 'Tanggal')
     siswa = models.ForeignKey(Siswa, on_delete = models.PROTECT)
     status = models.CharField(max_length = 30, choices = StatusChoices.choices)
+    created_at = models.DateTimeField(default = timezone.now, verbose_name = 'Dibuat')
+    updated_at = models.DateTimeField(default = timezone.now, verbose_name = 'Diubah')
+    by = models.ForeignKey(User, on_delete = models.CASCADE, null = True, verbose_name = 'Oleh')
 
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)

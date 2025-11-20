@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { getStagingDatabase } from "./stagingDatabase";
+import type { ConflictData } from "../components/ConflictsList";
 
 // TODO: rapihkan function-function di file ini
 
@@ -8,6 +9,7 @@ interface User {
   type: "kesiswaan" | "sekretaris" | "wali_kelas";
   kelas?: number;
 }
+
 
 export function getApiBaseUrl() {
   let baseUrl = sessionStorage.getItem("DJANGO_API_BASE_URL");
@@ -105,7 +107,7 @@ export async function refreshDatabase(token: string): Promise<string> {
   }
 }
 
-export async function uploadDatabase(token: string): Promise<string> {
+export async function uploadDatabase(token: string): Promise<{ conflicts: ConflictData[] }> {
   const baseUrl = getApiBaseUrl();
   const payload = getStagingDatabase();
 
@@ -119,7 +121,7 @@ export async function uploadDatabase(token: string): Promise<string> {
         },
       }
     );
-    return response.data;
+    return response.data.data;
   } catch (e: any) {
     if (e instanceof AxiosError) {
       if (

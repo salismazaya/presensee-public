@@ -15,6 +15,7 @@ dependencies = [
     "granian>=2.6.0",
     "pdfkit>=1.0.0",
     "psycopg[binary]>=3.2.12",
+    "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.1.1",
     "redis>=7.0.1",
     "requests>=2.32.5",

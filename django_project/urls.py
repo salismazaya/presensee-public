@@ -14,7 +14,7 @@ urlpatterns = [
 ]
 
 if not settings.DEBUG:
-    from main.views import spa_assets, spa_public, index
+    from main.views import index, spa_assets, spa_public
 
     urlpatterns.extend([
         # path untuk serve assets react

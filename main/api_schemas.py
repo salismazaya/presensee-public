@@ -33,4 +33,3 @@ class RequestDocumentSchema(Schema):
     nowa: str
     bulan: int
     tahun: int
-

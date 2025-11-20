@@ -1,3 +1,5 @@
+import type { InsertAbsensProps } from "./database";
+
 const KEY = "STAGING_DATABASE";
 
 export interface StagingDatabaseProps {
@@ -37,13 +39,6 @@ export function clearStagingDatabase() {
   localStorage.removeItem(KEY);
 }
 
-export interface InsertAbsensProps {
-  siswaId: number;
-  kelasId: number;
-  date: string;
-  status: "hadir" | "alfa" | "sakit" | "izin" | "bolos";
-}
-
 export function insertStagingAbsens(datas: InsertAbsensProps[]) {
   const listData = localStorage.getItem(KEY) ?? "[]";
   const listDataCleaned: StagingDatabaseInsertProps[] = JSON.parse(listData);
@@ -55,7 +50,9 @@ export function insertStagingAbsens(datas: InsertAbsensProps[]) {
         kelas: data.kelasId,
         siswa: data.siswaId,
         status: data.status,
+        previous_status: data.previousStatus,
         date: data.date,
+        updated_at: data.updatedAt
       }),
     };
 
