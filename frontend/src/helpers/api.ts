@@ -10,7 +10,6 @@ interface User {
   kelas?: number;
 }
 
-
 export function getApiBaseUrl() {
   let baseUrl = sessionStorage.getItem("DJANGO_API_BASE_URL");
 
@@ -107,7 +106,9 @@ export async function refreshDatabase(token: string): Promise<string> {
   }
 }
 
-export async function uploadDatabase(token: string): Promise<{ conflicts: ConflictData[] }> {
+export async function uploadDatabase(
+  token: string
+): Promise<{ conflicts: ConflictData[] }> {
   const baseUrl = getApiBaseUrl();
   const payload = getStagingDatabase();
 
@@ -219,6 +220,76 @@ export async function getBulan(token: string): Promise<
   const baseUrl = getApiBaseUrl();
   try {
     const response = await axios.get(baseUrl + "/bulan", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function getAbsensi(
+  token: string,
+  date: string,
+  kelasId: number
+): Promise<
+  Record<number, "hadir" | "sakit" | "izin" | "alfa" | "bolos" | null>
+> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/absensi", {
+      params: {
+        date,
+        kelas_id: kelasId,
+      },
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function getAbsensiesProgress(
+  token: string,
+  dates: string[],
+  kelasId: number
+): Promise<Record<string, { total_tidak_masuk: number, is_complete: boolean }>> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/absensi/progress", {
+      params: {
+        dates: dates.join(","),
+        kelas_id: kelasId,
+      },
       headers: {
         Authorization: "Bearer " + token,
       },

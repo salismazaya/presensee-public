@@ -2,18 +2,9 @@ import Swal from "sweetalert2";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { Link } from "react-router";
-import { useEffect } from "react";
-import { toast } from "react-toastify";
 
 export default function About() {
   const version = localStorage.getItem("VERSION") || "";
-
-  useEffect(() => {
-    toast.success("Data diterima", {
-      autoClose: 400,
-      closeOnClick: true,
-    })
-  }, [])
 
   const handleLogout = () => {
     Swal.fire({

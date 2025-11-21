@@ -1,6 +1,7 @@
 from django.contrib import admin
 # from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
+from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 
 # from django.contrib.auth.forms import UserChangeForm
@@ -17,18 +18,17 @@ class CustomAuthUserAdmin(AuthUserAdmin):
         (None, {'fields': ('username', 'password', 'type')}),
         (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
         (_('Permissions'), {
-            'fields': ('is_superuser', 'is_staff'),
+            'fields': ('is_superuser', 'is_staff',),
         }),
         # (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
     list_display = ('username', 'type', 'is_staff', 'is_superuser')
 
     def get_form(self, request, obj = None, change = None, **kwargs):
-        if change:
-            return createUserChangeForm(obj.pk)
-
-        return super().get_form(request, obj, change, **kwargs) 
-
+        if obj is None:
+            return UserCreationForm
+        
+        return createUserChangeForm(obj.pk)
 
 class SiswaAdmin(admin.ModelAdmin):
     search_fields = ('fullname',)
@@ -49,6 +49,9 @@ class KelasAdmin(admin.ModelAdmin):
     inlines = (SiswaInlineAdmin,)
 
     def get_form(self, request, obj = None, *args, **kwargs):
+        if obj is None:
+            return super().get_form(request, obj, *args, **kwargs)
+        
         return createKelasForm(obj.pk)
 
 
@@ -59,7 +62,7 @@ class AbsensiAdmin(admin.ModelAdmin):
     list_display = ('id', 'date', 'siswa', 'kelas', 'status')
     list_filter = ('date', 'siswa__kelas', 'status')
     search_fields = ('siswa__fullname',)
-    # readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
 
     def has_delete_permission(self, request, obj = None):
         return False

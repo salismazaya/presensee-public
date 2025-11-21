@@ -41,9 +41,9 @@ api = NinjaAPI(
     docs_url = False,
     throttle = [
         # TODO: ganti ke redis. throttle seperti ini tidak akurat jika multi worker
-        AnonRateThrottle("1/s"),
-        AnonRateThrottle("30/m"),
-        AuthRateThrottle("60/m"),
+        # AnonRateThrottle("1/s"),
+        # AnonRateThrottle("30/m"),
+        # AuthRateThrottle("60/m"),
     ]
 )
 
@@ -438,8 +438,8 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
     return {'data': result}
 
 
-@api.get('/absensi/complete', response = {400: ErrorSchema, 200: SuccessSchema})
-def get_absensi_complete(request: HttpRequest, kelas_id: int, dates: str):
+@api.get('/absensi/progress', response = {400: ErrorSchema, 200: SuccessSchema})
+def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
     dates = dates.split(',')
 
     if len(dates) >= 32:
@@ -471,9 +471,26 @@ def get_absensi_complete(request: HttpRequest, kelas_id: int, dates: str):
                 ).count()
         )
 
+        total_tidak_masuk = (
+            Absensi.objects
+                .filter(
+                    date = date_obj
+                )
+                .filter(
+                    siswa__kelas__pk = kelas_id
+                )
+                .exclude(
+                    status = Absensi.StatusChoices.HADIR
+                )
+                .count()
+        )
+
         is_complete = total_absensi == total_siswa
 
-        result[date] = is_complete
+        result[date] = {
+            'total_tidak_masuk': total_tidak_masuk,
+            'is_complete': is_complete
+        }
 
     return {'data': result}
         

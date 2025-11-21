@@ -9,12 +9,13 @@ class User(AbstractUser):
         KESISWAAN = 'kesiswaan', 'Kesiswaan'
         SEKRETARIS = 'sekretaris', 'Sekretaris'
 
-    is_superuser = models.BooleanField(default = False)
-    is_active = models.BooleanField(default = True)
-    is_staff = models.BooleanField(default = False)
+    is_superuser = models.BooleanField(default = False, verbose_name = 'Apakah admin?')
+    is_active = models.BooleanField(default = True, editable = False)
+    is_staff = models.BooleanField(default = False, verbose_name = 'Akses admin panel?')
     type = models.CharField(choices = TypeChoices.choices, max_length = 20, null = True)
     token = models.CharField(max_length = 50, null = True, blank = True, editable = False)
-
+    date_joined = models.DateTimeField(default = timezone.now, verbose_name = 'Daftar pada')
+    
     def __str__(self):
         display_name = self.username
         if self.first_name and self.last_name:

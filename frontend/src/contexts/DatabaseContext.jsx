@@ -9,17 +9,18 @@ import LZString from "lz-string";
 
 export function DatabaseContextConsumer({ children }) {
   const [db, setDb] = useState();
-  const [token, , tokenLoaded] = useToken();
+  const [token,] = useToken();
   const [refreshDb, setRefreshDb] = useState(0);
   const [, setIsLoading] = useGlobalLoading();
   const [, setLastRefresh] = useLastRefresh();
 
   const config = {
     locateFile: (filename) => `/${filename}`,
-  };
+  }
 
+  
   useEffect(() => {
-    if (!tokenLoaded || !token) return;
+    if (!token) return;
 
     initSqlJs(config).then(function (SQL) {
       setIsLoading(true);
@@ -55,7 +56,7 @@ export function DatabaseContextConsumer({ children }) {
         }, 500);
       }
     });
-  }, [tokenLoaded, token, refreshDb]);
+  }, [token, refreshDb]);
 
   return (
     <DatabaseContext value={[db, refreshDb, setRefreshDb]}>

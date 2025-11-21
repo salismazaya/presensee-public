@@ -16,6 +16,9 @@ import useKelas from "../hooks/useKelas";
 import useUser from "../hooks/useUser";
 import { type InsertAbsensProps } from "../helpers/database";
 import Swal from "sweetalert2";
+import useToken from "../hooks/useToken";
+import { getAbsensi } from "../helpers/api";
+import { toast } from "react-toastify";
 
 // Helper untuk format tanggal header
 function formatDisplayDate(dateStr: string | undefined) {
@@ -49,6 +52,7 @@ export default function AbsensiDetail() {
     []
   );
   const [kelas] = useKelas();
+  const [token] = useToken();
   const [kelasName, setKelasName] = useState("");
   const [user] = useUser();
   const [query, setQuery] = useState<string>("");
@@ -166,8 +170,6 @@ export default function AbsensiDetail() {
       const allSiswas = getSiswa({ db, whereQuery: `kelas_id=${kelas}` });
       const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
 
-      // statusSiswaChangedRef.
-
       if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
       setTimeout(() => setSiswas(allSiswas), 300); // Sedikit delay agar tidak blocking UI render awal
     }
@@ -236,6 +238,33 @@ export default function AbsensiDetail() {
       );
     }
   }, [absensies, query, siswas]);
+
+  const fetchToServerLoaded = useRef(false);
+
+  // fetch data dari server
+  useEffect(() => {
+    if (fetchToServerLoaded.current) return;
+    if (token && absen_id && kelas && absensies.length >= 1) {
+      getAbsensi(token, absen_id, kelas).then((res) => {
+        fetchToServerLoaded.current = true;
+
+        const newAbsensies = absensies.map((a) => {
+          const newStatus = a.status || res[a.siswaId] || undefined;
+          return {
+            ...a,
+            status: newStatus,
+          };
+        });
+
+        setAbsensies(newAbsensies);
+
+        toast.success("Menerima data dari server", {
+          autoClose: 1000,
+          closeOnClick: true,
+        })
+      });
+    }
+  }, [token, kelas, absensies]);
 
   // --- RENDER COMPONENTS ---
 

@@ -40,31 +40,31 @@ def createKelasForm(kelas_id: int):
     return KelasForm
 
 
-def createUserChangeForm(user_id: int):
+def createUserChangeForm(user_id: int = None):
     class UserChangeForm(BaseUserChangeForm):        
         class Meta:
             model = User
             fields = '__all__'
-
-        is_superuser = forms.BooleanField(label = 'Apakah admin?', required = False)
-        is_staff = forms.BooleanField(label = 'Boleh login admin panel?', required = False)
+        
+        date_joined = forms.DateTimeField(required = False)
 
         def clean_type(self):
-            current_obj = User.objects.get(pk = user_id)
-
             new_type = self.cleaned_data.get('type')
-            if current_obj.type != new_type:
-                kelas_wali_kelas = Kelas.objects.filter(wali_kelas__pk = user_id).first()
-                if new_type != "wali_kelas" and kelas_wali_kelas:
-                    raise ValidationError(f'{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
-                
-                kelas_sekretaris = Kelas.objects.filter(sekretaris__in = [user_id]).first()
-                if new_type != "sekretaris" and kelas_sekretaris:
-                    raise ValidationError(f'{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}')
+
+            if user_id:
+                current_obj = User.objects.get(pk = user_id)
+
+                if current_obj.type != new_type:
+                    kelas_wali_kelas = Kelas.objects.filter(wali_kelas__pk = user_id).first()
+                    if new_type != "wali_kelas" and kelas_wali_kelas:
+                        raise ValidationError(f'{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
+                    
+                    kelas_sekretaris = Kelas.objects.filter(sekretaris__in = [user_id]).first()
+                    if new_type != "sekretaris" and kelas_sekretaris:
+                        raise ValidationError(f'{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}')
 
             return new_type
-
-
+        
     return UserChangeForm
 
 

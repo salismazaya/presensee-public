@@ -36,7 +36,7 @@ export function SharedDataContextConsumer({
   };
 
   const [kelas, setKelas] = useState<number | undefined>(currentKelas);
-  const [token, , tokenLoaded] = useToken();
+  const [token] = useToken();
   const [user, setUser] = useState<User>();
   const [isLogout, setIsLogout] = useState<boolean>(false);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
@@ -58,7 +58,7 @@ export function SharedDataContextConsumer({
   };
 
   useEffect(() => {
-    if (tokenLoaded && !token) {
+    if (!token) {
       setIsLogout(true);
     }
 
@@ -85,7 +85,7 @@ export function SharedDataContextConsumer({
         setUser(user);
       }
     }
-  }, [token, tokenLoaded]);
+  }, [token]);
 
   const data: SharedDataProps = {
     kelas,
