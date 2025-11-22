@@ -165,6 +165,7 @@ export default function Absensi() {
       };
     });
 
+    setAbsensies(newAbsensiesProgress);
     setProgressAbsensi(newAbsensiesProgress);
   }, [filteredDates, db]);
 
@@ -189,31 +190,32 @@ export default function Absensi() {
       Object.keys(ap).forEach((key) => {
         const [dd, mm, yy] = key.split("-");
         const formattedKey = formatDate(new Date(`${mm}-${dd}-${yy}`));
-        
+
         const oldAbsensiProgress = progressAbsensi[formattedKey];
         const absensiProgress = {
           totalTidakMasuk: ap[key].total_tidak_masuk,
           isComplete: ap[key].is_complete,
         };
 
-        if (
-          (oldAbsensiProgress.isComplete && !absensiProgress.isComplete) ||
-          oldAbsensiProgress.totalTidakMasuk > absensiProgress.totalTidakMasuk
-        ) {
-          newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
-        } else {
+        // console.log(formattedKey, oldAbsensiProgress, absensiProgress);
+
+        if (!oldAbsensiProgress.isComplete && absensiProgress.isComplete) {
           newAbsensiesProgress[formattedKey] = absensiProgress;
+        } else {
+          newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
         }
       });
 
       toast.success("Menerima data dari server", {
         autoClose: 1000,
-        closeOnClick: true
-      })
+        closeOnClick: true,
+      });
 
-      setAbsensies(newAbsensiesProgress);
+      // console.log(newAbsensiesProgress);
+
+      setProgressAbsensi(newAbsensiesProgress);
     });
-  }, [progressAbsensi, token]);
+  }, [absensies, token]);
 
   useEffect(() => {
     if (!db || !kelas) return;
@@ -330,13 +332,14 @@ export default function Absensi() {
                 </div>
               )}
 
-              {Object.keys(absensies).map((dateString) => {
+              {Object.keys(progressAbsensi).map((dateString) => {
                 const isToday = dateString === dateNowString;
                 const isSunday = dateString.startsWith("Min");
                 const { day, date, month } = formatDisplayDate(dateString);
                 const [dd, mm, yy] = dateString.split(", ")[1].split("-");
                 const dateForLink = `20${yy}-${mm}-${dd}`;
-
+                
+                
                 let locked = false;
                 if (kelas)
                   locked = getIsLocked({
@@ -346,8 +349,9 @@ export default function Absensi() {
                   });
                 locked = locked || user?.type === "kesiswaan";
 
-                const isComplete = absensies[dateString].isComplete;
-                const totalTidakMasuk = absensies[dateString].totalTidakMasuk;
+                const isComplete = progressAbsensi[dateString].isComplete;
+                const totalTidakMasuk = progressAbsensi[dateString].totalTidakMasuk;
+                // console.log(dateString, isComplete);
 
                 return (
                   // Row Container
