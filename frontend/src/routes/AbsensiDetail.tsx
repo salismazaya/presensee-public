@@ -197,7 +197,7 @@ export default function AbsensiDetail() {
     ) {
       const datetime = new Date(absen_id);
 
-      const dd = datetime.getDay()
+      const dd = datetime.getDate()
       const mm = datetime.getMonth() + 1
       const yy = datetime.getFullYear() % 2000;
 
