@@ -17,11 +17,12 @@ from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 from main.api_schemas import (ChangePasswordSchema, DataUploadSchema,
-                              ErrorSchema, LoginSchema, SuccessSchema)
+                              ErrorSchema, LoginSchema, SuccessSchema, DataCompressedUploadSchema)
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from lzstring import LZString
 
 
 class HttpRequest(HttpRequest):
@@ -93,6 +94,17 @@ def get_me(request: HttpRequest):
         kelas = kelas_obj.pk
 
     return {'data': {'username': request.auth.username, "type": request.auth.type, "kelas": kelas}}
+
+
+@api.post('/compressed-upload', response = {403: ErrorSchema, 200: SuccessSchema})
+def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
+    lz = LZString()
+
+    data_decompressed_json = lz.decompressFromBase64(data.data)
+    data_decompressed = json.loads(data_decompressed_json)
+
+    data_upload = DataUploadSchema(data = data_decompressed)
+    return upload(request, data_upload)
 
 
 @api.post('/upload', response = {403: ErrorSchema, 200: SuccessSchema})

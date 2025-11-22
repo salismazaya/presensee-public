@@ -19,15 +19,16 @@ import Swal from "sweetalert2";
 import useToken from "../hooks/useToken";
 import { getAbsensi } from "../helpers/api";
 import { toast } from "react-toastify";
+import useGlobalLoading from "../hooks/useGlobalLoading";
 
 // Helper untuk format tanggal header
 function formatDisplayDate(date: Date) {
   // if (!dateStr) return "";
   // const [d, m, y] = dateStr.split("-");
 
-  const d = date.getDate()
-  const m = date.getMonth() + 1
-  const y = date.getFullYear()
+  const d = date.getDate();
+  const m = date.getMonth() + 1;
+  const y = date.getFullYear();
 
   const monthNames = [
     "Jan",
@@ -62,6 +63,8 @@ export default function AbsensiDetail() {
   const [user] = useUser();
   const [query, setQuery] = useState<string>("");
   const navigate = useNavigate();
+
+  const [, setIsLoading] = useGlobalLoading();
 
   const statusSiswaChangedRef = useRef<number[]>([]);
 
@@ -189,16 +192,11 @@ export default function AbsensiDetail() {
   }, [db, kelas, user, absen_id]);
 
   useEffect(() => {
-    if (
-      db &&
-      siswas.length >= 1 &&
-      absen_id &&
-      kelas
-    ) {
+    if (db && siswas.length >= 1 && absen_id && kelas) {
       const datetime = new Date(absen_id);
 
-      const dd = datetime.getDate()
-      const mm = datetime.getMonth() + 1
+      const dd = datetime.getDate();
+      const mm = datetime.getMonth() + 1;
       const yy = datetime.getFullYear() % 2000;
 
       const currentAbsensies = getAbsensies({
@@ -254,24 +252,37 @@ export default function AbsensiDetail() {
   useEffect(() => {
     if (fetchToServerLoaded.current) return;
     if (token && absen_id && kelas && absensies.length >= 1) {
-      getAbsensi(token, absen_id, kelas).then((res) => {
-        fetchToServerLoaded.current = true;
+      setIsLoading(true);
 
-        const newAbsensies = absensies.map((a) => {
-          const newStatus = a.status || res[a.siswaId] || undefined;
-          return {
-            ...a,
-            status: newStatus,
-          };
-        });
+      // anggap maksimal delay dari server itu 2 detik
+      // Ini untuk mendeteksi user sedang offline
+      const offlineDetectTimeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
 
-        setAbsensies(newAbsensies);
+      getAbsensi(token, absen_id, kelas)
+        .then((res) => {
+          fetchToServerLoaded.current = true;
 
-        toast.success("Menerima data dari server", {
-          autoClose: 1000,
-          closeOnClick: true,
+          const newAbsensies = absensies.map((a) => {
+            const newStatus = a.status || res[a.siswaId] || undefined;
+            return {
+              ...a,
+              status: newStatus,
+            };
+          });
+
+          setAbsensies(newAbsensies);
+
+          toast.success("Menerima data dari server", {
+            autoClose: 1000,
+            closeOnClick: true,
+          });
         })
-      });
+        .finally(() => {
+          setIsLoading(false);
+          clearTimeout(offlineDetectTimeout);
+        });
     }
   }, [token, kelas, absensies]);
 
