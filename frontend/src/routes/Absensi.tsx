@@ -181,17 +181,19 @@ export default function Absensi() {
       const ddmmyy = d.split(", ")[1];
       const [dd, mm, yy] = ddmmyy.split("-");
 
-      return `${dd}-${mm}-20${yy}`;
+      return `20${yy}-${mm}-${dd}`;
     });
 
     getAbsensiesProgress(token, formattedDates, kelas).then((ap) => {
       const newAbsensiesProgress: any = {};
 
       Object.keys(ap).forEach((key) => {
-        const [dd, mm, yy] = key.split("-");
-        const formattedKey = formatDate(new Date(`${mm}-${dd}-${yy}`));
-
+        const datetime = new Date(key);
+        // const [dd, mm, yy] = key.split("-");
+        const formattedKey = formatDate(datetime);
+        
         const oldAbsensiProgress = progressAbsensi[formattedKey];
+        // console.log(progressAbsensi)
         const absensiProgress = {
           totalTidakMasuk: ap[key].total_tidak_masuk,
           isComplete: ap[key].is_complete,
