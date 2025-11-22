@@ -26,6 +26,12 @@ export async function getVersion(): Promise<string> {
   return response.data;
 }
 
+export async function ping(): Promise<string> {
+  const baseUrl = getApiBaseUrl();
+  const response = await axios.get(baseUrl + "/ping");
+  return response.data;
+}
+
 export async function getMe(token: string): Promise<User> {
   const baseUrl = getApiBaseUrl();
   try {

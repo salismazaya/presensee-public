@@ -1,0 +1,1 @@
+uv run manage.py migrate && uv run granian --interface wsgi django_project.wsgi:application --no-ws --host 0.0.0.0 --port 8000

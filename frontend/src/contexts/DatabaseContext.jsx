@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import { refreshDatabase } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import Swal from "sweetalert2";
@@ -18,14 +18,17 @@ export function DatabaseContextConsumer({ children }) {
     locateFile: (filename) => `/${filename}`,
   }
 
-  
+  const loaded = useRef(false);
+
   useEffect(() => {
     if (!token) return;
+    if (loaded.current) return;
+
+    loaded.current = true;
 
     initSqlJs(config).then(function (SQL) {
       setIsLoading(true);
       const currentDatabase = localStorage.getItem("DATABASE");
-
       if (!currentDatabase) {
         const db = new SQL.Database();
         refreshDatabase(token)
@@ -53,7 +56,7 @@ export function DatabaseContextConsumer({ children }) {
         setDb(db);
         setTimeout(() => {
           setIsLoading(false);
-        }, 500);
+        }, 600);
       }
     });
   }, [token, refreshDb]);

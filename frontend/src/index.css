@@ -1,44 +1,81 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: emerald --default, dark --prefersdark;
+  themes: presensee-day --default, dark --prefersdark;
 }
 
+
 @plugin "daisyui/theme" {
-  name: "emerald";
+  name: "presensee-day";
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(92% 0 0);
-  --color-base-200: oklch(87% 0.006 286.286);
-  --color-base-300: oklch(87% 0.01 258.338);
-  --color-base-content: oklch(35.519% 0.032 262.988);
-  --color-primary: oklch(69% 0.17 162.48);
-  --color-primary-content: oklch(95% 0.037 318.852);
-  --color-secondary: oklch(61.302% 0.202 261.294);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(72.772% 0.149 33.2);
-  --color-accent-content: oklch(97% 0.014 343.198);
-  --color-neutral: oklch(35.519% 0.032 262.988);
-  --color-neutral-content: oklch(98.462% 0.001 247.838);
-  --color-info: oklch(72.06% 0.191 231.6);
-  --color-info-content: oklch(97% 0.014 343.198);
-  --color-success: oklch(64.8% 0.15 160);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(84.71% 0.199 83.87);
-  --color-warning-content: oklch(0% 0 0);
-  --color-error: oklch(44% 0.177 26.899);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 1rem;
+
+  /* --- BACKGROUND LAYERS (The Canvas) --- */
+  /* 99% Lightness dengan sedikit Chroma ke arah Indigo (Hue 280) */
+  /* Memberikan kesan "Kertas Putih Premium", bukan putih lampu neon */
+  --color-base-100: oklch(99% 0.005 280); 
+  
+  /* Untuk Card/Sidebar: Sedikit lebih gelap untuk depth */
+  --color-base-200: oklch(95% 0.01 280);
+  
+  /* Untuk Border/Input: Abu-abu keunguan tipis */
+  --color-base-300: oklch(90% 0.02 280);
+
+  /* --- TEXT CONTENT (Readability) --- */
+  /* Abu-abu tua dengan nuansa Indigo. Jauh lebih elegan dari hitam polos */
+  --color-base-content: oklch(25% 0.05 280);
+
+  /* --- BRAND COLORS --- */
+  /* PRIMARY: "Royal Indigo". Kuat, profesional, bagus untuk tombol utama */
+  --color-primary: oklch(52% 0.22 275);
+  --color-primary-content: oklch(98% 0 0); /* Teks putih di atas tombol */
+
+  /* SECONDARY: "Soft Magenta".  */
+  /* User sebelumnya suka warna Pink, ini versi lebih dewasa/soft-nya untuk aksen */
+  --color-secondary: oklch(65% 0.18 320);
+  --color-secondary-content: oklch(98% 0 0);
+
+  /* ACCENT: "Electric Teal". Untuk highlight kecil atau link */
+  --color-accent: oklch(70% 0.16 190);
+  --color-accent-content: oklch(10% 0.05 190);
+
+  /* NEUTRAL: Untuk tombol secondary atau elemen non-aktif */
+  --color-neutral: oklch(30% 0.05 260);
+  --color-neutral-content: oklch(98% 0 0);
+
+  /* --- STATUS COLORS (CRITICAL FOR ATTENDANCE) --- */
+  /* Di-tune agar kontras dengan background tapi tidak norak */
+  
+  /* INFO (Izin): Biru Langit Cerah */
+  --color-info: oklch(72% 0.15 230);
+  --color-info-content: oklch(20% 0.05 230);
+  
+  /* SUCCESS (Hadir): Hijau Mint Segar (Bukan hijau tua membosankan) */
+  --color-success: oklch(75% 0.16 150);
+  --color-success-content: oklch(15% 0.05 150);
+  
+  /* WARNING (Sakit): Amber/Emas Hangat */
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(20% 0.05 85);
+  
+  /* ERROR (Alfa/Bolos): Merah Rose Soft (Agar tidak terlalu agresif) */
+  --color-error: oklch(68% 0.18 20);
+  --color-error-content: oklch(98% 0 0);
+
+  /* --- UI SHAPE & FEEL --- */
+  /* Radius modern: Tidak kotak tajam, tidak bulat total. Pas. */
+  --radius-selector: 0.75rem;
   --radius-field: 0.5rem;
   --radius-box: 1rem;
+  
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 2px;
+  --border: 1px;
   --depth: 1;
   --noise: 0;
 }
 
 
 body {
-  @apply bg-base-200 min-h-screen h-max;
+  @apply  min-h-screen h-max;
 }

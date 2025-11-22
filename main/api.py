@@ -41,11 +41,17 @@ api = NinjaAPI(
     docs_url = False,
     throttle = [
         # TODO: ganti ke redis. throttle seperti ini tidak akurat jika multi worker
-        # AnonRateThrottle("1/s"),
-        # AnonRateThrottle("30/m"),
-        # AuthRateThrottle("60/m"),
+        AnonRateThrottle("1/s"),
+        AnonRateThrottle("30/m"),
+        AuthRateThrottle("60/m"),
     ]
 )
+
+
+@api.get('/ping', auth = None, throttle = [])
+def get_version(request: HttpRequest):
+    return HttpResponse("PONG")
+
 
 @api.get('/version', auth = None, throttle = [])
 def get_version(request: HttpRequest):

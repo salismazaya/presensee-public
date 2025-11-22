@@ -7,6 +7,8 @@ import {
 } from "../helpers/database";
 import useDatabase from "../hooks/useDatabase";
 import Swal from "sweetalert2";
+import useConflicts from "../hooks/useConflicts";
+import useLastRefresh from "../hooks/useLastRefresh";
 
 // --- Interfaces ---
 export interface ConflictData {
@@ -232,13 +234,17 @@ export function ConflictResolver({ conflicts, onSave }: ConflictResolverProps) {
 }
 
 export default function ConflictsList() {
-  const [conflicts, setConflicts] = useState<ConflictData[]>([]);
+  const [conflicts, setConflicts] = useConflicts();
   const db = useDatabase();
   const [show, setShow] = useState(true);
+  const [lastRefresh] = useLastRefresh()
 
   useEffect(() => {
-    setConflicts(getConflictsAbsensi());
-  }, []);
+    if (setConflicts) {
+      setConflicts(getConflictsAbsensi());
+    }
+  }, [setConflicts, lastRefresh]);
+
 
   const handleSave = (conflicts: InsertAbsensProps[]) => {
     insertAbsens(db, conflicts);
@@ -247,7 +253,7 @@ export default function ConflictsList() {
 
     Swal.fire({
       title: "Sukses",
-      text: "Silahkan upload jika sedang tersedia internet",
+      // text: "Silahkan upload jika sedang tersedia internet",
       icon: "success",
     }).finally(() => {
       setTimeout(() => {

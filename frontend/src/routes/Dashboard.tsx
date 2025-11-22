@@ -18,13 +18,14 @@ import useDatabase from "../hooks/useDatabase";
 import useToken from "../hooks/useToken";
 import useRefreshDatabase from "../hooks/useRefreshDatebase";
 import useGlobalLoading from "../hooks/useGlobalLoading";
-import { uploadDatabase } from "../helpers/api";
+import { ping, uploadDatabase } from "../helpers/api";
 import useUser from "../hooks/useUser";
 import Rekap from "../components/Rekap";
 import useLastRefresh from "../hooks/useLastRefresh";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useKelas from "../hooks/useKelas";
 import ConflictsList from "../components/ConflictsList";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
   const db = useDatabase();
@@ -37,9 +38,11 @@ export default function Dashboard() {
   const [siswasKelas, setSiswasKelas] = useState<SiswaProps[]>([]);
   const [kelasId] = useKelas();
   const stagingDatabase = getStagingDatabase();
+  const loaded = useRef(false);
 
   useEffect(() => {
-    if (!db || !kelasId) return;
+    if (loaded.current) return;
+    if (!db || !kelasId || !token) return;
 
     const dateNow = new Date();
     const date = `${dateNow.getFullYear()}-${(dateNow.getMonth() + 1)
@@ -50,7 +53,6 @@ export default function Dashboard() {
       db,
       whereQuery: `date="${date}"`,
     });
-    // console.log({ date });
     const siswasKelas = getSiswa({
       db,
       whereQuery: "kelas_id=" + kelasId,
@@ -58,7 +60,33 @@ export default function Dashboard() {
 
     setAbsensiesHariIni(absensies);
     setSiswasKelas(siswasKelas);
-  }, [db, kelasId]);
+
+    ping()
+      .then(async () => {
+        if (getStagingDatabase().length > 0) {
+          const res = await uploadDatabase(token);
+          res.conflicts.forEach((conflict) => {
+            insertConflictAbsensi(conflict);
+          });
+
+          clearStagingDatabase();
+          await refreshRemoteDatabase({
+            db,
+            token,
+          });
+          refreshLocalDatabase();
+          setLastRefresh(new Date().getTime());
+
+          toast.success("Auto upload sukses!", {
+            autoClose: 2000,
+            closeOnClick: true,
+          });
+        }
+      })
+      .finally(() => {
+        loaded.current = true;
+      });
+  }, [db, kelasId, token]);
 
   const handleRefresh = async () => {
     const { isConfirmed } = await Swal.fire({

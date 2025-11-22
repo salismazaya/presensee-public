@@ -130,18 +130,26 @@ export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
   const datasWithUpdatedAt: InsertAbsensProps[] = [];
 
   datas.forEach((data) => {
-    const [dd, mm, yy] = data.date.split("-", 3);
-    const date = `20${yy}-${mm}-${dd}`;
+    // const [dd, mm, yy] = data.date.split("-", 3);
+    const datetime = new Date(data.date);
+    // datetime.toDateString()
+    const yyyy = datetime.getFullYear();
+    const mm = datetime.getMonth() + 1;
+    const dd = datetime.getDate().toString().padStart(2, "0");
+    const date = `${yyyy}-${mm}-${dd}`;
 
     const sqlPreviousStatus = data.previousStatus
       ? `"${data.previousStatus}"`
       : "null";
 
-    insertsData.push(`("${date}",${data.siswaId},"${data.status}",${sqlPreviousStatus})`);
+    insertsData.push(
+      `("${date}",${data.siswaId},"${data.status}",${sqlPreviousStatus})`
+    );
     deletesData.push(`date="${date}" AND siswa_id=${data.siswaId}`);
 
     datasWithUpdatedAt.push({
       ...data,
+      date,
       updatedAt: Math.floor(Date.now() / 1000),
     });
   });
@@ -243,21 +251,20 @@ export function insertToLocalDatabase(sql: string) {
   localStorage.setItem("DATABASE", compressedDatabase);
 }
 
-
 export function purgeConflictAbsensi() {
   localStorage.removeItem("CONFLICT_ABSENSI");
 }
 
 export function insertConflictAbsensi(absensi: ConflictData) {
   const confclicts = getConflictsAbsensi();
-  confclicts.push(absensi)
+  confclicts.push(absensi);
 
   localStorage.setItem("CONFLICT_ABSENSI", JSON.stringify(confclicts));
 }
 
-export function getConflictsAbsensi() : ConflictData[] {
-  const rawConflicts = localStorage.getItem("CONFLICT_ABSENSI") || '[]';
-  
+export function getConflictsAbsensi(): ConflictData[] {
+  const rawConflicts = localStorage.getItem("CONFLICT_ABSENSI") || "[]";
+
   const confclicts = JSON.parse(rawConflicts);
   return confclicts;
 }

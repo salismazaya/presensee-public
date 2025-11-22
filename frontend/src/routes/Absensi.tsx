@@ -334,6 +334,8 @@ export default function Absensi() {
                 const isToday = dateString === dateNowString;
                 const isSunday = dateString.startsWith("Min");
                 const { day, date, month } = formatDisplayDate(dateString);
+                const [dd, mm, yy] = dateString.split(", ")[1].split("-");
+                const dateForLink = `20${yy}-${mm}-${dd}`;
 
                 let locked = false;
                 if (kelas)
@@ -400,7 +402,7 @@ export default function Absensi() {
                     {/* Status */}
                     <div className="col-span-3 md:col-span-3 flex justify-center">
                       {isComplete ? (
-                        <span className="badge badge-success font-bold badge-md text-gray-800 border-none shadow-sm">
+                        <span className="badge badge-success font-bold badge-md text-base-100 border-none shadow-sm">
                           Selesai
                         </span>
                       ) : (
@@ -430,7 +432,7 @@ export default function Absensi() {
                       {!isSunday && (
                         <>
                           <Link
-                            to={"/absensi/" + dateString.split(", ")[1]}
+                            to={"/absensi/" + dateForLink}
                             className={`
                                 btn btn-sm font-semibold shadow-sm border-none
                                 ${

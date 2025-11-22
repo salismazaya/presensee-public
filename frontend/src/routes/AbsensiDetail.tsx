@@ -21,9 +21,14 @@ import { getAbsensi } from "../helpers/api";
 import { toast } from "react-toastify";
 
 // Helper untuk format tanggal header
-function formatDisplayDate(dateStr: string | undefined) {
-  if (!dateStr) return "";
-  const [d, m, y] = dateStr.split("-");
+function formatDisplayDate(date: Date) {
+  // if (!dateStr) return "";
+  // const [d, m, y] = dateStr.split("-");
+
+  const d = date.getDate()
+  const m = date.getMonth() + 1
+  const y = date.getFullYear()
+
   const monthNames = [
     "Jan",
     "Feb",
@@ -38,7 +43,7 @@ function formatDisplayDate(dateStr: string | undefined) {
     "Nov",
     "Des",
   ];
-  return `${d} ${monthNames[parseInt(m) - 1]} 20${y}`;
+  return `${d} ${monthNames[m - 1]} ${y}`;
 }
 
 export default function AbsensiDetail() {
@@ -187,11 +192,15 @@ export default function AbsensiDetail() {
     if (
       db &&
       siswas.length >= 1 &&
-      absen_id?.split("-").length === 3 &&
+      absen_id &&
       kelas
     ) {
-      const [dd, mm, yy] = absen_id.split("-");
-      // Fetch data existing dari DB
+      const datetime = new Date(absen_id);
+
+      const dd = datetime.getDay()
+      const mm = datetime.getMonth() + 1
+      const yy = datetime.getFullYear() % 2000;
+
       const currentAbsensies = getAbsensies({
         db,
         sql: `SELECT a.id AS absensi_id, a.status, s.id AS siswa_id
@@ -325,7 +334,7 @@ export default function AbsensiDetail() {
                   {kelasName}
                 </span>
                 <span className="text-sm font-medium opacity-70">
-                  / {formatDisplayDate(absen_id)}
+                  / {absen_id && formatDisplayDate(new Date(absen_id))}
                 </span>
               </div>
             </div>

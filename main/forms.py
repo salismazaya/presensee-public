@@ -1,8 +1,15 @@
 from django import forms
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
+from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
 
 from main.models import Kelas, User
+
+
+class UserCreationForm(BaseUserCreationForm):
+    class Meta:
+        model = User
+        fields = ('password1', 'password1', 'username')
 
 
 def createKelasForm(kelas_id: int):

@@ -1,11 +1,11 @@
 from django.contrib import admin
 # from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-from django.contrib.auth.forms import UserCreationForm
+# from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 
 # from django.contrib.auth.forms import UserChangeForm
-from main.forms import createKelasForm, createUserChangeForm
+from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
 
 

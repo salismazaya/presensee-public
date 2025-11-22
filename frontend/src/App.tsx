@@ -6,7 +6,6 @@ import Dashboard from "./routes/Dashboard";
 import About from "./routes/About";
 import Absensi from "./routes/Absensi";
 import AbsensiDetail from "./routes/AbsensiDetail";
-import { SharedDataContextConsumer } from "./contexts/SharedDataContext";
 import AbsensiKelas from "./routes/AbsensiKelas";
 import Rekap from "./routes/Rekap";
 import ChangePassword from "./routes/ChangePassword";
@@ -17,12 +16,11 @@ import { useEffect } from "react";
 import { getVersion } from "./helpers/api";
 import serviceWorkerUtils from "./helpers/serviceWorker";
 // import InstallPWA from "./components/InstallPWA";
-import { ToastContainer } from 'react-toastify';
-
+import { ToastContainer } from "react-toastify";
+import { SharedDataContextConsumer } from "./contexts/SharedDataContext";
 
 function App() {
   useEffect(() => {
-
     // auto-update jika ada versi baru
     getVersion()
       .then((latestVersion) => {
