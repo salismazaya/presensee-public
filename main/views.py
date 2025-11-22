@@ -10,12 +10,15 @@ from django.shortcuts import redirect, render
 # from django.contrib import messages
 from main.forms import SetupForm
 from main.helpers import redis
+# from main.helpers.auth import require_superuser_basic_auth
 from main.models import User
+from django.contrib.auth import authenticate
 
-
-def ping(request: HttpRequest):
-    return HttpResponse("PONG")
-
+def redirect_factory(to: str):
+    def inner(*args, **kwargs):
+        return redirect(to)
+    
+    return inner
 
 
 def files(request: HttpRequest, file_id: str):
@@ -58,6 +61,7 @@ def spa_assets(request: HttpRequest):
     else:
         raise Http404
     
+
 def spa_public(request: HttpRequest):
     dirs = [
         settings.VITE_PUBLIC_DIR
@@ -119,3 +123,21 @@ def setup(request: HttpRequest):
             return redirect('/admin')
 
     return render(request, 'main/setup.html', {'form': form})
+
+
+def migrate(request: HttpRequest):
+    if request.method == 'GET':
+        context = {}
+        context['text'] = request.GET.get('text') or ''
+
+        return render(request, 'main/migrate_login.html', context)
+    
+    user = authenticate(request, username = request.POST['username'], password = request.POST['password'])
+    if not user or not user.is_superuser:
+        return redirect('/migrate?text=Ditolak')
+    
+    call_command("migrate")
+    return redirect('/migrate?text=Selesai')
+
+
+    
