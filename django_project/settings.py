@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = '2.0.0a'
+PRESENSEE_VERSION = '2.0.0hotfix1'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
