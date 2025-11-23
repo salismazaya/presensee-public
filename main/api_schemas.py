@@ -33,3 +33,7 @@ class RequestDocumentSchema(Schema):
     nowa: str
     bulan: int
     tahun: int
+
+
+class DataCompressedUploadSchema(Schema):
+    data: str

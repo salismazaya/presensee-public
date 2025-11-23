@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = '2.0.0hotfix3'
+PRESENSEE_VERSION = '2.0.0b'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cacheops',
+    'silk',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.gzip.GZipMiddleware',
+    'main.middlewares.CustomSilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'django_project.urls'

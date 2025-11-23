@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getStagingDatabase } from "./stagingDatabase";
 import type { ConflictData } from "../components/ConflictsList";
+import LZString from "lz-string";
 
 // TODO: rapihkan function-function di file ini
 
@@ -117,11 +118,12 @@ export async function uploadDatabase(
 ): Promise<{ conflicts: ConflictData[] }> {
   const baseUrl = getApiBaseUrl();
   const payload = getStagingDatabase();
+  const data = LZString.compressToBase64(JSON.stringify(payload));
 
   try {
     const response = await axios.post(
-      baseUrl + "/upload",
-      { data: payload },
+      baseUrl + "/compressed-upload",
+      { data },
       {
         headers: {
           Authorization: "Bearer " + token,
@@ -288,7 +290,9 @@ export async function getAbsensiesProgress(
   token: string,
   dates: string[],
   kelasId: number
-): Promise<Record<string, { total_tidak_masuk: number, is_complete: boolean }>> {
+): Promise<
+  Record<string, { total_tidak_masuk: number; is_complete: boolean }>
+> {
   const baseUrl = getApiBaseUrl();
   try {
     const response = await axios.get(baseUrl + "/absensi/progress", {

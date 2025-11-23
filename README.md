@@ -1,3 +1,12 @@
+## ⚠️ PERINGATAN
+
+*Software ini GRATIS*
+
+* ✅ **Diperbolehkan:** Penggunaan pribadi atau instansi internal.
+* ❌ **Dilarang:** Menjual software ini atau menggunakannya untuk tujuan komersil tanpa izin.
+
+---
+
 # **Presensee 📱**
 
 ![Presensee Banner](frontend/public/logo.png)
@@ -10,6 +19,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
 [![uv](https://img.shields.io/badge/uv-Python_Manager-de5fe7)](https://github.com/astral-sh/uv)
 [![Bun](https://img.shields.io/badge/Bun-Frontend_Runtime-black)](https://bun.sh/)
+
 
 **Presensee** adalah aplikasi absensi berbasis web dengan pendekatan **Offline-First**, dirancang agar **absensi tetap bisa jalan di mana saja** — di kelas, lapangan, atau area tanpa sinyal. Cukup input data, lalu **sinkronisasi otomatis** begitu internet tersedia.
 

@@ -17,11 +17,12 @@ from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 from main.api_schemas import (ChangePasswordSchema, DataUploadSchema,
-                              ErrorSchema, LoginSchema, SuccessSchema)
+                              ErrorSchema, LoginSchema, SuccessSchema, DataCompressedUploadSchema)
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from lzstring import LZString
 
 
 class HttpRequest(HttpRequest):
@@ -48,12 +49,12 @@ api = NinjaAPI(
 )
 
 
-@api.get('/ping', auth = None, throttle = [])
+@api.get('/ping', auth = None, throttle = [AnonRateThrottle("2/s")])
 def get_version(request: HttpRequest):
     return HttpResponse("PONG")
 
 
-@api.get('/version', auth = None, throttle = [])
+@api.get('/version', auth = None, throttle = [AnonRateThrottle("2/s")])
 def get_version(request: HttpRequest):
     return HttpResponse(settings.PRESENSEE_VERSION)
 
@@ -82,6 +83,7 @@ def login(request: HttpRequest, data: ChangePasswordSchema):
     request.auth.save()
     return 200, {"data": {"success": True}}
 
+
 @api.get('/me')
 def get_me(request: HttpRequest):
     kelas_obj = Kelas.objects.filter(
@@ -93,6 +95,17 @@ def get_me(request: HttpRequest):
         kelas = kelas_obj.pk
 
     return {'data': {'username': request.auth.username, "type": request.auth.type, "kelas": kelas}}
+
+
+@api.post('/compressed-upload', response = {403: ErrorSchema, 200: SuccessSchema})
+def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
+    lz = LZString()
+
+    data_decompressed_json = lz.decompressFromBase64(data.data)
+    data_decompressed = json.loads(data_decompressed_json)
+
+    data_upload = DataUploadSchema(data = data_decompressed)
+    return upload(request, data_upload)
 
 
 @api.post('/upload', response = {403: ErrorSchema, 200: SuccessSchema})
@@ -109,16 +122,6 @@ def upload(request: HttpRequest, data: DataUploadSchema):
         payload = json.loads(x.data)
         # dd, mm, yy = payload['date'].split("-")
         date = dateutil_parser.parse(payload['date'])
-
-        dd = date.day
-        mm = date.month
-        yy = date.year % 2000
-
-        date = datetime(
-            year = 2000 + int(yy),
-            month = int(mm),
-            day = int(dd)
-        ).date()
 
         if x.action == "absen":
             updated_at_int = int(payload['updated_at'])

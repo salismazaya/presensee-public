@@ -72,6 +72,8 @@ class Siswa(models.Model):
 
     fullname = models.CharField(verbose_name = 'Nama Lengkap', max_length = 50)
     kelas = models.ForeignKey(Kelas, on_delete = models.PROTECT, related_name = 'siswas')
+    nis = models.CharField(max_length = 20, null = True, blank = True)
+    nisn = models.CharField(max_length = 20, null = True, blank = True)
 
     def __str__(self):
         return self.fullname

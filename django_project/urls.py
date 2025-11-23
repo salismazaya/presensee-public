@@ -1,16 +1,18 @@
 from django.conf import settings
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 
 from main.admin import admin_site
 from main.api import api
-from main.views import files, ping, setup
+from main.views import files, setup, redirect_factory, migrate
 
 urlpatterns = [
+    path("admin", redirect_factory('/admin/')),
     path("admin/", admin_site.urls),
-    path("files/<str:file_id>/", files),
-    re_path(r"^ping/?$", ping),
     path("api/", api.urls),
-    path("setup/", setup),
+    re_path(r"^files/(?P<file_id>[^/]+)/?$", files),
+    re_path(r"^setup/?$", setup),
+    re_path(r"^migrate/?$", migrate),
+    path('silk/', include('silk.urls', namespace='silk'))
 ]
 
 if not settings.DEBUG:
