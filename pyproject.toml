@@ -12,6 +12,7 @@ dependencies = [
     "django-cors-headers>=4.5.0",
     "django-jazzmin>=3.0.1",
     "django-ninja>=1.4.3",
+    "django-silk[formatting]>=5.4.3",
     "dotenv-cli>=3.4.1",
     "granian>=2.6.0",
     "lzstring>=1.0.4",
