@@ -107,11 +107,11 @@ class KelasAdmin(admin.ModelAdmin):
         
         return createKelasForm(obj.pk)
     
-    def change_view(self, request, object_id, form_url = None, extra_context = {}):
-        extra_context['is_change'] = True
-        extra_context['object_id'] = object_id
+    # def change_view(self, request, object_id, form_url = None, extra_context = {}):
+    #     extra_context['is_change'] = True
+    #     extra_context['object_id'] = object_id
 
-        return super().change_view(request, object_id, form_url, extra_context)
+    #     return super().change_view(request, object_id, form_url, extra_context)
 
 
 class AbsensiAdmin(admin.ModelAdmin):

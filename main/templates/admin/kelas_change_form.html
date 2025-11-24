@@ -4,7 +4,7 @@
 {% block submit_buttons_bottom %}
     {{block.super}}
 
-    {% if is_change %}
+    {% if object_id %}
     <div class="form-group mt-3">
         <input id="naik-kelas-btn" type="button" value="Naik Kelas" class="btn btn-primary form-control"></input>
     </div>
@@ -19,7 +19,7 @@
 {{block.super}}
 
 <script>
-    '{% if is_change %}';
+    '{% if object_id %}';
     let newKelasId = null;
 
     document.getElementById('naik-kelas-btn').addEventListener('click', () => {

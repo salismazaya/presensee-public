@@ -22,6 +22,7 @@ from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from django.utils import crypto
 from lzstring import LZString
 
 
@@ -47,7 +48,6 @@ api = NinjaAPI(
         AuthRateThrottle("60/m"),
     ]
 )
-
 
 @api.get('/ping', auth = None, throttle = [AnonRateThrottle("2/s")])
 def get_version(request: HttpRequest):
@@ -111,6 +111,10 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 @api.post('/upload', response = {403: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
 def upload(request: HttpRequest, data: DataUploadSchema):
+    file_path = settings.BASE_DIR.joinpath(crypto.get_random_string(12) + '.bin')
+    with open(file_path, 'wb') as f:
+        f.write(request.body)        
+
     # TODO: terlalu spageti, ubah ke class based view
     user = request.auth
 
