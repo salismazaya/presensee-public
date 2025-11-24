@@ -20,6 +20,10 @@ class Command(BaseCommand):
 
         for user in users:
             fields = user['fields']
+
+            fields['wali_kelas_id'] = fields['wali_kelas']
+
+            del fields['wali_kelas']
             del fields['groups']
             del fields['user_permissions']
 
