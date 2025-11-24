@@ -179,7 +179,19 @@ JAZZMIN_SETTINGS = {
     "site_header": "Presensee",
     "site_brand": "Presensee",
     "login_logo": "/img/logo.png",
-    "copyright": "Salis Mazaya Miftah Malik"
+    "copyright": "Salis Mazaya Miftah Malik",
+    "custom_links": {
+        "main": [
+            {
+                'name': 'Import Siswa',
+                'url': 'admin:import_siswa'
+            },
+            {
+                'name': 'Export Absensi',
+                'url': 'admin:export_absensi'
+            },
+        ]
+    }
 }
 
 REDIS_URL = os.environ.get('REDIS_URL')

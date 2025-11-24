@@ -45,12 +45,15 @@ class AdminSite(admin.AdminSite):
         messages.success(request, "Sukses memindahkan seluruh siswa dari kelas %s ke kelas %s" % (old_kelas.name, new_kelas.name))
         return HttpResponse(str(new_kelas.pk))
 
-
     def get_urls(self):
+        from main.views_import_export import export_absensi, import_siswa
+
         urls = super().get_urls()
         last_url = urls.pop()
 
         urls.append(path('naik-kelas/', self.naik_kelas))
+        urls.append(path('export-absensi/', export_absensi, name = 'export_absensi'))
+        urls.append(path('import-siswa/', import_siswa, name = 'import_siswa'))
         urls.append(last_url)
 
         return urls

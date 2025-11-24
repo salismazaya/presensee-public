@@ -1,0 +1,69 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-excel-fill me-2"></i>Export Absensi
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <p class="text-muted text-center mb-4">
+                        Pilih kelas dan periode untuk mengunduh rekapitulasi absensi dalam format Excel.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="kelas" class="form-label fw-bold">Kelas</label>
+                            <select name="kelas" id="kelas" class="form-select form-control" required>
+                                <option value="" disabled selected>-- Pilih Kelas --</option>
+                                {% for k in kelas_list %}
+                                    <option value="{{ k.id }}">{{ k.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="month" class="form-label fw-bold">Bulan</label>
+                                <select name="month" id="month" class="form-select form-control" required>
+                                    {% for m in months %}
+                                        <option value="{{ m }}" {% if m == request.user.date_joined.month %}selected{% endif %}>
+                                            Bulan ke-{{ m }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="year" class="form-label fw-bold">Tahun</label>
+                                <select name="year" id="year" class="form-select form-control" required>
+                                    {% for y in years %}
+                                        <option value="{{ y }}">{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-download me-2"></i>Download Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

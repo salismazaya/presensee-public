@@ -21,9 +21,6 @@ class Command(BaseCommand):
         for user in users:
             fields = user['fields']
 
-            fields['wali_kelas_id'] = fields['wali_kelas']
-
-            del fields['wali_kelas']
             del fields['groups']
             del fields['user_permissions']
 
@@ -32,7 +29,9 @@ class Command(BaseCommand):
         for kelas in kelass:
             fields = kelas['fields']
             sekretariss = fields['sekretaris']
+            fields['wali_kelas_id'] = fields['wali_kelas']
 
+            del fields['wali_kelas']
             del fields['sekretaris']
 
             kelas, _ = Kelas.objects.update_or_create(pk = kelas['pk'], defaults = fields)
@@ -76,20 +75,4 @@ class Command(BaseCommand):
                 siswa_id = siswa_id,
                 defaults = fields
             )
-
-
-        # result = {}
-        # result['users'] = serializers.serialize('python', users)
-        # result['kelass'] = serializers.serialize('python', kelass)
-        # result['siswas'] = serializers.serialize('python', siswas)
-        # result['kuncis'] = serializers.serialize('python', kuncis)
-        # result['absensies'] = serializers.serialize('python', absensies)
-
-        # for x in result['absensies'] + result['kuncis']:
-        #     # id tabel diatas tidak di-import
-        #     del x['pk']
-
-        # output = pickle.dumps(result)
-
-        # open(options['input-path'], 'wb').write(output)
 
