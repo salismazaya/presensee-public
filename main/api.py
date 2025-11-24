@@ -135,7 +135,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
             )
 
         if x.action == "absen":
-            updated_at_int = int(payload.get('updated_at'), time.time())
+            updated_at_int = int(payload.get('updated_at', time.time()))
             updated_at = datetime.fromtimestamp(updated_at_int)
 
             siswa = Siswa.objects.filter(pk = payload["siswa"]).first()
