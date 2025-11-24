@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 import threading
 from datetime import datetime
 
@@ -111,10 +112,6 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 @api.post('/upload', response = {403: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
 def upload(request: HttpRequest, data: DataUploadSchema):
-    file_path = settings.BASE_DIR.joinpath(crypto.get_random_string(12) + '.bin')
-    with open(file_path, 'wb') as f:
-        f.write(request.body)        
-
     # TODO: terlalu spageti, ubah ke class based view
     user = request.auth
 
@@ -138,7 +135,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
             )
 
         if x.action == "absen":
-            updated_at_int = int(payload['updated_at'])
+            updated_at_int = int(payload.get('updated_at'), time.time())
             updated_at = datetime.fromtimestamp(updated_at_int)
 
             siswa = Siswa.objects.filter(pk = payload["siswa"]).first()
