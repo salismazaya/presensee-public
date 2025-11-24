@@ -47,7 +47,7 @@ Dibangun menggunakan stack modern: **Django** di backend, **React (Vite)** di fr
 
 1. **[uv](https://docs.astral.sh/uv/)** – Python Package Manager.
 2. **[Bun](https://bun.com/)** – Untuk build frontend.
-3. **[PostgreSQL Server](https://codingstudio.id/blog/postgresql-adalah/)** – Database utama.
+3. **[PostgreSQL Server](https://codingstudio.id/blog/postgresql-adalah/)** atau **[MySQL Server](https://www.mysql.com/)** – Database utama.
 4. **[Redis Server](https://redis.io/)** – Caching.
 
 ---

@@ -22,6 +22,12 @@ BASE_URL = os.environ.get("BASE_URL")
 
 PRESENSEE_VERSION = '2.0.0b'
 
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 

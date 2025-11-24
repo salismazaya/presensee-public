@@ -246,11 +246,11 @@ export default function AbsensiDetail() {
     }
   }, [absensies, query, siswas]);
 
-  const fetchToServerLoaded = useRef(false);
+  const dataServerLoaded = useRef(false);
 
   // fetch data dari server
   useEffect(() => {
-    if (fetchToServerLoaded.current) return;
+    if (dataServerLoaded.current) return;
     if (token && absen_id && kelas && absensies.length >= 1) {
       setIsLoading(true);
 
@@ -262,7 +262,7 @@ export default function AbsensiDetail() {
 
       getAbsensi(token, absen_id, kelas)
         .then((res) => {
-          fetchToServerLoaded.current = true;
+          dataServerLoaded.current = true;
 
           const newAbsensies = absensies.map((a) => {
             const newStatus = a.status || res[a.siswaId] || undefined;

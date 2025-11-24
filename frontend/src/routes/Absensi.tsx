@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { Link } from "react-router";
@@ -94,6 +94,8 @@ export default function Absensi() {
     Record<string, { totalTidakMasuk: number; isComplete: boolean }>
   >({});
 
+  const dataServerLoaded = useRef(false);
+
   const monthNamesFull = [
     "Januari",
     "Februari",
@@ -170,7 +172,11 @@ export default function Absensi() {
   }, [filteredDates, db]);
 
   useEffect(() => {
+    if (dataServerLoaded.current) return;
+    // load hanya sekali. biar user tidak bingung di-spam notif
+    
     if (!token || !kelas) return;
+
     // Format key: Jum, 21-11-25
     const dates = Object.keys(progressAbsensi);
 
@@ -213,9 +219,9 @@ export default function Absensi() {
         closeOnClick: true,
       });
 
-      // console.log(newAbsensiesProgress);
-
       setProgressAbsensi(newAbsensiesProgress);
+    }).finally(() => {
+      dataServerLoaded.current = true;
     });
   }, [absensies, token]);
 
