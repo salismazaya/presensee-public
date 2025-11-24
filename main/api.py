@@ -124,8 +124,18 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     for x in datas:
         payload = json.loads(x.data)
-        # dd, mm, yy = payload['date'].split("-")
-        date = dateutil_parser.parse(payload['date'])
+
+        try:
+            date = dateutil_parser.parse(payload['date'])
+        except:
+            # TODO: karena di beberapa versi, format tanggal seperti ini (ddmmyy)
+            # TODO: hapus dimasa depan
+            dd, mm, yy = payload['date'].split("-")
+            date = datetime(
+                year = 2000 + int(yy),
+                month = int(mm),
+                day = int(dd),
+            )
 
         if x.action == "absen":
             updated_at_int = int(payload['updated_at'])
