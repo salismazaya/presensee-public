@@ -3,14 +3,57 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 # from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
+from django.urls import path
+from django.db import transaction
+from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
-
+from django.http import HttpRequest, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 class AdminSite(admin.AdminSite):
-    pass
+    @csrf_exempt
+    @transaction.atomic
+    def naik_kelas(self, request: HttpRequest):
+        data = json.loads(request.body)
+
+        old_kelas_id = data.get('old_kelas_id')
+        new_kelas_name = data.get('new_kelas_name')
+
+        if not old_kelas_id or not new_kelas_name:
+            return HttpResponse('NOT_OK')
+        
+        old_kelas = Kelas.objects.filter(pk = old_kelas_id).first()
+        if old_kelas is None:
+            return HttpResponse('NOT_OK')
+        
+        new_kelas = Kelas.objects.create(
+            name = new_kelas_name
+        )
+        old_kelas.active = False
+        old_kelas.save()
+
+        Siswa.objects.filter(
+            kelas__pk = old_kelas_id
+        ).update(
+            kelas_id = new_kelas.pk
+        )
+
+        messages.success(request, "Sukses memindahkan seluruh siswa dari kelas %s ke kelas %s" % (old_kelas.name, new_kelas.name))
+        return HttpResponse(str(new_kelas.pk))
+
+
+    def get_urls(self):
+        urls = super().get_urls()
+        last_url = urls.pop()
+
+        urls.append(path('naik-kelas/', self.naik_kelas))
+        urls.append(last_url)
+
+        return urls
 
 
 class CustomAuthUserAdmin(AuthUserAdmin):
@@ -44,15 +87,28 @@ class SiswaInlineAdmin(admin.TabularInline):
 class KelasAdmin(admin.ModelAdmin):
     search_fields = ('name', "wali_kelas__first_name", "wali_kelas__last_name")
     list_filter = ('active',)
-    list_display = ('id', 'name', 'wali_kelas', 'active')
+    list_display = ('id', 'name_', 'wali_kelas', 'jumlah_siswa', 'active')
     ordering = ('-active',)
     inlines = (SiswaInlineAdmin,)
+    change_form_template = "admin/kelas_change_form.html"
+
+    def name_(self, obj):
+        return str(obj)
+    
+    def jumlah_siswa(self, obj):
+        return obj.siswas.count()
 
     def get_form(self, request, obj = None, *args, **kwargs):
         if obj is None:
             return super().get_form(request, obj, *args, **kwargs)
         
         return createKelasForm(obj.pk)
+    
+    def change_view(self, request, object_id, form_url = None, extra_context = {}):
+        extra_context['is_change'] = True
+        extra_context['object_id'] = object_id
+
+        return super().change_view(request, object_id, form_url, extra_context)
 
 
 class AbsensiAdmin(admin.ModelAdmin):

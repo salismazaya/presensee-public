@@ -33,7 +33,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
     { name = "dj-database-url", specifier = ">=2.2.0" },
     { name = "django", specifier = "==4.2.*" },
-    { name = "django-cacheops", specifier = ">=7.2" },
+    { name = "django-cacheops", specifier = "==7.2" },
     { name = "django-cors-headers", specifier = ">=4.5.0" },
     { name = "django-jazzmin", specifier = ">=3.0.1" },
     { name = "django-ninja", specifier = ">=1.4.3" },

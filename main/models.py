@@ -63,7 +63,12 @@ class Kelas(models.Model):
     active = models.BooleanField(default = True, verbose_name = 'Aktif')
 
     def __str__(self):
-        return self.name
+        display_name = self.name
+
+        if not self.active:
+            display_name += " (TIDAK AKTIF)"
+            
+        return display_name
 
 
 class Siswa(models.Model):
@@ -109,7 +114,7 @@ class Absensi(models.Model):
     status = models.CharField(max_length = 30, choices = StatusChoices.choices)
     created_at = models.DateTimeField(default = timezone.now, verbose_name = 'Dibuat')
     updated_at = models.DateTimeField(default = timezone.now, verbose_name = 'Diubah')
-    by = models.ForeignKey(User, on_delete = models.CASCADE, null = True, verbose_name = 'Oleh')
+    by = models.ForeignKey(User, on_delete = models.SET_NULL, null = True, verbose_name = 'Oleh')
 
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)

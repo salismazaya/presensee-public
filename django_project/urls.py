@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.urls import path, re_path, include
+from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
@@ -12,7 +12,6 @@ urlpatterns = [
     re_path(r"^files/(?P<file_id>[^/]+)/?$", files),
     re_path(r"^setup/?$", setup),
     re_path(r"^migrate/?$", migrate),
-    path('silk/', include('silk.urls', namespace='silk'))
 ]
 
 if not settings.DEBUG:
