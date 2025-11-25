@@ -36,7 +36,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=46.0.3" },
     { name = "dj-database-url", specifier = ">=2.2.0" },
     { name = "django", specifier = "==4.2.*" },
-    { name = "django-cacheops", specifier = "==7.2" },
+    { name = "django-cacheops", git = "https://github.com/salismazaya/django-cacheops?rev=salis" },
     { name = "django-cors-headers", specifier = ">=4.5.0" },
     { name = "django-jazzmin", specifier = ">=3.0.1" },
     { name = "django-ninja", specifier = ">=1.4.3" },
@@ -393,15 +393,11 @@ wheels = [
 [[package]]
 name = "django-cacheops"
 version = "7.2"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/salismazaya/django-cacheops?rev=salis#bd19577ab51be9938a91ea6c18873d739e0de57f" }
 dependencies = [
     { name = "django" },
     { name = "funcy" },
     { name = "redis" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/92/9df8a60ee959c214705ec3d3ccf80820097672a0260b149cf2751e818086/django_cacheops-7.2.tar.gz", hash = "sha256:cbc11cc0321295a3644e27bcb26940f08cb9c2e71d3ee506cbcff0bdda1a9f33", size = 72751 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/e0/cad1eca0d388ac9f0a75f785599a10acf62ecb6bbb7947da72c04461539c/django_cacheops-7.2-py2.py3-none-any.whl", hash = "sha256:c3b4399474919e62aa91bbd97e7b68cfc50e8cb4384d743bde686c37fe8c010b", size = 45116 },
 ]
 
 [[package]]
