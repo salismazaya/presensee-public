@@ -76,31 +76,6 @@ def createUserChangeForm(user_id: int = None):
 
 
 class SetupForm(forms.Form):
-    username = forms.CharField(
-        label="Username",
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Masukan username',
-            'class': 'form-control'
-        })
-    )
-
-
-    confirm_password = forms.CharField(
-        label="Konfirmasi Password",
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Ulangi password',
-            'class': 'form-control'
-        })
-    )
-    
-    password = forms.CharField(
-        label="Password",
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Masukkan password',
-            'class': 'form-control'
-        })
-    )
-
     class Meta:
         model = User
         fields = ['username', 'password', 'confirm_password']
@@ -110,6 +85,30 @@ class SetupForm(forms.Form):
                 'class': 'form-control'
             }),
         }
+
+    username = forms.CharField(
+        label = "Username",
+        widget = forms.TextInput(attrs = {
+            'placeholder': 'Masukan username',
+            'class': 'form-control'
+        })
+    )
+
+    confirm_password = forms.CharField(
+        label = "Konfirmasi Password",
+        widget = forms.PasswordInput(attrs = {
+            'placeholder': 'Ulangi password',
+            'class': 'form-control'
+        })
+    )
+    
+    password = forms.CharField(
+        label = "Password",
+        widget=forms.PasswordInput(attrs = {
+            'placeholder': 'Masukkan password',
+            'class': 'form-control'
+        })
+    )
 
     def clean(self):
         cleaned_data = super().clean()

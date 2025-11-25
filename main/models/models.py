@@ -1,9 +1,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from .base import BaseModel, BaseQuerySet, BaseManager
 
 
-class User(AbstractUser):
+class User(BaseModel, AbstractUser):
     class TypeChoices(models.TextChoices):
         WALI_KELAS = 'wali_kelas', 'Wali Kelas'
         KESISWAAN = 'kesiswaan', 'Kesiswaan'
@@ -24,7 +25,7 @@ class User(AbstractUser):
         return display_name
 
 
-class KelasQuerySet(models.QuerySet):
+class KelasQuerySet(BaseQuerySet):
     def own(self, user_id: int):
         return (
             self
@@ -42,7 +43,7 @@ class KelasQuerySet(models.QuerySet):
         )
 
 
-class KelasManager(models.Manager):
+class KelasManager(BaseManager):
     def get_queryset(self):
         return KelasQuerySet(self.model, using = self._db)
     
@@ -50,9 +51,9 @@ class KelasManager(models.Manager):
         return self.get_queryset().own(user_id)
 
 
-class Kelas(models.Model):
+class Kelas(BaseModel):
     extra_objects = KelasManager()
-    objects = models.Manager()
+    objects = BaseManager()
     
     class Meta:
         verbose_name = verbose_name_plural = "Kelas"    
@@ -71,7 +72,7 @@ class Kelas(models.Model):
         return display_name
 
 
-class Siswa(models.Model):
+class Siswa(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Siswa"
 
@@ -84,7 +85,7 @@ class Siswa(models.Model):
         return self.fullname
 
 
-class KunciAbsensi(models.Model):
+class KunciAbsensi(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Kunci Absensi"
         unique_together = ('kelas', 'date')
@@ -97,7 +98,7 @@ class KunciAbsensi(models.Model):
         return "Lock: %s" % self.kelas
 
 
-class Absensi(models.Model):
+class Absensi(BaseModel):
     class Meta:
         unique_together = ('date', 'siswa')
         verbose_name = verbose_name_plural = "Absensi"
