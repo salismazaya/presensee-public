@@ -1,11 +1,10 @@
 from django.db import models
 
 
-class Domain(models.Model):
-    owner = models.ForeignKey('main.User', on_delete = models.SET_NULL, null = True, related_name = 'owner_domain')
-
 class BaseQuerySet(models.QuerySet):
     def filter_domain(self, request):
+        # ini adalah filter. logika sebenernya di repo private
+        # ini dibutuhkan agar kedua repo tetap kompatibel
         return self
 
 
@@ -22,5 +21,3 @@ class BaseModel(models.Model):
         abstract = True
     
     objects = BaseManager()
-    domain = models.ForeignKey(Domain, on_delete = models.PROTECT, related_name = '%(class)s', null = True)
-
