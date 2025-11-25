@@ -9,7 +9,7 @@ from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, Domain
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -61,8 +61,16 @@ class AdminSite(admin.AdminSite):
 
 class FilterDomainMixin:
     def get_queryset(self, request):
-        rv = super().get_queryset(request)
+        domain = request.get_host()
+        rv = super().get_queryset(request).filter(domain__domain = domain)
         return rv
+    
+    def save_model(self, request: HttpRequest, obj, form, change):
+        domain = request.get_host()
+        domain_obj = Domain.objects.get(domain = domain)
+        obj.domain_id = domain_obj.pk
+
+        return super().save_model(request, obj, form, change)
 
 
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
@@ -123,18 +131,11 @@ class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
         
         return createKelasForm(obj.pk)
     
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'wali_kelas':
-            kwargs['queryset'] = User.objects.filter_domain(request)
+    def render_change_form(self, request, context, *args, **kwargs):
+        context['adminform'].form.fields['wali_kelas'].queryset = User.objects.filter_domain(request)
+        context['adminform'].form.fields['sekretaris'].queryset = User.objects.filter_domain(request)
 
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == 'sekretaris':
-            kwargs['queryset'] = User.objects.filter_domain(request)
-
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        return super().render_change_form(request, context, *args, **kwargs)
 
 
 
@@ -149,26 +150,23 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj = None):
         return False
-    
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'siswa':
-            kwargs['queryset'] = User.objects.filter_domain(request)
 
-        elif db_field.name == 'by':
-            kwargs['queryset'] = User.objects.filter_domain(request)
+    def render_change_form(self, request, context, *args, **kwargs):
+        context['adminform'].form.fields['siswa'].queryset = User.objects.filter_domain(request)
+        context['adminform'].form.fields['by'].queryset = User.objects.filter_domain(request)
 
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().render_change_form(request, context, *args, **kwargs)
+
 
 
 class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_filter = ("locked", "kelas")
     list_display = ("kelas", "date", "locked")
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'kelas':
-            kwargs['queryset'] = Kelas.objects.filter_domain(request)
+    def render_change_form(self, request, context, *args, **kwargs):
+        context['adminform'].form.fields['kelas'].queryset = Kelas.objects.filter_domain(request)
+        return super().render_change_form(request, context, *args, **kwargs)
 
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 admin_site = AdminSite()
