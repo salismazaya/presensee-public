@@ -60,17 +60,7 @@ class AdminSite(admin.AdminSite):
 
 
 class FilterDomainMixin:
-    def get_queryset(self, request):
-        domain = request.get_host()
-        rv = super().get_queryset(request).filter(domain__domain = domain)
-        return rv
-    
-    def save_model(self, request: HttpRequest, obj, form, change):
-        domain = request.get_host()
-        domain_obj = Domain.objects.get(domain = domain)
-        obj.domain_id = domain_obj.pk
-
-        return super().save_model(request, obj, form, change)
+    pass
 
 
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
@@ -90,9 +80,6 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
         
         return createUserChangeForm(obj.pk)
     
-    # def get_queryset(self, request):
-    #     return super().get_queryset(request)
-
 
 class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ('fullname',)
@@ -138,7 +125,6 @@ class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
         return super().render_change_form(request, context, *args, **kwargs)
 
 
-
 class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def kelas(self, obj):
         return obj.siswa.kelas
@@ -156,7 +142,6 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         context['adminform'].form.fields['by'].queryset = User.objects.filter_domain(request)
 
         return super().render_change_form(request, context, *args, **kwargs)
-
 
 
 class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
