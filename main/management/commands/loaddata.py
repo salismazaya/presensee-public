@@ -24,7 +24,7 @@ class Command(BaseCommand):
             del fields['groups']
             del fields['user_permissions']
 
-            User.objects.update_or_create(pk = user['pk'], defaults = fields)
+            User.original_objects.update_or_create(pk = user['pk'], defaults = fields)
 
         for kelas in kelass:
             fields = kelas['fields']
@@ -34,18 +34,18 @@ class Command(BaseCommand):
             del fields['wali_kelas']
             del fields['sekretaris']
 
-            kelas, _ = Kelas.objects.update_or_create(pk = kelas['pk'], defaults = fields)
+            kelas, _ = Kelas.original_objects.update_or_create(pk = kelas['pk'], defaults = fields)
             
             for sekretaris in sekretariss:
                 if not kelas.sekretaris.filter(pk = sekretaris).exists():
-                    kelas.sekretaris.add(User.objects.get(pk = sekretaris))
+                    kelas.sekretaris.add(User.original_objects.get(pk = sekretaris))
 
         for siswa in siswas:
             fields = siswa['fields']
             fields['kelas_id'] = fields['kelas']
             del fields['kelas']
 
-            Siswa.objects.update_or_create(pk = siswa['pk'], defaults = fields)
+            Siswa.original_objects.update_or_create(pk = siswa['pk'], defaults = fields)
 
         for kunci in kuncis:
             fields = kunci['fields']
@@ -54,7 +54,7 @@ class Command(BaseCommand):
 
             del fields['kelas']
             
-            KunciAbsensi.objects.update_or_create(
+            KunciAbsensi.original_objects.update_or_create(
                 date = date,
                 kelas_id = kelas_id,
                 defaults = fields
@@ -70,7 +70,7 @@ class Command(BaseCommand):
             del fields['siswa']
             del fields['by']
             
-            Absensi.objects.update_or_create(
+            Absensi.original_objects.update_or_create(
                 date = date,
                 siswa_id = siswa_id,
                 defaults = fields
