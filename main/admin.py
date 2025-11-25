@@ -9,7 +9,7 @@ from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, Domain
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -86,11 +86,10 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_filter = ('kelas',)
     list_display = ('id', 'fullname', 'kelas')
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'kelas':
-            kwargs['queryset'] = Kelas.objects.filter_domain(request)
 
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    def render_change_form(self, request, context, *args, **kwargs):
+        context['adminform'].form.fields['kelas'].queryset = Kelas.objects.filter_domain(request)
+        return super().render_change_form(request, context, *args, **kwargs)
 
 
 class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
@@ -138,7 +137,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return False
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context['adminform'].form.fields['siswa'].queryset = User.objects.filter_domain(request)
+        context['adminform'].form.fields['siswa'].queryset = Siswa.objects.filter_domain(request)
         context['adminform'].form.fields['by'].queryset = User.objects.filter_domain(request)
 
         return super().render_change_form(request, context, *args, **kwargs)
