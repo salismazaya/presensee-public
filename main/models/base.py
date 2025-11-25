@@ -4,6 +4,7 @@ from django.contrib.auth.models import UserManager
 
 class Domain(models.Model):
     owner = models.ForeignKey('main.User', on_delete = models.SET_NULL, null = True, related_name = 'owner_domain')
+    domain = models.CharField(max_length = 100)
 
 
 class BaseQuerySet(models.QuerySet):
@@ -19,10 +20,6 @@ class BaseQuerySet(models.QuerySet):
                 raise ValueError("Must use filter_domain")
 
         return super()._fetch_all()
-        # ini adalah filter. logika sebenernya di repo private
-        # ini dibutuhkan agar kedua repo tetap kompatibel
-        return self
-
 
 class BaseManager(models.Manager):
     def get_queryset(self, filtered_by_domain = None) -> BaseQuerySet:
