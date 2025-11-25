@@ -199,5 +199,6 @@ REDIS_URL = os.environ.get('REDIS_URL')
 CACHEOPS_REDIS = REDIS_URL
 
 CACHEOPS = {
-    'main.*': {'ops': ('fetch', 'get', 'count', 'exists'), 'timeout': 60 * 60 * 12},
+    'main.*': {'ops': ('fetch', 'get', 'exists'), 'timeout': 60 * 60 * 12},
 }
+
