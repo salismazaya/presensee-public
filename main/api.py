@@ -35,7 +35,7 @@ class AuthBearer(HttpBearer):
         if not token:
             return
         
-        user = User.objects.filter(token = token).first()
+        user = User.objects.filter_domain(request).filter(token = token).first()
         return user
 
 api = NinjaAPI(
@@ -62,7 +62,8 @@ def get_version(request: HttpRequest):
 
 @api.post('/login', auth = None, response = {403: ErrorSchema, 200: SuccessSchema})
 def login(request: HttpRequest, data: LoginSchema):
-    user = User.objects.filter(username = data.username).first()
+    user = User.objects.filter_domain(request).filter(username = data.username).first()
+    
     if user is None:
         return 403, {"detail": "Username/password salah"}
 
@@ -87,7 +88,7 @@ def login(request: HttpRequest, data: ChangePasswordSchema):
 
 @api.get('/me')
 def get_me(request: HttpRequest):
-    kelas_obj = Kelas.objects.filter(
+    kelas_obj = Kelas.objects.filter_domain(request).filter(
         Q(wali_kelas__pk = request.auth.pk) | Q(sekretaris__in = [request.auth.pk])
     ).first()
     kelas = None
@@ -138,7 +139,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
             updated_at_int = int(payload.get('updated_at', time.time()))
             updated_at = datetime.fromtimestamp(updated_at_int)
 
-            siswa = Siswa.objects.filter(pk = payload["siswa"]).first()
+            siswa = Siswa.objects.filter_domain(request).filter(pk = payload["siswa"]).first()
             if not siswa:
                 continue
     
@@ -160,6 +161,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
                 absensi = (
                     Absensi.objects
+                        .filter_domain(request)
                         .filter(siswa__pk = siswa.pk, date = date)
                         .first()
                 )
@@ -267,7 +269,7 @@ from main.helpers import redis
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
     cache_key = f"rekap_{bulan}_{tahun}_{kelas}"
     
-    kelas_obj = Kelas.objects.filter(pk = kelas).first()
+    kelas_obj = Kelas.objects.filter_domain(request).filter(pk = kelas).first()
 
     bulan_str = localize_month_to_string(bulan)
 
@@ -322,21 +324,25 @@ def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
 def get_data(request: HttpRequest):
     kelas_qs = (
         Kelas.objects
+            .filter_domain(request)
             .filter(active = True)
     )
 
     absensi_qs = (
         Absensi.objects
+            .filter_domain(request)
             .filter(siswa__kelas__active = True)
     )
 
     siswa_qs = (
         Siswa.objects
+            .filter_domain(request)
             .filter(kelas__active = True)
     )
 
     lock_absensi_qs = (
         KunciAbsensi.objects
+            .filter_domain(request)
             .filter(kelas__active = True)
             .filter(locked = True)
     )
@@ -344,9 +350,9 @@ def get_data(request: HttpRequest):
     user = request.auth
 
     if user.type == User.TypeChoices.KESISWAAN:
-        kelas_qs = kelas_qs.all()
-        absensi_qs = absensi_qs.all()
-        siswa_qs = siswa_qs.all()
+        kelas_qs = kelas_qs.filter_domain(request).filter(active = True)
+        absensi_qs = absensi_qs.filter_domain(request).filter(siswa__kelas__active = True)
+        siswa_qs = siswa_qs.filter_domain(request).filter(kelas__active = True)
 
     elif user.type == User.TypeChoices.WALI_KELAS:
         kelas_qs = kelas_qs.filter(wali_kelas__pk = user.pk)
@@ -400,6 +406,7 @@ def get_bulan_absensi(request: HttpRequest):
 
     queryset = (
         Absensi.objects
+        .filter_domain(request)
         .annotate(
             bulan_num = ExtractMonth('date'),
             tahun_num = ExtractYear('date'),
@@ -434,6 +441,7 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
     kelas = (
         Kelas.extra_objects
             .own(request.auth.pk)
+            .filter_domain(request)
             .filter(pk = kelas_id)
             .first()
     )
@@ -443,12 +451,17 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
 
     result = {}
 
-    siswas = kelas.siswas.all()
+    siswas = kelas.siswas.filter_domain(request).all()
+
     for siswa in siswas:
-        absensi = Absensi.objects.filter(
-            date = date,
-            siswa__pk = siswa.pk
-        ).first()
+        absensi = (
+            Absensi.objects
+                .filter_domain(request)
+                .filter(
+                    date = date,
+                    siswa__pk = siswa.pk
+                ).first()
+        )
 
         if absensi:
             result[siswa.pk] = absensi.status

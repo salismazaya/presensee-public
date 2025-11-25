@@ -59,7 +59,13 @@ class AdminSite(admin.AdminSite):
         return urls
 
 
-class CustomAuthUserAdmin(AuthUserAdmin):
+class FilterDomainMixin:
+    def get_queryset(self, request):
+        rv = super().get_queryset(request)
+        return rv
+
+
+class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password', 'type')}),
         (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
@@ -75,19 +81,29 @@ class CustomAuthUserAdmin(AuthUserAdmin):
             return UserCreationForm
         
         return createUserChangeForm(obj.pk)
+    
+    # def get_queryset(self, request):
+    #     return super().get_queryset(request)
 
-class SiswaAdmin(admin.ModelAdmin):
+
+class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ('fullname',)
     list_filter = ('kelas',)
     list_display = ('id', 'fullname', 'kelas')
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'kelas':
+            kwargs['queryset'] = Kelas.objects.filter_domain(request)
 
-class SiswaInlineAdmin(admin.TabularInline):
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
     extra = 0
     model = Siswa
 
 
-class KelasAdmin(admin.ModelAdmin):
+class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ('name', "wali_kelas__first_name", "wali_kelas__last_name")
     list_filter = ('active',)
     list_display = ('id', 'name_', 'wali_kelas', 'jumlah_siswa', 'active')
@@ -107,14 +123,22 @@ class KelasAdmin(admin.ModelAdmin):
         
         return createKelasForm(obj.pk)
     
-    # def change_view(self, request, object_id, form_url = None, extra_context = {}):
-    #     extra_context['is_change'] = True
-    #     extra_context['object_id'] = object_id
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'wali_kelas':
+            kwargs['queryset'] = User.objects.filter_domain(request)
 
-    #     return super().change_view(request, object_id, form_url, extra_context)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class AbsensiAdmin(admin.ModelAdmin):
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'sekretaris':
+            kwargs['queryset'] = User.objects.filter_domain(request)
+
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+
+
+class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def kelas(self, obj):
         return obj.siswa.kelas
 
@@ -125,11 +149,26 @@ class AbsensiAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj = None):
         return False
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'siswa':
+            kwargs['queryset'] = User.objects.filter_domain(request)
+
+        elif db_field.name == 'by':
+            kwargs['queryset'] = User.objects.filter_domain(request)
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class KunciAbsensiAdmin(admin.ModelAdmin):
+class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_filter = ("locked", "kelas")
     list_display = ("kelas", "date", "locked")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'kelas':
+            kwargs['queryset'] = Kelas.objects.filter_domain(request)
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 admin_site = AdminSite()

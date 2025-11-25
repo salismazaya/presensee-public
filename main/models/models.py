@@ -1,10 +1,12 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.utils import timezone
-from .base import BaseModel, BaseQuerySet, BaseManager
-
+from .base import BaseModel, BaseQuerySet, BaseManager, CustomUserManager
 
 class User(BaseModel, AbstractUser):
+    objects: CustomUserManager = CustomUserManager()
+    original_objects = UserManager()
+
     class TypeChoices(models.TextChoices):
         WALI_KELAS = 'wali_kelas', 'Wali Kelas'
         KESISWAAN = 'kesiswaan', 'Kesiswaan'
@@ -56,7 +58,8 @@ class Kelas(BaseModel):
     objects = BaseManager()
     
     class Meta:
-        verbose_name = verbose_name_plural = "Kelas"    
+        verbose_name = verbose_name_plural = "Kelas"
+        default_manager_name = 'original_objects'
 
     name = models.CharField(verbose_name = 'Nama Kelas', max_length = 50, unique = True)
     wali_kelas = models.OneToOneField(User, on_delete = models.PROTECT, null = True, blank = True, related_name = 'wali_kelas')
@@ -75,6 +78,7 @@ class Kelas(BaseModel):
 class Siswa(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Siswa"
+        default_manager_name = 'original_objects'
 
     fullname = models.CharField(verbose_name = 'Nama Lengkap', max_length = 50)
     kelas = models.ForeignKey(Kelas, on_delete = models.PROTECT, related_name = 'siswas')
@@ -89,6 +93,7 @@ class KunciAbsensi(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Kunci Absensi"
         unique_together = ('kelas', 'date')
+        default_manager_name = 'original_objects'
         
     date = models.DateField(default = timezone.now, verbose_name = 'Tanggal')
     kelas = models.ForeignKey(Kelas, on_delete = models.CASCADE)
@@ -102,6 +107,7 @@ class Absensi(BaseModel):
     class Meta:
         unique_together = ('date', 'siswa')
         verbose_name = verbose_name_plural = "Absensi"
+        default_manager_name = 'original_objects'
 
     class StatusChoices(models.TextChoices):
         HADIR = 'hadir', 'Hadir'
