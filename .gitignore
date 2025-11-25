@@ -180,3 +180,4 @@ cython_debug/
 
 staticfiles
 dev-dist
+testdata.pkl
