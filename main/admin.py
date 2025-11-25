@@ -9,7 +9,7 @@ from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, Domain
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -26,17 +26,17 @@ class AdminSite(admin.AdminSite):
         if not old_kelas_id or not new_kelas_name:
             return HttpResponse('NOT_OK')
         
-        old_kelas = Kelas.objects.filter(pk = old_kelas_id).first()
+        old_kelas = Kelas.original_objects.filter(pk = old_kelas_id).first()
         if old_kelas is None:
             return HttpResponse('NOT_OK')
         
-        new_kelas = Kelas.objects.create(
+        new_kelas = Kelas.original_objects.create(
             name = new_kelas_name
         )
         old_kelas.active = False
         old_kelas.save()
 
-        Siswa.objects.filter(
+        Siswa.original_objects.filter(
             kelas__pk = old_kelas_id
         ).update(
             kelas_id = new_kelas.pk
@@ -61,8 +61,13 @@ class AdminSite(admin.AdminSite):
 
 class FilterDomainMixin:
     def get_queryset(self, request):
-        rv = super().get_queryset(request)
-        return rv
+        return super().get_queryset(request)
+    
+    def save_model(self, request: HttpRequest, obj, form, change):
+        domain = request.get_host()
+        
+
+        return super().save_model(request, obj, form, change)
 
 
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
