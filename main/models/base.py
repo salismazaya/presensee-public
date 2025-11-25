@@ -1,15 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import UserManager
 
-
-class Domain(models.Model):
-    owner = models.ForeignKey('main.User', on_delete = models.SET_NULL, null = True, related_name = 'owner_domain')
-
-
 class BaseQuerySet(models.QuerySet):
     _filtered_by_domain = False
 
-    def filter_domain(self, request):
+    def filter_domain(self, request) -> 'BaseQuerySet':
         self._hints.update({'filtered_by_domain': True})
         return self._chain()
     
@@ -19,9 +14,6 @@ class BaseQuerySet(models.QuerySet):
                 raise ValueError("Must use filter_domain")
 
         return super()._fetch_all()
-        # ini adalah filter. logika sebenernya di repo private
-        # ini dibutuhkan agar kedua repo tetap kompatibel
-        return self
 
 
 class BaseManager(models.Manager):
@@ -40,9 +32,6 @@ class BaseModel(models.Model):
     objects: BaseManager = BaseManager()
     original_objects = models.Manager()
 
-    domain = models.ForeignKey(Domain, on_delete = models.PROTECT, related_name = '%(class)s', null = True)
-
-    objects = BaseManager()
 
 class CustomUserManager(BaseManager, UserManager):
     def get_by_natural_key(self, username): 
