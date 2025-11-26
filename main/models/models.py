@@ -11,6 +11,7 @@ class User(BaseModel, AbstractUser):
         WALI_KELAS = 'wali_kelas', 'Wali Kelas'
         KESISWAAN = 'kesiswaan', 'Kesiswaan'
         SEKRETARIS = 'sekretaris', 'Sekretaris'
+        GURU_PIKET = 'guru_piket', 'Guru Piket'
 
     is_superuser = models.BooleanField(default = False, verbose_name = 'Apakah admin?')
     is_active = models.BooleanField(default = True, editable = False)
