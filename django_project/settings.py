@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = '2.0.0b'
+PRESENSEE_VERSION = '2.0.0rc0'
 
 try:
     import pymysql

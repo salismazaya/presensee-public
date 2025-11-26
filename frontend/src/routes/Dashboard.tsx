@@ -123,7 +123,10 @@ export default function Dashboard() {
           title: "Berhasil",
           text: "Data berhasil diperbaharui",
           icon: "success",
-          timer: 1500,
+        }).finally(() => {
+          setTimeout(() => {
+            window.location.reload();
+          }, 150);
         });
       } finally {
         setIsLoading(false);
