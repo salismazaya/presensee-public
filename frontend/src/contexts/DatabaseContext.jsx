@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import { refreshDatabase } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import Swal from "sweetalert2";
@@ -9,22 +9,26 @@ import LZString from "lz-string";
 
 export function DatabaseContextConsumer({ children }) {
   const [db, setDb] = useState();
-  const [token, , tokenLoaded] = useToken();
+  const [token,] = useToken();
   const [refreshDb, setRefreshDb] = useState(0);
   const [, setIsLoading] = useGlobalLoading();
   const [, setLastRefresh] = useLastRefresh();
 
   const config = {
     locateFile: (filename) => `/${filename}`,
-  };
+  }
+
+  const loaded = useRef(false);
 
   useEffect(() => {
-    if (!tokenLoaded || !token) return;
+    if (!token) return;
+    if (loaded.current) return;
+
+    loaded.current = true;
 
     initSqlJs(config).then(function (SQL) {
       setIsLoading(true);
       const currentDatabase = localStorage.getItem("DATABASE");
-
       if (!currentDatabase) {
         const db = new SQL.Database();
         refreshDatabase(token)
@@ -52,10 +56,10 @@ export function DatabaseContextConsumer({ children }) {
         setDb(db);
         setTimeout(() => {
           setIsLoading(false);
-        }, 500);
+        }, 600);
       }
     });
-  }, [tokenLoaded, token, refreshDb]);
+  }, [token, refreshDb]);
 
   return (
     <DatabaseContext value={[db, refreshDb, setRefreshDb]}>

@@ -1,0 +1,74 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block submit_buttons_bottom %}
+    {{block.super}}
+
+    {% if object_id %}
+    <div class="form-group mt-3">
+        <input id="naik-kelas-btn" type="button" value="Naik Kelas" class="btn btn-primary form-control"></input>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+{{block.super}}
+<script src="{% static 'js/sweetalert2.min.js' %}"></script>
+{% endblock %}
+
+{% block extrajs %}
+{{block.super}}
+
+<script>
+    '{% if object_id %}';
+    let newKelasId = null;
+
+    document.getElementById('naik-kelas-btn').addEventListener('click', () => {
+        Swal.fire({
+            text: 'Masukan nama kelas baru',
+            showCancelButton: true,
+            input: "text",
+            inputAttributes: {
+                autocapitalize: "off"
+            },
+            showLoaderOnConfirm: true,
+            preConfirm: async (newName) => {
+                if (!newName) {
+                    Swal.showValidationMessage('Nama tidak boleh kosong');
+                    return;
+                }
+
+                const endpoint = '/admin/naik-kelas/';
+                const payload = {
+                    'old_kelas_id': parseInt('{{object_id}}'),
+                    'new_kelas_name': newName,
+                }
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.text();
+                    if (data == "NOT_OK") {
+                        Swal.showValidationMessage('Terjadi error')
+                    }
+                    newKelasId = data;
+
+                } catch {
+                    Swal.showValidationMessage('Terjadi error')
+                }
+                
+            }
+        }).then(result => {
+            if (result.isConfirmed) {
+                window.location.href = `/admin/main/kelas/${newKelasId}/change/`;
+            }
+        })
+    })
+    '{% endif %}';
+</script>
+{% endblock %}

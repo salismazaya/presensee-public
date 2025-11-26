@@ -2,6 +2,7 @@ import Swal from "sweetalert2";
 import { refreshDatabase } from "./api";
 import { insert, insertStagingAbsens } from "./stagingDatabase";
 import LZString from "lz-string";
+import type { ConflictData } from "../components/ConflictsList";
 
 export interface SiswaProps {
   id: number;
@@ -18,8 +19,9 @@ interface DatabaseProps {
 export interface AbsensiProps {
   id?: number;
   date?: string;
-  siswa_id: number;
+  siswaId: number;
   status?: "hadir" | "alfa" | "sakit" | "izin" | "bolos";
+  updatedAt?: number;
 }
 
 export function getSiswa(data: DatabaseProps) {
@@ -109,11 +111,13 @@ export interface InsertAbsensProps {
   kelasId: number;
   date: string;
   status: "hadir" | "alfa" | "sakit" | "izin" | "bolos";
+  previousStatus?: "hadir" | "alfa" | "sakit" | "izin" | "bolos";
+  updatedAt?: number;
 }
 
 export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
   let insertSql = `
-  INSERT INTO absensi (date, siswa_id, status) VALUES 
+  INSERT INTO absensi (date, siswa_id, status, previous_status) VALUES 
   `;
 
   let deleteSql = `
@@ -123,11 +127,31 @@ export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
   const insertsData: string[] = [];
   const deletesData: string[] = [];
 
+  const datasWithUpdatedAt: InsertAbsensProps[] = [];
+
   datas.forEach((data) => {
-    const [dd, mm, yy] = data.date.split("-", 3);
-    const date = `20${yy}-${mm}-${dd}`;
-    insertsData.push(`("${date}",${data.siswaId},"${data.status}")`);
+    // const [dd, mm, yy] = data.date.split("-", 3);
+    const datetime = new Date(data.date);
+    // datetime.toDateString()
+    const yyyy = datetime.getFullYear();
+    const mm = datetime.getMonth() + 1;
+    const dd = datetime.getDate().toString().padStart(2, "0");
+    const date = `${yyyy}-${mm}-${dd}`;
+
+    const sqlPreviousStatus = data.previousStatus
+      ? `"${data.previousStatus}"`
+      : "null";
+
+    insertsData.push(
+      `("${date}",${data.siswaId},"${data.status}",${sqlPreviousStatus})`
+    );
     deletesData.push(`date="${date}" AND siswa_id=${data.siswaId}`);
+
+    datasWithUpdatedAt.push({
+      ...data,
+      date,
+      updatedAt: Math.floor(Date.now() / 1000),
+    });
   });
 
   insertSql += insertsData.join(",") + ";";
@@ -139,7 +163,7 @@ export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
   db.run(deleteSql);
   db.run(insertSql);
 
-  insertStagingAbsens(datas);
+  insertStagingAbsens(datasWithUpdatedAt);
   insertToLocalDatabase(deleteSql);
   insertToLocalDatabase(insertSql);
 }
@@ -180,7 +204,11 @@ export function getAbsensies(data: DatabaseProps) {
 
   while (stmt.step()) {
     const row = stmt.getAsObject();
-    result.push(row);
+    result.push({
+      kelasId: row.kelas_id,
+      siswaId: row.siswa_id,
+      ...row,
+    });
   }
 
   return result;
@@ -221,4 +249,22 @@ export function insertToLocalDatabase(sql: string) {
 
   const compressedDatabase = LZString.compress(database);
   localStorage.setItem("DATABASE", compressedDatabase);
+}
+
+export function purgeConflictAbsensi() {
+  localStorage.removeItem("CONFLICT_ABSENSI");
+}
+
+export function insertConflictAbsensi(absensi: ConflictData) {
+  const confclicts = getConflictsAbsensi();
+  confclicts.push(absensi);
+
+  localStorage.setItem("CONFLICT_ABSENSI", JSON.stringify(confclicts));
+}
+
+export function getConflictsAbsensi(): ConflictData[] {
+  const rawConflicts = localStorage.getItem("CONFLICT_ABSENSI") || "[]";
+
+  const confclicts = JSON.parse(rawConflicts);
+  return confclicts;
 }

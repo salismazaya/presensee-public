@@ -1,15 +1,25 @@
+## ⚠️ PERINGATAN
+
+*Software ini GRATIS*
+
+* ✅ **Diperbolehkan:** Penggunaan pribadi atau instansi internal.
+* ❌ **Dilarang:** Menjual software ini atau menggunakannya untuk tujuan komersil tanpa izin.
+
+---
+
 # **Presensee 📱**
 
 ![Presensee Banner](frontend/public/logo.png)
 
 > **Sistem Absensi Modern dengan Arsitektur Offline-First — cepat, ringan, dan tetap jalan meskipun tanpa internet.**
 
-[![Django](https://img.shields.io/badge/Django-4.x-green)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-4.2-green)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-Bundler-purple)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
 [![uv](https://img.shields.io/badge/uv-Python_Manager-de5fe7)](https://github.com/astral-sh/uv)
 [![Bun](https://img.shields.io/badge/Bun-Frontend_Runtime-black)](https://bun.sh/)
+
 
 **Presensee** adalah aplikasi absensi berbasis web dengan pendekatan **Offline-First**, dirancang agar **absensi tetap bisa jalan di mana saja** — di kelas, lapangan, atau area tanpa sinyal. Cukup input data, lalu **sinkronisasi otomatis** begitu internet tersedia.
 
@@ -37,7 +47,7 @@ Dibangun menggunakan stack modern: **Django** di backend, **React (Vite)** di fr
 
 1. **[uv](https://docs.astral.sh/uv/)** – Python Package Manager.
 2. **[Bun](https://bun.com/)** – Untuk build frontend.
-3. **[PostgreSQL Server](https://codingstudio.id/blog/postgresql-adalah/)** – Database utama.
+3. **[PostgreSQL Server](https://codingstudio.id/blog/postgresql-adalah/)** atau **[MySQL Server](https://www.mysql.com/)** – Database utama.
 4. **[Redis Server](https://redis.io/)** – Caching.
 
 ---

@@ -1,5 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getStagingDatabase } from "./stagingDatabase";
+import type { ConflictData } from "../components/ConflictsList";
+import LZString from "lz-string";
 
 // TODO: rapihkan function-function di file ini
 
@@ -22,6 +24,12 @@ export function getApiBaseUrl() {
 export async function getVersion(): Promise<string> {
   const baseUrl = getApiBaseUrl();
   const response = await axios.get(baseUrl + "/version");
+  return response.data;
+}
+
+export async function ping(): Promise<string> {
+  const baseUrl = getApiBaseUrl();
+  const response = await axios.get(baseUrl + "/ping");
   return response.data;
 }
 
@@ -105,21 +113,24 @@ export async function refreshDatabase(token: string): Promise<string> {
   }
 }
 
-export async function uploadDatabase(token: string): Promise<string> {
+export async function uploadDatabase(
+  token: string
+): Promise<{ conflicts: ConflictData[] }> {
   const baseUrl = getApiBaseUrl();
   const payload = getStagingDatabase();
+  const data = LZString.compressToBase64(JSON.stringify(payload));
 
   try {
     const response = await axios.post(
-      baseUrl + "/upload",
-      { data: payload },
+      baseUrl + "/compressed-upload",
+      { data },
       {
         headers: {
           Authorization: "Bearer " + token,
         },
       }
     );
-    return response.data;
+    return response.data.data;
   } catch (e: any) {
     if (e instanceof AxiosError) {
       if (
@@ -217,6 +228,78 @@ export async function getBulan(token: string): Promise<
   const baseUrl = getApiBaseUrl();
   try {
     const response = await axios.get(baseUrl + "/bulan", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function getAbsensi(
+  token: string,
+  date: string,
+  kelasId: number
+): Promise<
+  Record<number, "hadir" | "sakit" | "izin" | "alfa" | "bolos" | null>
+> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/absensi", {
+      params: {
+        date,
+        kelas_id: kelasId,
+      },
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function getAbsensiesProgress(
+  token: string,
+  dates: string[],
+  kelasId: number
+): Promise<
+  Record<string, { total_tidak_masuk: number; is_complete: boolean }>
+> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/absensi/progress", {
+      params: {
+        dates: dates.join(","),
+        kelas_id: kelasId,
+      },
       headers: {
         Authorization: "Bearer " + token,
       },

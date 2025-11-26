@@ -28,6 +28,8 @@ def dump_to_sqlite(kelas_qs, siswa_qs, absensi_qs, lock_absensi_qs):
         date DATE NOT NULL,
         siswa_id INTEGER NOT NULL,
         status TEXT NOT NULL,
+        previous_status TEXT,
+        updated_at INTEGER,
         FOREIGN KEY (siswa_id) REFERENCES siswa(id) ON DELETE RESTRICT,
         UNIQUE(date, siswa_id)
     );
@@ -68,8 +70,8 @@ def dump_to_sqlite(kelas_qs, siswa_qs, absensi_qs, lock_absensi_qs):
     # Absensi
     for a in absensi_qs:
         cursor.execute(
-            "INSERT INTO absensi (id, date, siswa_id, status) VALUES (?, ?, ?, ?)",
-            (a.id, str(a.date), a.siswa_id, a.status)
+            "INSERT INTO absensi (id, date, siswa_id, status, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (a.id, str(a.date), a.siswa_id, a.status, int(a.updated_at.timestamp()))
         )
     
     # Lock Absen

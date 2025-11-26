@@ -20,7 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = '2.0.0a'
+PRESENSEE_VERSION = '2.0.0rc0'
+
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -50,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cacheops',
 ]
 
 MIDDLEWARE = [
@@ -162,14 +169,36 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'main.User'
 
-CORS_ALLOW_ALL_ORIGINS = True
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 
 JAZZMIN_SETTINGS = {
     "site_title": "Presensee Admin",
     "site_header": "Presensee",
     "site_brand": "Presensee",
     "login_logo": "/img/logo.png",
-    "copyright": "Salis Mazaya Miftah Malik"
+    "copyright": "Salis Mazaya Miftah Malik",
+    "custom_links": {
+        "main": [
+            {
+                'name': 'Import Siswa',
+                'url': 'admin:import_siswa'
+            },
+            {
+                'name': 'Export Absensi',
+                'url': 'admin:export_absensi'
+            },
+        ]
+    }
 }
 
 REDIS_URL = os.environ.get('REDIS_URL')
+
+CACHEOPS_REDIS = REDIS_URL
+
+CACHEOPS = {
+    'main.*': {'ops': ('fetch', 'get', 'exists'), 'timeout': 60 * 60 * 12},
+}
+

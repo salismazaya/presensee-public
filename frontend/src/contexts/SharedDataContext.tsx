@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState, type JSX } from "react";
 import { getMe } from "../helpers/api";
 import useToken from "../hooks/useToken";
+import type { ConflictData } from "../components/ConflictsList";
 
 export interface User {
   username: string;
@@ -16,6 +17,8 @@ interface SharedDataProps {
   setGlobalLoading?: (l: boolean) => void;
   lastRefresh?: number;
   setLastRefresh?: (l: number) => void;
+  conflicts?: ConflictData[],
+  setConflicts?: (l: ConflictData[]) => void;
 }
 
 export function SharedDataContextConsumer({
@@ -36,10 +39,12 @@ export function SharedDataContextConsumer({
   };
 
   const [kelas, setKelas] = useState<number | undefined>(currentKelas);
-  const [token, , tokenLoaded] = useToken();
+  const [token] = useToken();
   const [user, setUser] = useState<User>();
   const [isLogout, setIsLogout] = useState<boolean>(false);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
+
+  const [conflicts, setConflicts] = useState<ConflictData[]>([]);
 
   const currentLastRefreshString = localStorage.getItem("LAST_REFRESH");
 
@@ -58,7 +63,7 @@ export function SharedDataContextConsumer({
   };
 
   useEffect(() => {
-    if (tokenLoaded && !token) {
+    if (!token) {
       setIsLogout(true);
     }
 
@@ -85,7 +90,7 @@ export function SharedDataContextConsumer({
         setUser(user);
       }
     }
-  }, [token, tokenLoaded]);
+  }, [token]);
 
   const data: SharedDataProps = {
     kelas,
@@ -96,6 +101,8 @@ export function SharedDataContextConsumer({
     setGlobalLoading,
     lastRefresh: lastRefresh,
     setLastRefresh: _setLastRefresh,
+    conflicts,
+    setConflicts
   };
 
   return (

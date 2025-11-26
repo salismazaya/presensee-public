@@ -1,0 +1,100 @@
+{% extends "admin/base_site.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      {% if messages %} {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %}
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Import Data Siswa
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <strong>Aturan Format Excel (.xlsx):</strong>
+            <ul class="mb-0 mt-2 small">
+              <li>Baris 1: Header (Judul Kolom) - akan diabaikan.</li>
+              <li>Baris 2 dst: Data Siswa.</li>
+              <li><strong>Urutan Kolom Wajib:</strong></li>
+              <ol>
+                <li>Nama Lengkap (Wajib)</li>
+                <li>
+                  Nama Kelas (Wajib) - <em>Otomatis dibuat jika belum ada</em>
+                </li>
+                <li>NIS (Opsional, boleh kosong)</li>
+                <li>NISN (Opsional, boleh kosong)</li>
+              </ol>
+            </ul>
+          </div>
+
+          <div class="table-responsive mb-4">
+            <table
+              class="table table-bordered table-sm text-center small text-muted"
+            >
+              <thead class="table-light">
+                <tr>
+                  <th>A (Nama)</th>
+                  <th>B (Kelas)</th>
+                  <th>C (NIS)</th>
+                  <th>D (NISN)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Budi Santoso</td>
+                  <td>X-RPL-1</td>
+                  <td>12345</td>
+                  <td>00123456</td>
+                </tr>
+                <tr>
+                  <td>Siti Aminah</td>
+                  <td>X-TKJ-2</td>
+                  <td>(kosong)</td>
+                  <td>(kosong)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="excel_file" class="form-label fw-bold"
+                >Pilih File Excel</label
+              >
+              <input
+                class="form-control"
+                type="file"
+                id="excel_file"
+                name="excel_file"
+                accept=".xlsx"
+                required
+              />
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-upload me-2"></i>Upload & Proses
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

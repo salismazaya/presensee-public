@@ -1,0 +1,1 @@
+from .models import Absensi, Kelas, Siswa, User, KunciAbsensi

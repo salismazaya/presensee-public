@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migrate</title>
+  </head>
+  <body>
+    <form method="post">
+      {% csrf_token %}
+      <input
+        type="text"
+        id="username"
+        name="username"
+        placeholder="Username"
+        required
+      /><br /><br />
+      <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="password"
+        required
+      /><br /><br />
+      <button id="migrate-button">Migrate</button>
+
+      <p id="wait-text" style="display: none">Tungguu....</p>
+    </form>
+
+    <h2>{{text}}</h2>
+
+    <script>
+      document
+        .getElementById("migrate-button")
+        .addEventListener("click", () => {
+          const username = document.getElementById("username").textContent;
+          const password = document.getElementById("password").textContent;
+
+          if (!username || !password) {
+            return;
+          }
+
+          document.getElementById("wait-text").style.display = "block";
+          document.getElementById("migrate-button").style.display = "none";
+        });
+    </script>
+  </body>
+</html>

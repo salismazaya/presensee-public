@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import {
   getAbsensies,
   getSiswa,
+  insertConflictAbsensi,
   refreshRemoteDatabase,
   type AbsensiProps,
   type SiswaProps,
@@ -17,12 +18,14 @@ import useDatabase from "../hooks/useDatabase";
 import useToken from "../hooks/useToken";
 import useRefreshDatabase from "../hooks/useRefreshDatebase";
 import useGlobalLoading from "../hooks/useGlobalLoading";
-import { uploadDatabase } from "../helpers/api";
+import { ping, uploadDatabase } from "../helpers/api";
 import useUser from "../hooks/useUser";
 import Rekap from "../components/Rekap";
 import useLastRefresh from "../hooks/useLastRefresh";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useKelas from "../hooks/useKelas";
+import ConflictsList from "../components/ConflictsList";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
   const db = useDatabase();
@@ -35,9 +38,11 @@ export default function Dashboard() {
   const [siswasKelas, setSiswasKelas] = useState<SiswaProps[]>([]);
   const [kelasId] = useKelas();
   const stagingDatabase = getStagingDatabase();
+  const loaded = useRef(false);
 
   useEffect(() => {
-    if (!db || !kelasId) return;
+    if (loaded.current) return;
+    if (!db || !kelasId || !token) return;
 
     const dateNow = new Date();
     const date = `${dateNow.getFullYear()}-${(dateNow.getMonth() + 1)
@@ -48,7 +53,6 @@ export default function Dashboard() {
       db,
       whereQuery: `date="${date}"`,
     });
-    // console.log({ date });
     const siswasKelas = getSiswa({
       db,
       whereQuery: "kelas_id=" + kelasId,
@@ -56,7 +60,33 @@ export default function Dashboard() {
 
     setAbsensiesHariIni(absensies);
     setSiswasKelas(siswasKelas);
-  }, [db, kelasId]);
+
+    ping()
+      .then(async () => {
+        if (getStagingDatabase().length > 0) {
+          const res = await uploadDatabase(token);
+          res.conflicts.forEach((conflict) => {
+            insertConflictAbsensi(conflict);
+          });
+
+          clearStagingDatabase();
+          await refreshRemoteDatabase({
+            db,
+            token,
+          });
+          refreshLocalDatabase();
+          setLastRefresh(new Date().getTime());
+
+          toast.success("Auto upload sukses!", {
+            autoClose: 2000,
+            closeOnClick: true,
+          });
+        }
+      })
+      .finally(() => {
+        loaded.current = true;
+      });
+  }, [db, kelasId, token]);
 
   const handleRefresh = async () => {
     const { isConfirmed } = await Swal.fire({
@@ -93,7 +123,10 @@ export default function Dashboard() {
           title: "Berhasil",
           text: "Data berhasil diperbaharui",
           icon: "success",
-          timer: 1500,
+        }).finally(() => {
+          setTimeout(() => {
+            window.location.reload();
+          }, 150);
         });
       } finally {
         setIsLoading(false);
@@ -123,7 +156,8 @@ export default function Dashboard() {
     if (token && db) {
       setIsLoading(true);
       try {
-        await uploadDatabase(token);
+        const response = await uploadDatabase(token);
+
         clearStagingDatabase();
         await refreshRemoteDatabase({
           db,
@@ -132,11 +166,28 @@ export default function Dashboard() {
         refreshLocalDatabase();
         setLastRefresh(new Date().getTime());
 
-        Swal.fire({
-          title: "Upload Berhasil!",
-          text: "Semua data telah disinkronisasi.",
-          icon: "success",
-        });
+        if (response.conflicts.length == 0) {
+          Swal.fire({
+            title: "Upload Berhasil!",
+            text: "Semua data telah disinkronisasi.",
+            icon: "success",
+          });
+        } else {
+          response.conflicts.forEach((conflict) => {
+            insertConflictAbsensi(conflict);
+          });
+
+          Swal.fire({
+            title: "Upload Berhasil!",
+            text: "Data telah disinkronisasi.",
+            icon: "success",
+            iconColor: "blue",
+          }).finally(() => {
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+          });
+        }
       } catch (e: any) {
         Swal.fire({
           title: "Upload Gagal",
@@ -272,7 +323,11 @@ export default function Dashboard() {
             )}
 
             <Link
-              to={user?.type == "kesiswaan" ? "/minta-rekap-kelas" : "/minta-rekap"}
+              to={
+                user?.type == "kesiswaan"
+                  ? "/minta-rekap-kelas"
+                  : "/minta-rekap"
+              }
               className="btn bg-base-100 border-base-300 hover:bg-base-200 hover:border-primary shadow-sm h-auto py-3 flex flex-col gap-1"
             >
               <svg
@@ -295,6 +350,8 @@ export default function Dashboard() {
               </span>
             </Link>
           </div>
+
+          <ConflictsList />
 
           {/* Info Terakhir Update */}
           <div className="flex justify-end px-2">

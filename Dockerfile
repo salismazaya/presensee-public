@@ -42,5 +42,6 @@ RUN uv run manage.py collectstatic --no-input
 COPY --from=builder /app/dist ./frontend/dist
 
 # Default command
-ENTRYPOINT ["uv"]
-CMD ["run", "granian", "--interface", "wsgi", "django_project.wsgi:application", "--no-ws", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/bin/sh"]
+
+CMD ["./run.sh"]

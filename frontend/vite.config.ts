@@ -4,6 +4,17 @@ import { VitePWA } from "vite-plugin-pwa";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react_utils: ['react-toastify', 'react-day-picker', 'react-router'],
+          sweetalert2: ['sweetalert2'],
+          lz_string: ['lz-string'],
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     tailwindcss(),

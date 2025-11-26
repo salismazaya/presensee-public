@@ -3,18 +3,19 @@ from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
-from main.views import files, ping, setup
+from main.views import files, setup, redirect_factory, migrate
 
 urlpatterns = [
+    path("admin", redirect_factory('/admin/')),
     path("admin/", admin_site.urls),
-    path("files/<str:file_id>/", files),
-    re_path(r"^ping/?$", ping),
     path("api/", api.urls),
-    path("setup/", setup),
+    re_path(r"^files/(?P<file_id>[^/]+)/?$", files),
+    re_path(r"^setup/?$", setup),
+    re_path(r"^migrate/?$", migrate),
 ]
 
 if not settings.DEBUG:
-    from main.views import spa_assets, spa_public, index
+    from main.views import index, spa_assets, spa_public
 
     urlpatterns.extend([
         # path untuk serve assets react

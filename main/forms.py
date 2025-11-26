@@ -1,8 +1,15 @@
 from django import forms
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
+from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
 
 from main.models import Kelas, User
+
+
+class UserCreationForm(BaseUserCreationForm):
+    class Meta:
+        model = User
+        fields = ('password1', 'password1', 'username')
 
 
 def createKelasForm(kelas_id: int):
@@ -17,7 +24,7 @@ def createKelasForm(kelas_id: int):
                 if wali_kelas.type != User.TypeChoices.WALI_KELAS:
                     raise ValidationError(f'type user {wali_kelas.username} bukan wali kelas')
 
-                kelas_wali_kelas = Kelas.objects.exclude(pk = kelas_id).filter(wali_kelas__pk = wali_kelas.pk).first()
+                kelas_wali_kelas = Kelas.original_objects.exclude(pk = kelas_id).filter(wali_kelas__pk = wali_kelas.pk).first()
                 if kelas_wali_kelas:
                     raise ValidationError(f'{wali_kelas.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
                 
@@ -30,7 +37,7 @@ def createKelasForm(kelas_id: int):
                 if sekretaris.type != User.TypeChoices.SEKRETARIS:
                     raise ValidationError(f'type user {sekretaris.username} bukan sekretaris')
 
-                sekretaris_kelas = Kelas.objects.exclude(pk = kelas_id).filter(sekretaris__in = [sekretaris.pk]).first()
+                sekretaris_kelas = Kelas.original_objects.exclude(pk = kelas_id).filter(sekretaris__in = [sekretaris.pk]).first()
                 if sekretaris_kelas:
                     raise ValidationError(f'{sekretaris.username} sedang menjadi sekretaris di {sekretaris_kelas.name}')
 
@@ -40,60 +47,35 @@ def createKelasForm(kelas_id: int):
     return KelasForm
 
 
-def createUserChangeForm(user_id: int):
+def createUserChangeForm(user_id: int = None):
     class UserChangeForm(BaseUserChangeForm):        
         class Meta:
             model = User
             fields = '__all__'
-
-        is_superuser = forms.BooleanField(label = 'Apakah admin?', required = False)
-        is_staff = forms.BooleanField(label = 'Boleh login admin panel?', required = False)
+        
+        date_joined = forms.DateTimeField(required = False)
 
         def clean_type(self):
-            current_obj = User.objects.get(pk = user_id)
-
             new_type = self.cleaned_data.get('type')
-            if current_obj.type != new_type:
-                kelas_wali_kelas = Kelas.objects.filter(wali_kelas__pk = user_id).first()
-                if new_type != "wali_kelas" and kelas_wali_kelas:
-                    raise ValidationError(f'{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
-                
-                kelas_sekretaris = Kelas.objects.filter(sekretaris__in = [user_id]).first()
-                if new_type != "sekretaris" and kelas_sekretaris:
-                    raise ValidationError(f'{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}')
+
+            if user_id:
+                current_obj = User.original_objects.get(pk = user_id)
+
+                if current_obj.type != new_type:
+                    kelas_wali_kelas = Kelas.original_objects.filter(wali_kelas__pk = user_id).first()
+                    if new_type != "wali_kelas" and kelas_wali_kelas:
+                        raise ValidationError(f'{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
+                    
+                    kelas_sekretaris = Kelas.original_objects.filter(sekretaris__in = [user_id]).first()
+                    if new_type != "sekretaris" and kelas_sekretaris:
+                        raise ValidationError(f'{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}')
 
             return new_type
-
-
+        
     return UserChangeForm
 
 
 class SetupForm(forms.Form):
-    username = forms.CharField(
-        label="Username",
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Masukan username',
-            'class': 'form-control'
-        })
-    )
-
-
-    confirm_password = forms.CharField(
-        label="Konfirmasi Password",
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Ulangi password',
-            'class': 'form-control'
-        })
-    )
-    
-    password = forms.CharField(
-        label="Password",
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Masukkan password',
-            'class': 'form-control'
-        })
-    )
-
     class Meta:
         model = User
         fields = ['username', 'password', 'confirm_password']
@@ -103,6 +85,30 @@ class SetupForm(forms.Form):
                 'class': 'form-control'
             }),
         }
+
+    username = forms.CharField(
+        label = "Username",
+        widget = forms.TextInput(attrs = {
+            'placeholder': 'Masukan username',
+            'class': 'form-control'
+        })
+    )
+
+    confirm_password = forms.CharField(
+        label = "Konfirmasi Password",
+        widget = forms.PasswordInput(attrs = {
+            'placeholder': 'Ulangi password',
+            'class': 'form-control'
+        })
+    )
+    
+    password = forms.CharField(
+        label = "Password",
+        widget=forms.PasswordInput(attrs = {
+            'placeholder': 'Masukkan password',
+            'class': 'form-control'
+        })
+    )
 
     def clean(self):
         cleaned_data = super().clean()
