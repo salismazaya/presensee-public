@@ -443,7 +443,7 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
 
     result = {}
 
-    siswas = kelas.siswas.filter_domain(request).all()
+    siswas = kelas.siswas.all()
 
     for siswa in siswas:
         absensi = (
