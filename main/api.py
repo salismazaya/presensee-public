@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import time
 import threading
 from datetime import datetime
@@ -23,7 +24,9 @@ from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
-from django.utils import crypto
+import uuid
+
+from main.helpers import redis
 from lzstring import LZString
 
 
@@ -46,16 +49,16 @@ api = NinjaAPI(
         # TODO: ganti ke redis. throttle seperti ini tidak akurat jika multi worker
         AnonRateThrottle("1/s"),
         AnonRateThrottle("30/m"),
-        AuthRateThrottle("60/m"),
+        AuthRateThrottle("100/m"),
     ]
 )
 
-@api.get('/ping', auth = None, throttle = [AnonRateThrottle("2/s")])
-def get_version(request: HttpRequest):
+@api.get('/ping', auth = None, throttle = [AnonRateThrottle("5/s")])
+def heartbeat(request: HttpRequest):
     return HttpResponse("PONG")
 
 
-@api.get('/version', auth = None, throttle = [AnonRateThrottle("2/s")])
+@api.get('/version', auth = None, throttle = [AnonRateThrottle("5/s")])
 def get_version(request: HttpRequest):
     return HttpResponse(settings.PRESENSEE_VERSION)
 
@@ -77,7 +80,7 @@ def login(request: HttpRequest, data: LoginSchema):
 
 
 @api.post('/change-password', response = {403: ErrorSchema, 200: SuccessSchema})
-def login(request: HttpRequest, data: ChangePasswordSchema):
+def change_password(request: HttpRequest, data: ChangePasswordSchema):
     if not request.auth.check_password(data.old_password):
         return 403, {"detail": "Password salah!"}
     
@@ -120,20 +123,21 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     datas = sorted(data.data, key = lambda x: 0 if x.action == "absen" else 1) 
 
+    ddmmyy_pattern = re.compile(r'^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$')
+
     for x in datas:
         payload = json.loads(x.data)
 
-        try:
-            date = dateutil_parser.parse(payload['date'])
-        except:
-            # TODO: karena di beberapa versi, format tanggal seperti ini (ddmmyy)
-            # TODO: hapus dimasa depan
+        if re.match(ddmmyy_pattern, payload['date']):
             dd, mm, yy = payload['date'].split("-")
             date = datetime(
                 year = 2000 + int(yy),
                 month = int(mm),
                 day = int(dd),
             )
+        
+        else:
+            date = dateutil_parser.parse(payload['date'])
 
         if x.action == "absen":
             updated_at_int = int(payload.get('updated_at', time.time()))
@@ -251,11 +255,6 @@ def upload(request: HttpRequest, data: DataUploadSchema):
     return {'data': {'conflicts': conflicts}}
 
 REKAP_THREADING_LOCK = threading.Lock()
-
-import uuid
-
-from main.helpers import redis
-
 
 @api.get('/get-rekap', response = {404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema})
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
