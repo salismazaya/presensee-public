@@ -199,12 +199,30 @@ export default function AbsensiDetail() {
       const mm = datetime.getMonth() + 1;
       const yy = datetime.getFullYear() % 2000;
 
+      // Pastikan yy adalah 2 digit akhir tahun (misal: 25)
+      // Pastikan mm dan dd sudah berupa string atau number yang benar
+
+      // Teknik Zero-Padding
+      const year = `20${yy}`;
+      const month = String(mm).padStart(2, "0"); // Mengubah 9 menjadi "09"
+      const day = String(dd).padStart(2, "0"); // Mengubah 5 menjadi "05"
+
+      const sql = `
+  SELECT 
+    a.id AS absensi_id, 
+    a.status, 
+    s.id AS siswa_id, 
+    IFNULL(a.status, 'belum absen') AS status_display -- Opsi tambahan
+  FROM siswa AS s
+  LEFT JOIN absensi AS a 
+    ON a.siswa_id = s.id 
+    AND a.date = '${year}-${month}-${day}' -- Gunakan single quote
+  WHERE s.kelas_id = ${kelas};
+`;
+
       const currentAbsensies = getAbsensies({
         db,
-        sql: `SELECT a.id AS absensi_id, a.status, s.id AS siswa_id
-              FROM siswa AS s
-              LEFT JOIN absensi AS a ON a.siswa_id = s.id AND DATE(a.date) = "20${yy}-${mm}-${dd}"
-              WHERE s.kelas_id = ${kelas};`,
+        sql,
       });
 
       // Merge dengan list siswa (agar siswa yang belum absen tetap muncul)
@@ -387,6 +405,7 @@ export default function AbsensiDetail() {
       <div className="max-w-3xl mx-auto px-4 mt-4 space-y-3">
         {filteredAbsensies.map((absensi) => {
           const siswa = siswas.find((x) => absensi.siswaId == x.id);
+
           if (!siswa) return null;
 
           // Determine Status Badge
