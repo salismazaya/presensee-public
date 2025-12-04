@@ -47,8 +47,8 @@ class KelasQuerySet(BaseQuerySet):
 
 
 class KelasManager(BaseManager):
-    def get_queryset(self):
-        return KelasQuerySet(self.model, using = self._db)
+    def get_queryset(self, filtered_by_domain = None):
+        return KelasQuerySet(self.model, using = self._db, hints = {'filtered_by_domain': filtered_by_domain})
     
     def own(self, user_id: int):
         return self.get_queryset().own(user_id)
@@ -56,7 +56,7 @@ class KelasManager(BaseManager):
 
 class Kelas(BaseModel):
     extra_objects = KelasManager()
-    objects = BaseManager()
+    objects =  KelasManager()
     
     class Meta:
         verbose_name = verbose_name_plural = "Kelas"
@@ -110,20 +110,56 @@ class Absensi(BaseModel):
         verbose_name = verbose_name_plural = "Absensi"
         default_manager_name = 'original_objects'
 
-    class StatusChoices(models.TextChoices):
+        constraints = [
+            models.CheckConstraint(
+                check = ~models.Q(_status = "wait") | models.Q(wait_expired_at__isnull = False),
+                name = 'wait_expired_at_must_not_null_while_status_is_wait'
+            )
+        ]
+
+    class SafeStatusChoices(models.TextChoices):
         HADIR = 'hadir', 'Hadir'
         SAKIT = 'sakit', 'Sakit'
         IZIN = 'izin', 'Izin'
         ALFA = 'alfa', 'Alfa'
         BOLOS = 'bolos', 'Bolos'
 
+    class StatusChoices(models.TextChoices):
+        HADIR = 'hadir', 'Hadir'
+        SAKIT = 'sakit', 'Sakit'
+        IZIN = 'izin', 'Izin'
+        ALFA = 'alfa', 'Alfa'
+        BOLOS = 'bolos', 'Bolos'
+        WAIT = 'tunggu', 'Menunggu'
+
     date = models.DateField(default = timezone.now, verbose_name = 'Tanggal')
     siswa = models.ForeignKey(Siswa, on_delete = models.PROTECT)
-    status = models.CharField(max_length = 30, choices = StatusChoices.choices)
     created_at = models.DateTimeField(default = timezone.now, verbose_name = 'Dibuat')
     updated_at = models.DateTimeField(default = timezone.now, verbose_name = 'Diubah')
+    wait_expired_at = models.DateTimeField(editable = False, null = True)
     by = models.ForeignKey(User, on_delete = models.SET_NULL, null = True, verbose_name = 'Oleh')
+    _status = models.CharField(max_length = 30, choices = SafeStatusChoices.choices, null = True, verbose_name = 'Status')
+    _final_status = models.GeneratedField(
+        expression = models.Case(
+            models.When(~models.Q(_status = StatusChoices.WAIT), then = models.F('_status')),
+            models.When(wait_expired_at__gt = models.functions.Now(), then = models.Value(StatusChoices.BOLOS)),
+            default = models.Value(StatusChoices.WAIT)
+        ),
+        output_field = models.CharField(),
+        db_persist = False,
+        editable = False,
+        verbose_name = 'Status',
+        choices = StatusChoices.choices
+    )
+
+    @property
+    def status(self):
+        return self._final_status
+    
+    @status.setter
+    def status(self, value):
+        self._status = value
+
 
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)
-

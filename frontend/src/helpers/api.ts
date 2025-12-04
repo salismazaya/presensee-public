@@ -59,6 +59,33 @@ export async function getMe(token: string): Promise<User> {
   }
 }
 
+
+export async function getSiswas(token: string): Promise<any> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/siswas", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
 export async function login(
   username: string,
   password: string

@@ -74,9 +74,9 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     )
     list_display = ('username', 'type', 'is_staff', 'is_superuser')
 
-    def get_form(self, request, obj = None, change = None, **kwargs):
+    def get_form(self, request, obj = None, **kwargs):
         if obj is None:
-            return UserCreationForm
+            return AuthUserAdmin.get_form(self, request, obj, **kwargs)
         
         return createUserChangeForm(obj.pk)
     
@@ -128,13 +128,19 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def kelas(self, obj):
         return obj.siswa.kelas
 
-    list_display = ('id', 'date', 'siswa', 'kelas', 'status')
-    list_filter = ('date', 'siswa__kelas', 'status')
+    list_display = ('id', 'date', 'siswa', 'kelas', '_final_status')
+    list_filter = ('date', 'siswa__kelas', '_final_status')
     search_fields = ('siswa__fullname',)
     readonly_fields = ('created_at', 'updated_at')
 
     def has_delete_permission(self, request, obj = None):
         return False
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(_final_status = Absensi.StatusChoices.WAIT)
 
     def render_change_form(self, request, context, *args, **kwargs):
         context['adminform'].form.fields['siswa'].queryset = Siswa.objects.filter_domain(request)

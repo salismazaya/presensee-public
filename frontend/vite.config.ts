@@ -12,6 +12,10 @@ export default defineConfig({
           sweetalert2: ['sweetalert2'],
           lz_string: ['lz-string'],
         }
+      },
+      input:  {
+        main: 'index.html',
+        piket: 'piket.html',
       }
     }
   },

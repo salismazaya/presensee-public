@@ -18,7 +18,7 @@ from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 from main.api_schemas import (ChangePasswordSchema, DataUploadSchema,
-                              ErrorSchema, LoginSchema, SuccessSchema, DataCompressedUploadSchema)
+                              ErrorSchema, LoginSchema, SuccessSchema, DataCompressedUploadSchema, PiketDataUploadSchema)
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
@@ -88,9 +88,7 @@ def login(request: HttpRequest, data: ChangePasswordSchema):
 
 @api.get('/me')
 def get_me(request: HttpRequest):
-    kelas_obj = Kelas.objects.filter_domain(request).filter(
-        Q(wali_kelas__pk = request.auth.pk) | Q(sekretaris__in = [request.auth.pk])
-    ).first()
+    kelas_obj: Kelas = Kelas.objects.filter_domain(request).own(request.auth.pk).first()
     kelas = None
 
     if kelas_obj:
@@ -98,6 +96,21 @@ def get_me(request: HttpRequest):
 
     return {'data': {'username': request.auth.username, "type": request.auth.type, "kelas": kelas}}
 
+
+@api.get('/siswas', response = {403: ErrorSchema, 200: SuccessSchema})
+def get_siswa(request: HttpRequest):
+    if request.auth.type != 'guru_piket':
+        return 403, {'detail': 'Forbidden'}
+
+    results = {}
+    siswas: list[Siswa] = Siswa.objects.prefetch_related('kelas').filter_domain(request)
+    for siswa in siswas:
+        results[siswa.pk] = {
+            'name': siswa.fullname,
+            'kelas': siswa.kelas.name,
+        }
+    
+    return {'data': results}
 
 @api.post('/compressed-upload', response = {403: ErrorSchema, 200: SuccessSchema})
 def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
@@ -108,6 +121,12 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 
     data_upload = DataUploadSchema(data = data_decompressed)
     return upload(request, data_upload)
+
+
+@api.post('/piket/upload', response = {403: ErrorSchema, 200: SuccessSchema})
+@transaction.atomic
+def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
+    pass
 
 
 @api.post('/upload', response = {403: ErrorSchema, 200: SuccessSchema})
@@ -125,7 +144,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
         try:
             date = dateutil_parser.parse(payload['date'])
-        except:
+        except:  # noqa: E722
             # TODO: karena di beberapa versi, format tanggal seperti ini (ddmmyy)
             # TODO: hapus dimasa depan
             dd, mm, yy = payload['date'].split("-")
@@ -137,7 +156,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
         if x.action == "absen":
             updated_at_int = int(payload.get('updated_at', time.time()))
-            updated_at = datetime.fromtimestamp(updated_at_int)
+            updated_at = datetime.fromtimestamp(updated_at_int).astimezone(settings.TIME_ZONE_OBJ)
 
             siswa = Siswa.objects.filter_domain(request).filter(pk = payload["siswa"]).first()
             if not siswa:
@@ -166,7 +185,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                         # karena ini insert berarti updated_at=created_at
                         created_at = updated_at,
                         updated_at = updated_at,
-                        by_id = user.pk,
+                        by_id = user.pk
                     )
                 elif absensi.by is None:
                     # absensi bukan None karena sudah divalidasi diatas

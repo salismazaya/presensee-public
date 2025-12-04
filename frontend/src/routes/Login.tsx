@@ -2,7 +2,8 @@ import { useState } from "react";
 import { login } from "../helpers/api";
 import Swal from "sweetalert2";
 import useToken from "../hooks/useToken";
-import ThemeToggle from "../components/ThemeToggle"; // <--- Import disini
+import ThemeToggle from "../components/ThemeToggle";
+import serviceWorkerUtils from "../helpers/serviceWorker";
 
 export default function Login() {
   const [username, setUsername] = useState<string>("");
@@ -16,6 +17,7 @@ export default function Login() {
         setIsLoading(true);
         const token = await login(username, password);
         setToken(token);
+        serviceWorkerUtils.unregister();
         window.location.href = "/"; 
       } catch (e: any) {
         Swal.fire({

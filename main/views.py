@@ -73,7 +73,7 @@ def spa_public(request: HttpRequest):
             context = {
                 'BASE_API_URL': settings.BASE_URL + '/api'
             }
-            return render(request, 'main/base.html', context)
+            return render(request, 'piket.html', context)
         
         file_path =  dir / path
         try:
@@ -96,7 +96,7 @@ def index(request: HttpRequest):
     context = {
         'BASE_API_URL': settings.BASE_URL + '/api'
     }
-    return render(request, 'main/base.html', context)    
+    return render(request, 'piket.html', context)    
 
 
 def setup(request: HttpRequest):
