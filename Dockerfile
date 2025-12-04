@@ -21,7 +21,7 @@ COPY .python-version .
 COPY uv.lock .
 
 # Install dependencies
-RUN apk update && apk add --no-cache libxrender fontconfig curl
+RUN apk update && apk add --no-cache libxrender fontconfig curl git
 
 # Install uv (Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
