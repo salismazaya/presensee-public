@@ -127,6 +127,7 @@ export async function uploadDatabase(
       {
         headers: {
           Authorization: "Bearer " + token,
+          "X-Api-Version": "v2",
         },
       }
     );

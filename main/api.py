@@ -121,6 +121,22 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     conflicts = []
 
+    # TODO: hilangkan ini nanti. untuk sekarang berfungsi memaksa user untuk update versi client
+    is_v2 = request.headers.get('X-Api-Version', 'v2') == 'v2'
+
+    force_upload = request.COOKIES.get('force_upload', '0') == '1'
+    
+    if not is_v2 and not force_upload:
+        content = {'detail': 'Biar aplikasinya makin mulus, coba tap ikon (i) di pojok kanan bawah, terus pilih Hapus Cache, ya!'}
+        content = json.dumps(content)
+
+        response = HttpResponse(content = content, content_type = "application/json")
+        response.set_cookie("force_upload", "1", max_age = 1000)
+        response.status_code = 403
+
+        return response
+
+
     datas = sorted(data.data, key = lambda x: 0 if x.action == "absen" else 1) 
 
     ddmmyy_pattern = re.compile(r'^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$')
@@ -252,7 +268,12 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                 'kelas_id': payload['kelas']
             })
 
-    return {'data': {'conflicts': conflicts}}
+    content = json.dumps({'data': {'conflicts': conflicts}})
+    response = HttpResponse(content = content, content_type = "application/json")
+    response.set_cookie("force_upload", "", expires=0)
+
+    return response
+
 
 REKAP_THREADING_LOCK = threading.Lock()
 
