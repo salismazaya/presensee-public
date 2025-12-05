@@ -31,14 +31,14 @@ function AppPiket() {
       });
   }, []);
 
-  const piketPath = import.meta.env.VITE_PIKET_PATH || '';
+  const piketRootPath = import.meta.env.VITE_PIKET_PATH;
 
   return (
     <SharedDataContextConsumer>
       <>
         <BrowserRouter>
           <Routes>
-            <Route path={piketPath}>
+            <Route path={piketRootPath}>
               <Route index element={<Scan />} />
               <Route path="login" element={<Login />}  />
               <Route path="about" element={<About />}  />

@@ -1,12 +1,18 @@
 import { Link } from "react-router";
+
 interface FooterProps {
   active?: "home" | "about";
 }
 
 export default function PiketFooter({ active }: FooterProps) {
+  const piketRootPath = import.meta.env.VITE_PIKET_PATH;
+
   return (
     <div className="dock z-50">
-      <Link to="/" className={active == "home" ? "dock-active" : ""}>
+      <Link
+        to={piketRootPath}
+        className={active == "home" ? "dock-active" : ""}
+      >
         <svg
           className="size-[1.2em]"
           xmlns="http://www.w3.org/2000/svg"
@@ -41,10 +47,12 @@ export default function PiketFooter({ active }: FooterProps) {
             ></line>
           </g>
         </svg>
-        {/* <span className="dock-label">Kemabl</span> */}
       </Link>
 
-      <Link to="/piket/about" className={active == "about" ? "dock-active" : ""}>
+      <Link
+        to={piketRootPath + "about"}
+        className={active == "about" ? "dock-active" : ""}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"

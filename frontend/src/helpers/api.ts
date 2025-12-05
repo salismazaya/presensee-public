@@ -59,7 +59,6 @@ export async function getMe(token: string): Promise<User> {
   }
 }
 
-
 export async function getSiswas(token: string): Promise<any> {
   const baseUrl = getApiBaseUrl();
   try {
@@ -89,14 +88,18 @@ export async function getSiswas(token: string): Promise<any> {
 export async function login(
   username: string,
   password: string
-): Promise<string> {
+): Promise<{ token: string; username: string; type: string }> {
   const baseUrl = getApiBaseUrl();
   try {
     const response = await axios.post(baseUrl + "/login", {
       username,
       password,
     });
-    return response.data.data.token;
+    return {
+      token: response.data.data.token,
+      username: response.data.data.username,
+      type: response.data.data.type,
+    };
   } catch (e: any) {
     if (e instanceof AxiosError) {
       if (

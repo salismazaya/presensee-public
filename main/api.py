@@ -73,7 +73,7 @@ def login(request: HttpRequest, data: LoginSchema):
     user.token = get_random_string(20)
     user.save()
 
-    return 200, {"data": {"token": user.token}}
+    return 200, {"data": {"token": user.token, "username": user.username, "type": user.type}}
 
 
 @api.post('/change-password', response = {403: ErrorSchema, 200: SuccessSchema})

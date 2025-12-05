@@ -1,14 +1,29 @@
-export function unregister() {
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-      registrations.forEach(async function (registration) {
+export async function unregister() {
+  if ("caches" in window) {
+    const cacheNames = await caches.keys();
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
         await registration.unregister();
-        window.location.href = '/';
+      }
+      cacheNames.forEach((cacheName) => {
+        caches.delete(cacheName);
       });
+      window.location.href = "/";
+    }
+  }
+}
+
+export function register() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" });
     });
   }
 }
 
 export default {
-  unregister
-}
+  unregister,
+  register,
+};

@@ -71,7 +71,7 @@ export default function Scan() {
   const localSiswas = useRef(getLocalSiswas());
   const [overlayData, _setOverlayData] = useState<[string, string] | null>();
 
-  const [,setIsLoading] = useGlobalLoading();
+  const [, setIsLoading] = useGlobalLoading();
 
   const setOverlayData = (overlay: [string, string] | null) => {
     if (overlayTimeout.current) {
@@ -84,6 +84,7 @@ export default function Scan() {
       _setOverlayData(null);
     }, 5000);
   };
+
 
   useEffect(() => {
     if (!token) return;
@@ -133,7 +134,7 @@ export default function Scan() {
     if (now - latestTimeScan.current < 1500) {
       return;
     }
-    
+
     latestTimeScan.current = now;
 
     results.forEach((result) => {
@@ -196,10 +197,9 @@ export default function Scan() {
     log.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
   const handleUpload = () => {
     setIsLoading(true);
-  }
+  };
 
   useEffect(() => {
     setLogCount(logs.length);
@@ -230,7 +230,12 @@ export default function Scan() {
                     ></path>
                   </svg>
                   <span>{logCount} data menunggu di-upload</span>
-                  <button className="btn btn-sm btn-primary" onClick={handleUpload}>Upload</button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleUpload}
+                  >
+                    Upload
+                  </button>
                 </div>
               )}
 
