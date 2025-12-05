@@ -163,3 +163,24 @@ class Absensi(BaseModel):
 
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)
+    
+
+class AbsensiSession(BaseModel):
+    class Meta:
+        verbose_name = verbose_name_plural = "Jadwal Absensi (QR)"
+        default_manager_name = 'original_objects'
+
+    senin = models.BooleanField(default = False)
+    selasa = models.BooleanField(default = False)
+    rabu = models.BooleanField(default = False)
+    kamis = models.BooleanField(default = False)
+    jumat = models.BooleanField(default = False)
+    sabtu = models.BooleanField(default = False)
+
+    jam_masuk = models.TimeField()
+    jam_keluar = models.TimeField()
+
+    kelas = models.ManyToManyField(Kelas, related_name = 'jadwal_kelas')
+
+    
+

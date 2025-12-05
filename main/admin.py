@@ -9,7 +9,7 @@ from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -140,7 +140,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return False
     
     def get_queryset(self, request):
-        return super().get_queryset(request).exclude(_final_status = Absensi.StatusChoices.WAIT)
+        return super().get_queryset(request)
 
     def render_change_form(self, request, context, *args, **kwargs):
         context['adminform'].form.fields['siswa'].queryset = Siswa.objects.filter_domain(request)
@@ -165,3 +165,4 @@ admin_site.register(Absensi, AbsensiAdmin)
 admin_site.register(Kelas, KelasAdmin)
 admin_site.register(Siswa, SiswaAdmin)
 admin_site.register(KunciAbsensi, KunciAbsensiAdmin)
+admin_site.register(AbsensiSession)

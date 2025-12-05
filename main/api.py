@@ -22,7 +22,7 @@ from main.api_schemas import (ChangePasswordSchema, DataUploadSchema,
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers.humanize import localize_month_to_string
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
 from django.utils import crypto
 from lzstring import LZString
 
@@ -112,6 +112,33 @@ def get_siswa(request: HttpRequest):
     
     return {'data': results}
 
+
+@api.get('/jadwal', response = {403: ErrorSchema, 200: SuccessSchema}, auth = None)
+def get_jadwal_absensi(request: HttpRequest):
+    # if request.auth.type != 'guru_piket':
+    #     return 403, {'detail': 'Forbidden'}
+
+    results = {}
+    kelass: list[Kelas] = Kelas.objects.filter_domain(request)
+    
+    for kelas in kelass:
+        results[kelas.pk] = {
+            'name': kelas.name,
+        }
+
+        for day in ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']:
+            # TODO: N+1 issue. sementara aman aja karena ada cache
+            absensi_session: AbsensiSession = kelas.jadwal_kelas.filter(**{day: True}).first()
+            if absensi_session:
+                results[kelas.pk][day] = (
+                    absensi_session.jam_masuk.strftime('%H:%M'),
+                    absensi_session.jam_keluar.strftime('%H:%M')
+                )
+            else:
+                results[kelas.pk][day] = None
+
+    return {'data': results}
+
 @api.post('/compressed-upload', response = {403: ErrorSchema, 200: SuccessSchema})
 def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
     lz = LZString()
@@ -126,6 +153,7 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 @api.post('/piket/upload', response = {403: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
 def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
+    # absension_session = AbsensiSession.objects.filter_domain(request).first()
     pass
 
 
