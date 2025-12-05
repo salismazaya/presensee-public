@@ -4,190 +4,350 @@ import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import PiketFooter from "../../components/PiketFooter";
 import LZString from "lz-string";
-import { getSiswas } from "../../helpers/api";
+import { getJadwal, getSiswas, uploadPiketDatabase } from "../../helpers/api";
 import useToken from "../../hooks/useToken";
-import useGlobalLoading from "../../hooks/useGlobalLoading";
 
-// Tipe data mock diperbarui dengan tanggal
+// --- TIPE DATA ---
+
+// 1. Tipe untuk Tampilan (Logs di kanan)
 interface ScanLog {
   name: string;
   kelas: string;
   date: string;
   time: string;
   siswaId: number;
+  status: "success" | "failed" | "late"; // Tambah status late
+  message?: string; // Pesan tambahan misal "Terlambat"
   timestamp: number;
-  status: "success" | "failed";
+}
+
+// 2. Tipe untuk Data Upload (Yang akan dikirim ke server)
+interface UploadData {
+  siswaId: number;
+  timestamp: number;
+  type: "absen_pulang" | "absen_masuk";
+  // date: string;
 }
 
 interface Siswa {
   name: string;
   kelas: string;
+  kelas_id: number;
 }
 
-function getData(): ScanLog[] {
-  let compressedDatas = localStorage.getItem("PIKET_ABSENSI_DATA");
+type JadwalProps = Record<
+  string,
+  Record<
+    string,
+    { jam_masuk: string; jam_masuk_sampai: string; jam_keluar: string }
+  >
+>;
 
-  if (!compressedDatas) {
-    return [];
-  }
+// --- HELPER STORAGE ---
 
-  compressedDatas = LZString.decompress(compressedDatas);
-  return JSON.parse(compressedDatas);
+// Helper: Visual Logs (Hanya untuk history di layar)
+function getVisualLogs(): ScanLog[] {
+  let compressed = localStorage.getItem("PIKET_LOGS_VIEW");
+  if (!compressed) return [];
+  return JSON.parse(LZString.decompress(compressed));
 }
 
-function setData(datas: ScanLog[]) {
-  const compressedDatas = LZString.compress(JSON.stringify(datas));
-  localStorage.setItem("PIKET_ABSENSI_DATA", compressedDatas);
+function setVisualLogs(datas: ScanLog[]) {
+  const compressed = LZString.compress(JSON.stringify(datas));
+  localStorage.setItem("PIKET_LOGS_VIEW", compressed);
 }
 
+// Helper: Upload Queue (Data bersih untuk diupload)
+function getUploadQueue(): UploadData[] {
+  let compressed = localStorage.getItem("PIKET_UPLOAD_QUEUE");
+  if (!compressed) return [];
+  return JSON.parse(LZString.decompress(compressed));
+}
+
+function setUploadQueue(datas: UploadData[]) {
+  const compressed = LZString.compress(JSON.stringify(datas));
+  localStorage.setItem("PIKET_UPLOAD_QUEUE", compressed);
+}
+
+// Helper: Siswa & Jadwal (Sama seperti sebelumnya)
 function getLocalSiswas(): Record<string, Siswa> {
-  let compressedDatas = localStorage.getItem("PIKET_SISWA_DATA");
-
-  if (!compressedDatas) {
-    return {};
-  }
-
-  compressedDatas = LZString.decompress(compressedDatas);
-  return JSON.parse(compressedDatas);
+  let compressed = localStorage.getItem("PIKET_SISWA_DATA");
+  if (!compressed) return {};
+  return JSON.parse(LZString.decompress(compressed));
 }
-
 function setLocalSiswas(siswas: Siswa[]) {
-  const compressedDatas = LZString.compress(JSON.stringify(siswas));
-  localStorage.setItem("PIKET_SISWA_DATA", compressedDatas);
+  const compressed = LZString.compress(JSON.stringify(siswas));
+  localStorage.setItem("PIKET_SISWA_DATA", compressed);
 }
+function getLocalJadwal(): JadwalProps {
+  return JSON.parse(localStorage.getItem("PIKET_JADWAL") || "{}");
+}
+function setLocalJadwal(jadwal: JadwalProps) {
+  localStorage.setItem("PIKET_JADWAL", JSON.stringify(jadwal));
+}
+
+// --- COMPONENT UTAMA ---
 
 export default function Scan() {
+  // State
   const [activeSiswaId, setActiveSiswaId] = useState<number | null>(null);
   const [latestSiswaId, setLatestSiswaId] = useState<number | null>(null);
-
-  // --- 1. STATE UNTUK FLASH ---
-  const [flash, setFlash] = useState<"ok" | "error" | null>(null);
-
-  const [logs, _setLogs] = useState<ScanLog[]>(getData());
-  const [logCount, setLogCount] = useState(logs.length);
-
-  const [token] = useToken();
-  const alreadyScan = useRef<string[]>([]);
-  const localSiswas = useRef(getLocalSiswas());
+  const [flash, _setFlash] = useState<"ok" | "error" | null>(null);
   const [overlayData, _setOverlayData] = useState<[string, string] | null>();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [, setIsLoading] = useGlobalLoading();
+  // Data State
+  const [logs, _setLogs] = useState<ScanLog[]>(getVisualLogs());
+  const [queue, _setQueue] = useState<UploadData[]>(getUploadQueue()); // State antrian upload
 
+  // Hooks
+  const [token] = useToken();
+
+  // Refs
+  const localSiswas = useRef(getLocalSiswas());
+  const localJadwal = useRef(getLocalJadwal());
+  const cancelSelectTimeout = useRef<number>(null);
+  const overlayTimeout = useRef<number>(null);
+  const latestTimeScan = useRef<number>(Date.now());
+
+  // Wrapper untuk update Logs & Queue
+  const setLogs = (datas: ScanLog[]) => {
+    setVisualLogs(datas);
+    _setLogs(datas);
+  };
+
+  const setQueue = (datas: UploadData[]) => {
+    setUploadQueue(datas);
+    _setQueue(datas);
+  };
+
+  // Efek Flash Layar
+  const setFlash = (data: "ok" | "error") => {
+    _setFlash(data);
+    setTimeout(() => _setFlash(null), 300);
+  };
+
+  // Efek Overlay Nama
   const setOverlayData = (overlay: [string, string] | null) => {
-    if (overlayTimeout.current) {
-      clearTimeout(overlayTimeout.current);
-    }
-
+    if (overlayTimeout.current) clearTimeout(overlayTimeout.current);
     _setOverlayData(overlay);
-
     overlayTimeout.current = setTimeout(() => {
       _setOverlayData(null);
     }, 5000);
   };
 
-
+  // Load Data Awal
   useEffect(() => {
     if (!token) return;
     getSiswas(token).then((siswas) => {
       localSiswas.current = siswas;
       setLocalSiswas(siswas);
     });
+    getJadwal(token).then((jadwal) => {
+      localJadwal.current = jadwal;
+      setLocalJadwal(jadwal);
+    });
   }, [token]);
 
-  const setLogs = (datas: ScanLog[]) => {
-    setData(datas);
-    _setLogs(datas);
-  };
+  useEffect(() => {
+    // Cek setiap 10 detik
+    const intervalId = setInterval(() => {
+      // Syarat: Ada antrian DAN tidak sedang loading (upload)
+      if (queue.length > 0) {
+        console.log("Auto upload triggered...");
+        handleUpload();
+      }
+    }, 10000); // 10000 ms = 10 detik
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const cancelSelectTimeout = useRef<number>(null);
-  const overlayTimeout = useRef<number>(null);
-  const latestTimeScan = useRef<number>(Date.now());
+    // Bersihkan interval saat komponen unmount atau queue berubah
+    // (Agar timer di-reset setiap kali ada data baru atau selesai upload)
+    return () => clearInterval(intervalId);
+  }, [queue]);
 
+  // Hapus Log Visual (Tidak menghapus data antrian upload, hanya visual)
   const handleCancel = (siswaId: number) => {
     const newLogs = logs.filter((log) => log.siswaId !== siswaId);
     setLogs(newLogs);
     setActiveSiswaId(null);
-
-    const toast = Swal.mixin({
+    Swal.fire({
       toast: true,
       position: "top-end",
+      icon: "info",
+      title: "Log dihapus dari tampilan",
       showConfirmButton: false,
       timer: 1500,
     });
-    toast.fire({ icon: "info", title: "Data dihapus" });
   };
 
   const handleRowClick = (siswaId: number) => {
     setActiveSiswaId(activeSiswaId === siswaId ? null : siswaId);
-    if (cancelSelectTimeout.current) {
-      clearTimeout(cancelSelectTimeout.current);
-      cancelSelectTimeout.current = null;
-    }
-    cancelSelectTimeout.current = setTimeout(() => {
-      setActiveSiswaId(null);
-    }, 5000);
+    if (cancelSelectTimeout.current) clearTimeout(cancelSelectTimeout.current);
+    cancelSelectTimeout.current = setTimeout(
+      () => setActiveSiswaId(null),
+      5000
+    );
   };
 
   const handleScan = (results: IDetectedBarcode[]) => {
-    const now = Date.now();
-    if (now - latestTimeScan.current < 1500) {
-      return;
-    }
-
-    latestTimeScan.current = now;
+    const nowTimestamp = Date.now();
+    // Global Debounce: Mencegah kamera membaca frame ganda dalam 1.5 detik
+    if (nowTimestamp - latestTimeScan.current < 1500) return;
+    latestTimeScan.current = nowTimestamp;
 
     results.forEach((result) => {
       const siswaId = parseInt(result.rawValue);
+      const siswa = localSiswas.current[siswaId.toString()];
 
-      const siswa: Siswa | undefined = localSiswas.current[siswaId.toString()];
+      // 1. Validasi Siswa
       if (!siswa) {
         setFlash("error");
         new Audio("/error.mp3").play();
-
-        setTimeout(() => setFlash(null), 300);
         return;
       }
 
-      if (alreadyScan.current.includes(siswaId.toString())) {
+      // --- FILTER ANTI DOUBLE SCAN (LOGIC) ---
+      // Cek apakah siswa ini ada di log terakhir?
+      const existingLog = logs.find((l) => l.siswaId === siswaId);
+
+      if (existingLog) {
+        const lastScanTime = existingLog.timestamp * 1000; // Konversi ke ms
+        const diffMs = nowTimestamp - lastScanTime;
+        const cooldownTime = 5 * 1000;
+
+        if (diffMs < cooldownTime) {
+          setFlash("error");
+          setOverlayData([siswa.name, "Sudah Absen Barusan"]);
+          // Tidak play audio error agar tidak berisik, atau bisa tambahkan audio warning khusus
+          return;
+        }
+      }
+      // ---------------------------------------
+
+      const jadwal = localJadwal.current[siswa.kelas_id.toString()];
+      // 2. Validasi Jadwal
+      if (!jadwal) {
         setFlash("error");
-        setOverlayData([siswa.name, "Sudah diabsen"]);
-        new Audio("/error.mp3").play();
-        setTimeout(() => setFlash(null), 300);
+        setOverlayData([siswa.name, "Jadwal Tidak Ditemukan"]);
         return;
       }
 
       setLatestSiswaId(siswaId);
 
+      // Setup Waktu
       const date = new Date();
       const yyyy = date.getFullYear();
       const mm = date.getMonth().toString().padStart(2, "0");
       const dd = date.getDate().toString().padStart(2, "0");
-
       const dateString = `${yyyy}-${mm}-${dd}`;
-      const timestamp = Math.floor(Date.now() / 1000);
 
-      setOverlayData([siswa.name, siswa.kelas]);
+      const dayIndex = date.getDay();
+      const days = [
+        "minggu",
+        "senin",
+        "selasa",
+        "rabu",
+        "kamis",
+        "jumat",
+        "sabtu",
+      ];
+      const dayName = days[dayIndex];
 
-      new Audio("/ok.mp3").play();
-      setFlash("ok");
-      setTimeout(() => setFlash(null), 300);
+      if (!jadwal[dayName]) {
+        setFlash("error");
+        setOverlayData([siswa.name, "Libur / Tidak Ada Jadwal"]);
+        return;
+      }
 
-      setLogs([
-        {
-          name: siswa.name,
-          kelas: siswa.kelas,
-          date: dateString,
+      const jadwalToday = jadwal[dayName];
+      const currentMinutes = date.getHours() * 60 + date.getMinutes();
+      const timeString = date.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const [limitH, limitM] = jadwalToday.jam_masuk_sampai
+        .split(":")
+        .map(Number);
+      const limitMinutes = limitH * 60 + limitM;
+
+      const [outH, outM] = jadwalToday.jam_keluar.split(":").map(Number);
+      const outMinutes = outH * 60 + outM;
+
+      // --- LOGIKA JAM ---
+      let scanStatus: "success" | "failed" | "late" = "success";
+      let scanMessage = siswa.kelas;
+      let addToQueue = false;
+      let absenType: "absen_pulang" | "absen_masuk" = "absen_masuk";
+
+      if (currentMinutes < outMinutes) {
+        // FASE MASUK
+        if (currentMinutes > limitMinutes) {
+          scanStatus = "late";
+          scanMessage = "Terlambat";
+          setFlash("error");
+          new Audio("/error.mp3").play();
+          setOverlayData([siswa.name, "TERLAMBAT!"]);
+        } else {
+          scanStatus = "success";
+          setFlash("ok");
+          new Audio("/ok.mp3").play();
+          setOverlayData([siswa.name, siswa.kelas]);
+
+          absenType = "absen_masuk";
+          addToQueue = true;
+        }
+      } else {
+        // FASE PULANG
+        scanStatus = "success";
+        scanMessage = "Pulang";
+        addToQueue = true;
+        setFlash("ok");
+        new Audio("/ok.mp3").play();
+        setOverlayData([siswa.name, "Hati-hati di jalan"]);
+
+        absenType = "absen_pulang";
+        addToQueue = true;
+      }
+
+      const newLog: ScanLog = {
+        name: siswa.name,
+        kelas: siswa.kelas,
+        date: dateString,
+        siswaId,
+        time: timeString,
+        status: scanStatus,
+        message: scanMessage,
+        timestamp: Math.floor(nowTimestamp / 1000),
+      };
+
+      // --- FILTER TAMPILAN (VISUAL) ---
+      // Hapus log lama siswa ini dari list (jika ada) supaya tidak numpuk
+      const otherLogs = logs.filter((l) => l.siswaId !== siswaId);
+
+      // Masukkan log baru di paling atas
+      setLogs([newLog, ...otherLogs]);
+
+      // 4. Update Upload Queue
+      if (addToQueue) {
+        const newUploadData: UploadData = {
           siswaId,
-          time: new Date().toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          status: "success",
-          timestamp,
-        },
-        ...logs,
-      ]);
+          timestamp: Math.floor(nowTimestamp / 1000),
+          type: absenType,
+          // date: dateString,
+        };
+        const isAlreadyQueued = queue.some((q) => {
+          const date = new Date(q.timestamp * 1000);
+          const yyyy = date.getFullYear();
+          const mm = date.getMonth().toString().padStart(2, "0");
+          const dd = date.getDate().toString().padStart(2, "0");
+          const qDateString = `${yyyy}-${mm}-${dd}`;
+
+          q.siswaId === siswaId && qDateString === dateString;
+        });
+        if (!isAlreadyQueued) {
+          setQueue([...queue, newUploadData]);
+        }
+      }
 
       setTimeout(() => setLatestSiswaId(null), 1000);
     });
@@ -197,14 +357,19 @@ export default function Scan() {
     log.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleUpload = () => {
-    setIsLoading(true);
-  };
+  // --- LOGIKA UPLOAD ---
+  const handleUpload = async () => {
+    if (queue.length === 0 || !token) return;
 
-  useEffect(() => {
-    setLogCount(logs.length);
-    alreadyScan.current = logs.map((l) => l.siswaId.toString());
-  }, [logs]);
+    try {
+      console.log("Mengupload data:", queue);
+
+      const invalids = await uploadPiketDatabase(token, queue);
+      setQueue(invalids);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="min-h-screen font-sans pb-24 flex flex-col">
@@ -214,8 +379,12 @@ export default function Scan() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
             {/* --- KOLOM KIRI: SCANNER --- */}
             <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-4 md:sticky md:top-24 h-fit z-10">
-              {logCount >= 1 && (
-                <div role="alert" className="alert bg-blue-50 text-blue-500">
+              {/* Notifikasi Upload mengambil jumlah dari QUEUE, bukan Logs */}
+              {queue.length >= 1 && (
+                <div
+                  role="alert"
+                  className="alert bg-blue-50 text-blue-500 shadow-md animate-in slide-in-from-top-2"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -229,13 +398,9 @@ export default function Scan() {
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  <span>{logCount} data menunggu di-upload</span>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleUpload}
-                  >
-                    Upload
-                  </button>
+                  <span className="font-medium text-sm">
+                    {queue.length} data siap upload
+                  </span>
                 </div>
               )}
 
@@ -284,7 +449,7 @@ export default function Scan() {
                     }}
                   />
 
-                  {/* --- 3. OVERLAY FLASH --- */}
+                  {/* Flash Overlay */}
                   <div
                     className={`absolute inset-0 z-50 ${
                       flash == "ok" ? "bg-green-400/40" : "bg-red-400/40"
@@ -293,28 +458,46 @@ export default function Scan() {
                     }`}
                   ></div>
 
-                  {/* Teks Overlay Nama Siswa */}
+                  {/* Info Overlay */}
                   {overlayData && (
                     <div className="absolute bottom-10 left-0 right-0 z-20 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-                      <div className="inline-block bg-base-100/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-lg border border-base-200">
-                        <p className="text-lg font-bold text-primary">
+                      <div
+                        className={`inline-block px-6 py-3 rounded-2xl shadow-lg border backdrop-blur-md ${
+                          overlayData[1].includes("ERLAMBAT")
+                            ? "bg-red-100/90 border-red-200"
+                            : "bg-base-100/90 border-base-200"
+                        }`}
+                      >
+                        <p
+                          className={`text-lg font-bold ${
+                            overlayData[1].includes("ERLAMBAT")
+                              ? "text-red-600"
+                              : "text-primary"
+                          }`}
+                        >
                           {overlayData[0]}
                         </p>
-                        <p className="text-sm font-medium text-base-content/70">
+                        <p
+                          className={`text-sm font-medium ${
+                            overlayData[1].includes("ERLAMBAT")
+                              ? "text-red-500"
+                              : "text-base-content/70"
+                          }`}
+                        >
                           {overlayData[1]}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Garis Scan Animasi */}
                   <div className="absolute inset-x-0 top-0 h-0.5 bg-primary shadow-[0_0_20px_rgba(var(--p),1)] animate-[scan_2s_infinite_linear]"></div>
                 </div>
               </div>
             </div>
 
-            {/* --- KOLOM KANAN: RIWAYAT --- */}
+            {/* --- KOLOM KANAN: RIWAYAT VISUAL (LOGS) --- */}
             <div className="md:col-span-7 lg:col-span-8 flex flex-col gap-4">
+              {/* Header Riwayat */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-100 p-4 rounded-xl shadow-sm border border-base-200 sticky top-[70px] md:static z-20">
                 <h3 className="font-bold text-lg text-base-content">
                   Aktivitas Terbaru
@@ -342,39 +525,39 @@ export default function Scan() {
                 </label>
               </div>
 
+              {/* List Logs */}
               <div className="space-y-3 min-h-[300px]">
                 {filteredLogs.map((log) => {
                   const isActive = activeSiswaId === log.siswaId;
                   const isNew = latestSiswaId === log.siswaId;
+                  // Tentukan warna icon berdasarkan status
+                  let iconClass = "bg-success/10 text-success";
+                  if (log.status === "late")
+                    iconClass = "bg-warning/10 text-warning";
+                  if (log.status === "failed")
+                    iconClass = "bg-error/10 text-error";
 
                   return (
                     <div
-                      key={log.siswaId}
+                      key={log.timestamp + log.siswaId}
                       onClick={() => handleRowClick(log.siswaId)}
-                      className={`
-                        card bg-base-100 shadow-sm border cursor-pointer group
-                        transform transition-all duration-300 ease-out
-                        ${
-                          isNew
-                            ? "animate-pop-in bg-primary/10 border-primary"
-                            : "animate-in fade-in slide-in-from-top-4"
-                        }
-                        ${
-                          isActive
-                            ? "border-primary ring-1 ring-primary"
-                            : "border-base-200 hover:border-primary/30"
-                        }
-                      `}
+                      className={`card bg-base-100 shadow-sm border cursor-pointer group transform transition-all duration-300 ease-out 
+                      ${
+                        isNew
+                          ? "animate-pop-in bg-primary/10 border-primary"
+                          : "animate-in fade-in slide-in-from-top-4"
+                      } 
+                      ${
+                        isActive
+                          ? "border-primary ring-1 ring-primary"
+                          : "border-base-200 hover:border-primary/30"
+                      }`}
                     >
                       <div className="card-body p-3 md:p-4 flex flex-row items-center gap-3 md:gap-4">
                         <div
                           className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
                             isNew ? "scale-110" : ""
-                          } ${
-                            log.status === "success"
-                              ? "bg-success/10 text-success"
-                              : "bg-error/10 text-error"
-                          }`}
+                          } ${iconClass}`}
                         >
                           {log.status === "success" ? (
                             <svg
@@ -386,6 +569,19 @@ export default function Scan() {
                               <path
                                 fillRule="evenodd"
                                 d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          ) : log.status === "late" ? (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              className="w-5 h-5 md:w-6 md:h-6"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
                                 clipRule="evenodd"
                               />
                             </svg>
@@ -414,14 +610,15 @@ export default function Scan() {
                             {log.name}
                           </div>
                           <div className="text-xs text-base-content/60 flex items-center gap-2 mt-0.5">
-                            <span className="badge badge-xs badge-ghost font-medium">
-                              {log.kelas}
+                            <span
+                              className={`badge badge-xs font-medium ${
+                                log.status === "late"
+                                  ? "badge-warning"
+                                  : "badge-ghost"
+                              }`}
+                            >
+                              {log.message || log.kelas}
                             </span>
-                            {isActive && (
-                              <span className="text-[10px] text-base-content/40 animate-pulse">
-                                Ketuk lagi untuk tutup
-                              </span>
-                            )}
                           </div>
                         </div>
 
@@ -466,9 +663,7 @@ export default function Scan() {
           </div>
         </div>
       </main>
-
       <PiketFooter active="home" />
-
       <style>{`
         @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
         @keyframes pop-in { 0% { opacity: 0; transform: scale(0.9) translateY(-20px); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
