@@ -116,7 +116,7 @@ class Absensi(BaseModel):
 
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(_status="wait")
+                check=~models.Q(_status="tunggu")
                 | models.Q(wait_expired_at__isnull=False),
                 name="wait_expired_at_must_not_null_while_status_is_wait",
             )
