@@ -19,6 +19,7 @@ class DataUploadDetailSchema(Schema):
     action: Literal["absen", "lock", "unlock"]
     data: str
 
+
 class DataUploadSchema(Schema):
     data: List[DataUploadDetailSchema]
 
@@ -37,3 +38,9 @@ class RequestDocumentSchema(Schema):
 
 class DataCompressedUploadSchema(Schema):
     data: str
+
+
+class PiketDataUploadSchema(Schema):
+    siswa: int
+    timestamp: int
+    type: Literal['absen_pulang', 'absen_masuk']

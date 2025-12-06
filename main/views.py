@@ -69,11 +69,17 @@ def spa_public(request: HttpRequest):
 
     for dir in dirs:
         path = request.get_full_path().removeprefix("/public/").removeprefix('/')
-        if not '.' in path:
+        if '.' not in path:
             context = {
                 'BASE_API_URL': settings.BASE_URL + '/api'
             }
-            return render(request, 'main/base.html', context)
+            
+            if request.COOKIES.get('user_type') == User.TypeChoices.GURU_PIKET:
+                template = "piket.html"
+            else:
+                template = "index.html"
+
+            return render(request, template, context)
         
         file_path =  dir / path
         try:
@@ -89,14 +95,7 @@ def spa_public(request: HttpRequest):
         except (FileNotFoundError, IsADirectoryError):
             continue
     else:
-        raise Http404
-    
-
-def index(request: HttpRequest):
-    context = {
-        'BASE_API_URL': settings.BASE_URL + '/api'
-    }
-    return render(request, 'main/base.html', context)    
+        raise Http404   
 
 
 def setup(request: HttpRequest):

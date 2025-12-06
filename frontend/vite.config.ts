@@ -8,69 +8,32 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          react_utils: ['react-toastify', 'react-day-picker', 'react-router'],
-          sweetalert2: ['sweetalert2'],
-          lz_string: ['lz-string'],
-        }
-      }
-    }
+          react_utils: ["react-toastify", "react-day-picker", "react-router"],
+          sweetalert2: ["sweetalert2"],
+          lz_string: ["lz-string"],
+        },
+      },
+      input: {
+        main: "index.html",
+        piket: "piket.html",
+      },
+    },
   },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      workbox: {
-        skipWaiting: true,
-        cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,wasm,json}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [
-          /^\/api/, 
-          /^\/admin/,
-          /^\/files/,
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-webfonts",
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 tahun
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "google-fonts-stylesheets",
-            },
-          },
-          {
-            urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 hari
-              }
-            }
-          }
-        ],
-      },
-      
+      injectRegister: "script",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
+
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
-      
+
       manifest: {
         name: "Presensee",
-        lang: 'id',
+        lang: "id",
         short_name: "Presensee",
         description: "Aplikasi Presensi Offline First",
         theme_color: "#ffffff",
@@ -79,12 +42,12 @@ export default defineConfig({
         orientation: "portrait",
         icons: [
           {
-            src: "/public/logo.png", 
+            src: "/logo.png", // Hapus '/public', path root sudah mengarah ke public
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/public/logo.png",
+            src: "/logo.png",
             sizes: "512x512",
             type: "image/png",
           },
