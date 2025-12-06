@@ -150,14 +150,13 @@ export default function Scan() {
   }, [token]);
 
   useEffect(() => {
-    // Cek setiap 10 detik
+    // Cek setiap 15 detik
     const intervalId = setInterval(() => {
-      // Syarat: Ada antrian DAN tidak sedang loading (upload)
       if (queue.length > 0) {
         console.log("Auto upload triggered...");
         handleUpload();
       }
-    }, 10000); // 10000 ms = 10 detik
+    }, 15000); // 15000 ms = 15 detik
 
     // Bersihkan interval saat komponen unmount atau queue berubah
     // (Agar timer di-reset setiap kali ada data baru atau selesai upload)
@@ -212,12 +211,12 @@ export default function Scan() {
       if (existingLog) {
         const lastScanTime = existingLog.timestamp * 1000; // Konversi ke ms
         const diffMs = nowTimestamp - lastScanTime;
-        const cooldownTime = 5 * 1000;
+        const cooldownTime = 180 * 1000;
 
         if (diffMs < cooldownTime) {
           setFlash("error");
           setOverlayData([siswa.name, "Sudah Absen Barusan"]);
-          // Tidak play audio error agar tidak berisik, atau bisa tambahkan audio warning khusus
+          new Audio("/error.mp3").play();
           return;
         }
       }
@@ -228,6 +227,7 @@ export default function Scan() {
       if (!jadwal) {
         setFlash("error");
         setOverlayData([siswa.name, "Jadwal Tidak Ditemukan"]);
+        new Audio("/error.mp3").play();
         return;
       }
 

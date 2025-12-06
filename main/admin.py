@@ -10,12 +10,11 @@ from django.db import transaction
 from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
-from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
+from main.forms import createKelasForm, createUserChangeForm
 from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from django.utils import timezone
 
 
 class AdminSite(admin.AdminSite):
@@ -148,10 +147,17 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         "date",
         "siswa__kelas",
     )
-    search_fields = ("siswa__fullname",)
+    search_fields = ("siswa__fullname", "status")
     readonly_fields = ("created_at", "updated_at")
 
     def final_status(self, obj):
+        final_status = obj.status
+
+        if obj._status == Absensi.StatusChoices.WAIT:
+            if final_status != Absensi.StatusChoices.WAIT:
+                obj._status = final_status
+                obj.save()
+
         return obj.status.capitalize()
 
     final_status.short_description = "Status"
@@ -163,7 +169,11 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return False
 
     def get_queryset(self, request):
-        return super().get_queryset(request).exclude(wait_expired_at__gt=timezone.now())
+        return (
+            super()
+            .get_queryset(request)
+            .exclude(final_status=Absensi.StatusChoices.WAIT)
+        )
 
     def render_change_form(self, request, context, *args, **kwargs):
         context["adminform"].form.fields[

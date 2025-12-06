@@ -5,6 +5,7 @@ import PiketFooter from "../../components/PiketFooter";
 
 export default function About() {
   const version = localStorage.getItem("VERSION") || "";
+  const piketRootPath = import.meta.env.VITE_PIKET_PATH;
 
   const handleLogout = () => {
     Swal.fire({
@@ -115,7 +116,8 @@ export default function About() {
           <div className="flex flex-col">
             {/* Ganti Password */}
             <Link
-              to="/change-password"
+              // to="/change-password"
+              to={piketRootPath + "change-password"}
               className="flex items-center gap-3 p-4 hover:bg-base-200 transition-colors border-b border-base-200"
             >
               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.utils import timezone
-from .base import BaseModel, BaseQuerySet, BaseManager, CustomUserManager
+from .base import BaseModel, BaseQuerySet, BaseManager, CustomUserManager, AbsensiManager, AbsensiOriginalManager
 from datetime import timedelta
 
 
@@ -122,6 +122,9 @@ class Absensi(BaseModel):
             )
         ]
 
+    objects = AbsensiManager()
+    original_objects = AbsensiOriginalManager()
+
     class SafeStatusChoices(models.TextChoices):
         HADIR = "hadir", "Hadir"
         SAKIT = "sakit", "Sakit"
@@ -152,24 +155,16 @@ class Absensi(BaseModel):
         verbose_name="Status",
     )
 
+    def __str__(self):
+        return "%s : %s : %s" % (self.date, self.siswa, self.status)
+    
     @property
     def status(self):
-        if self._status != self.StatusChoices.WAIT:
-            return self._status
-
-        if self.wait_expired_at and timezone.now() > self.wait_expired_at:
-            self._status = self.StatusChoices.BOLOS
-            self.save()
-            return self.StatusChoices.BOLOS
-
-        return self.StatusChoices.WAIT
-
+        return self.final_status
+    
     @status.setter
     def status(self, value):
         self._status = value
-
-    def __str__(self):
-        return "%s : %s : %s" % (self.date, self.siswa, self.status)
 
 
 class AbsensiSession(BaseModel):

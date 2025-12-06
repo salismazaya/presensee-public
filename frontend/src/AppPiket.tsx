@@ -9,6 +9,8 @@ import { ToastContainer } from "react-toastify";
 import Scan from "./routes/piket/Scan";
 import About from "./routes/piket/About";
 import Login from "./routes/Login";
+import AuthenticatedLayout from "./layouts/AuthenticatedLayout";
+import ChangePassword from "./routes/piket/ChangePassword";
 
 function AppPiket() {
   useEffect(() => {
@@ -39,9 +41,10 @@ function AppPiket() {
         <BrowserRouter>
           <Routes>
             <Route path={piketRootPath}>
-              <Route index element={<Scan />} />
-              <Route path="login" element={<Login />}  />
-              <Route path="about" element={<About />}  />
+              <Route index element={<AuthenticatedLayout child={<Scan />} />} />
+              <Route path="login" element={<Login />} />
+              <Route path="about" element={<About />} />
+              <Route path="change-password" element={<ChangePassword />} />
             </Route>
           </Routes>
         </BrowserRouter>

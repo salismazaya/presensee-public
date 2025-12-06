@@ -75,7 +75,7 @@ def dump_to_sqlite(kelas_qs, siswa_qs, absensi_qs, lock_absensi_qs):
         )
     
     # Lock Absen
-    for l in lock_absensi_qs:
+    for l in lock_absensi_qs:  # noqa: E741
         cursor.execute(
             "INSERT INTO kunci_absensi (id, date, kelas_id) VALUES (?, ?, ?)",
             (l.id, l.date, l.kelas_id)
