@@ -60,19 +60,22 @@ class Command(BaseCommand):
                 defaults = fields
             )
 
+
+        absensies_obj = []
         for absensi in absensies:
             fields = absensi['fields']
-            siswa_id = fields['siswa']
             date = fields['date']
 
             fields['by_id'] = fields['by']
+            fields['siswa_id'] = fields['siswa']
 
             del fields['siswa']
             del fields['by']
+
+            absensi_obj = Absensi(**fields)
+
+            absensies_obj.append(absensi_obj)
             
-            Absensi.original_objects.update_or_create(
-                date = date,
-                siswa_id = siswa_id,
-                defaults = fields
-            )
+        
+        Absensi.original_objects.bulk_create(absensies_obj)
 

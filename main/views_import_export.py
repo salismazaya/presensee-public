@@ -92,7 +92,7 @@ def export_absensi(request):
     # Jika method GET, tampilkan form filter
     if request.method == 'GET':
         context = {
-            'kelas_list': Kelas.objects.filter(active=True),
+            'kelas_list': Kelas.objects.filter_domain(request).filter(active=True),
             'years': range(2020, timezone.now().year + 2), # Rentang tahun
             'months': range(1, 13),
             'title': 'Export Absensi',
