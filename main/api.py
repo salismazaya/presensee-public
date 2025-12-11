@@ -1,5 +1,6 @@
 import asyncio
 import json
+import pickle
 import re
 import time
 import threading
@@ -60,15 +61,16 @@ api = NinjaAPI(
         AnonRateThrottle("1/s"),
         AnonRateThrottle("30/m"),
         AuthRateThrottle("100/m"),
-    ]
+    ],
 )
 
-@api.get('/ping', auth = None, throttle = [AnonRateThrottle("5/s")])
+
+@api.get("/ping", auth=None, throttle=[AnonRateThrottle("5/s")])
 def heartbeat(request: HttpRequest):
     return HttpResponse("PONG")
 
 
-@api.get('/version', auth = None, throttle = [AnonRateThrottle("5/s")])
+@api.get("/version", auth=None, throttle=[AnonRateThrottle("5/s")])
 def get_version(request: HttpRequest):
     return HttpResponse("PONG")
 
@@ -91,7 +93,7 @@ def login(request: HttpRequest, data: LoginSchema):
     }
 
 
-@api.post('/change-password', response = {403: ErrorSchema, 200: SuccessSchema})
+@api.post("/change-password", response={403: ErrorSchema, 200: SuccessSchema})
 def change_password(request: HttpRequest, data: ChangePasswordSchema):
     if not request.auth.check_password(data.old_password):
         return 403, {"detail": "Password salah!"}
@@ -135,10 +137,10 @@ def get_siswa(request: HttpRequest):
     return {"data": results}
 
 
-@api.get("/jadwal", response={403: ErrorSchema, 200: SuccessSchema}, auth=None)
+@api.get("/jadwal", response={403: ErrorSchema, 200: SuccessSchema})
 def get_jadwal_absensi(request: HttpRequest):
-    # if request.auth.type != 'guru_piket':
-    #     return 403, {'detail': 'Forbidden'}
+    if request.auth.type != "guru_piket":
+        return 403, {"detail": "Forbidden"}
 
     results = {}
     kelass: list[Kelas] = Kelas.objects.filter_domain(request)
@@ -195,6 +197,28 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
     absensies = data
     invalids = []
 
+    redis_client = redis.get_singleton_client()
+    current_domain = request.META["HTTP_HOST"]
+    waiting_data_key = f"piket_waiting_to_upload_{current_domain}"
+
+    waiting_data = redis_client.get(waiting_data_key)
+    if waiting_data is None:
+        waiting_data = []
+    else:
+        waiting_data = pickle.loads(waiting_data)
+
+    absensies.extend(waiting_data)
+
+    # TODO: implementasi minimal jumlah absensi untuk di-upload.
+    # TODO: bertujuan untuk membuat database bekerja dalam mode batch
+    # TODO: data sementara di simpan di waiting_data_key
+
+    # sort agar absen type masuk di-proses terlebih dahulu
+    absensies.sort(key=lambda x: 0 if x.type == "absen_masuk" else 1)
+
+    new_absensies = []
+    updated_absensies = []
+
     for absensi in absensies:
         date = datetime.fromtimestamp(absensi.timestamp).date()
         absensi_obj: Absensi = (
@@ -236,7 +260,8 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
         if absensi.type == "absen_pulang":
             if absensi_obj:
                 absensi_obj.status = Absensi.StatusChoices.HADIR
-                absensi_obj.save()
+                # absensi_obj.save()
+                updated_absensies.append(absensi_obj)
             else:
                 invalids.append(absensi)
 
@@ -245,15 +270,26 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
                 timezone.now().date(), absensi_session.jam_keluar
             ).astimezone(settings.TIME_ZONE_OBJ)
 
-            Absensi.original_objects.create(
+            new_absensi = Absensi(
                 date=date,
                 siswa_id=absensi.siswa,
                 by_id=request.auth.pk,
                 wait_expired_at=jam_keluar,
                 status=Absensi.StatusChoices.WAIT,
             )
+            new_absensies.append(new_absensi)
 
-    return {"data": {"invalids": invalids}}
+    # hit db
+    Absensi.original_objects.bulk_create(new_absensies)
+    Absensi.original_objects.bulk_update(updated_absensies, fields=["_status"])
+
+    # waiting data akan dihapus jika tidak diproses lebih dari 2 hari
+    invalids_pickled = pickle.dumps(invalids)
+    redis_client.set(waiting_data_key, invalids_pickled, ex=86400 * 2)
+
+    # invalids berfungsi untuk mengembalikan data yang tidak valid ke client guru piket
+    # untuk sementara ini akan konstan return empty array
+    return {"data": {"invalids": []}}
 
 
 @api.post("/upload", response={403: ErrorSchema, 200: SuccessSchema})
@@ -266,21 +302,23 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     datas = sorted(data.data, key=lambda x: 0 if x.action == "absen" else 1)
 
-    ddmmyy_pattern = re.compile(r'^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$')
+    ddmmyy_pattern = re.compile(
+        r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
+    )
 
     for x in datas:
         payload = json.loads(x.data)
 
-        if re.match(ddmmyy_pattern, payload['date']):
-            dd, mm, yy = payload['date'].split("-")
+        if re.match(ddmmyy_pattern, payload["date"]):
+            dd, mm, yy = payload["date"].split("-")
             date = datetime(
                 year=2000 + int(yy),
                 month=int(mm),
                 day=int(dd),
             )
-        
+
         else:
-            date = dateutil_parser.parse(payload['date'])
+            date = dateutil_parser.parse(payload["date"])
 
         if x.action == "absen":
             updated_at_int = int(payload.get("updated_at", time.time()))
@@ -418,7 +456,10 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
 REKAP_THREADING_LOCK = threading.Lock()
 
-@api.get('/get-rekap', response = {404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema})
+
+@api.get(
+    "/get-rekap", response={404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema}
+)
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
     cache_key = f"rekap_{bulan}_{tahun}_{kelas}"
 

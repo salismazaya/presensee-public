@@ -86,7 +86,17 @@ function setLocalJadwal(jadwal: JadwalProps) {
   localStorage.setItem("PIKET_JADWAL", JSON.stringify(jadwal));
 }
 
-// --- COMPONENT UTAMA ---
+const getTodayDateString = () => {
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  // Mengikuti logika kode asli Anda (tanpa +1 jika memang kode aslinya begitu)
+  // Note: getMonth() itu 0-11. Jika di database Anda bulan 1 = "01", maka harusnya +1.
+  // Tapi di sini saya ikuti kode yang Anda berikan sebelumnya:
+
+  const mm = date.getMonth().toString().padStart(2, "0");
+  const dd = date.getDate().toString().padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 export default function Scan() {
   // State
@@ -97,7 +107,21 @@ export default function Scan() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Data State
-  const [logs, _setLogs] = useState<ScanLog[]>(getVisualLogs());
+  const [logs, _setLogs] = useState<ScanLog[]>(() => {
+    const savedLogs = getVisualLogs();
+    const todayStr = getTodayDateString();
+
+    // Filter: Hanya ambil log yang tanggalnya SAMA dengan hari ini
+    const todayLogs = savedLogs.filter((log) => log.date === todayStr);
+
+    // Jika ada data lama yang terbuang, update localStorage agar bersih
+    if (todayLogs.length !== savedLogs.length) {
+      console.log("Membersihkan log lama...");
+      setVisualLogs(todayLogs);
+    }
+
+    return todayLogs;
+  });
   const [queue, _setQueue] = useState<UploadData[]>(getUploadQueue()); // State antrian upload
 
   // Hooks
@@ -109,6 +133,7 @@ export default function Scan() {
   const cancelSelectTimeout = useRef<number>(null);
   const overlayTimeout = useRef<number>(null);
   const latestTimeScan = useRef<number>(Date.now());
+  const queueRef = useRef(queue);
 
   // Wrapper untuk update Logs & Queue
   const setLogs = (datas: ScanLog[]) => {
@@ -138,6 +163,10 @@ export default function Scan() {
 
   // Load Data Awal
   useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
+
+  useEffect(() => {
     if (!token) return;
     getSiswas(token).then((siswas) => {
       localSiswas.current = siswas;
@@ -150,18 +179,23 @@ export default function Scan() {
   }, [token]);
 
   useEffect(() => {
-    // Cek setiap 15 detik
-    const intervalId = setInterval(() => {
-      if (queue.length > 0) {
-        console.log("Auto upload triggered...");
-        handleUpload();
-      }
-    }, 15000); // 15000 ms = 15 detik
+    // Pastikan token ada sebelum menjalankan timer
+    if (!token) return;
 
-    // Bersihkan interval saat komponen unmount atau queue berubah
-    // (Agar timer di-reset setiap kali ada data baru atau selesai upload)
+    const intervalId = setInterval(() => {
+      // BACA DARI REF (Data selalu terbaru, tapi tidak mereset timer)
+      const currentQueue = queueRef.current;
+
+      if (currentQueue.length > 0) {
+        console.log("Auto upload triggered...");
+        processUpload(currentQueue);
+      }
+    }, 15000); // Murni 15 detik
+
+    // Interval hanya di-reset jika TOKEN berubah (jarang terjadi),
+    // TIDAK di-reset jika queue berubah.
     return () => clearInterval(intervalId);
-  }, [queue]);
+  }, [token]);
 
   // Hapus Log Visual (Tidak menghapus data antrian upload, hanya visual)
   const handleCancel = (siswaId: number) => {
@@ -204,8 +238,6 @@ export default function Scan() {
         return;
       }
 
-      // --- FILTER ANTI DOUBLE SCAN (LOGIC) ---
-      // Cek apakah siswa ini ada di log terakhir?
       const existingLog = logs.find((l) => l.siswaId === siswaId);
 
       if (existingLog) {
@@ -220,7 +252,6 @@ export default function Scan() {
           return;
         }
       }
-      // ---------------------------------------
 
       const jadwal = localJadwal.current[siswa.kelas_id.toString()];
       // 2. Validasi Jadwal
@@ -278,10 +309,19 @@ export default function Scan() {
       let scanMessage = siswa.kelas;
       let addToQueue = false;
       let absenType: "absen_pulang" | "absen_masuk" = "absen_masuk";
+      const [inH, inM] = jadwalToday.jam_masuk.split(":").map(Number);
+      const startMinutes = inH * 60 + inM;
 
       if (currentMinutes < outMinutes) {
         // FASE MASUK
-        if (currentMinutes > limitMinutes) {
+        if (currentMinutes > startMinutes) {
+          setFlash("error");
+          new Audio("/error.mp3").play();
+          setOverlayData([
+            siswa.name,
+            `Absen belum dimulai ${jadwalToday.jam_masuk}`,
+          ]);
+        } else if (currentMinutes > limitMinutes) {
           scanStatus = "late";
           scanMessage = "Terlambat";
           setFlash("error");
@@ -358,13 +398,14 @@ export default function Scan() {
   );
 
   // --- LOGIKA UPLOAD ---
-  const handleUpload = async () => {
-    if (queue.length === 0 || !token) return;
+  const processUpload = async (dataToUpload: UploadData[]) => {
+    if (!token || dataToUpload.length === 0) return;
 
     try {
-      console.log("Mengupload data:", queue);
+      console.log("Mengupload data:", dataToUpload);
+      const invalids = await uploadPiketDatabase(token, dataToUpload);
 
-      const invalids = await uploadPiketDatabase(token, queue);
+      // Update state (ini akan men-trigger useEffect ref sync di atas)
       setQueue(invalids);
     } catch (error) {
       console.error(error);

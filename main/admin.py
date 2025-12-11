@@ -170,8 +170,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         return (
-            super()
-            .get_queryset(request)
+            super().get_queryset(request)
             .exclude(final_status=Absensi.StatusChoices.WAIT)
         )
 
