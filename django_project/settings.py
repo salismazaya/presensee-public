@@ -162,6 +162,11 @@ if not DEBUG:
     VITE_ASSETS_DIR = BASE_DIR.joinpath('frontend/dist/assets')
     VITE_PUBLIC_DIR = BASE_DIR.joinpath('frontend/dist')
 
+
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = 'media/'
+SERVE_MEDIA_USING_DJANGO = os.environ.get('SERVE_MEDIA_USING_DJANGO', 'True') == 'True'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 

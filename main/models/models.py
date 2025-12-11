@@ -18,6 +18,7 @@ class User(BaseModel, AbstractUser):
     type = models.CharField(choices = TypeChoices.choices, max_length = 20, null = True)
     token = models.CharField(max_length = 50, null = True, blank = True, editable = False)
     date_joined = models.DateTimeField(default = timezone.now, verbose_name = 'Daftar pada')
+    photo = models.ImageField(null = True, blank = True)
     
     def __str__(self):
         display_name = self.username
@@ -126,3 +127,14 @@ class Absensi(BaseModel):
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)
 
+
+class Data(BaseModel):
+    class Meta:
+        verbose_name = verbose_name_plural = "Data Sekolah"
+        default_manager_name = 'original_objects'
+
+    nama_sekolah = models.CharField(max_length = 100)
+    logo_sekolah = models.ImageField(null = True, blank = True)
+    deskripsi_sekolah = models.TextField(null = True, blank = True)
+    kop_sekolah = models.ImageField(null = True, blank = True)
+    nama_aplikasi = models.CharField(max_length = 50, default = 'Presensee')

@@ -9,7 +9,7 @@ from django.contrib import messages
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, Data
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -152,6 +152,22 @@ class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return super().render_change_form(request, context, *args, **kwargs)
 
 
+class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
+    list_display = ('edit', 'nama_sekolah', 'nama_aplikasi')
+
+    def edit(self, obj):
+        return 'Edit'
+    
+    edit.short_description = ''
+
+    def has_delete_permission(self, *args, **kwargs):
+        return False
+
+    def has_add_permission(self, request):
+        if Data.objects.filter_domain(request).exists():
+            return False
+        
+        return super().has_add_permission(request)
 
 admin_site = AdminSite()
 admin_site.register(User, CustomAuthUserAdmin)
@@ -159,3 +175,4 @@ admin_site.register(Absensi, AbsensiAdmin)
 admin_site.register(Kelas, KelasAdmin)
 admin_site.register(Siswa, SiswaAdmin)
 admin_site.register(KunciAbsensi, KunciAbsensiAdmin)
+admin_site.register(Data, DataAdmin)
