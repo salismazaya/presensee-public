@@ -1,15 +1,11 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.utils import timezone
-from .base import (
-    BaseModel,
-    BaseQuerySet,
-    BaseManager,
-    CustomUserManager,
-    AbsensiManager,
-    AbsensiOriginalManager,
-)
-from datetime import timedelta
+
+from .base import (AbsensiManager, AbsensiOriginalManager, BaseManager,
+                   BaseModel, BaseQuerySet, CustomUserManager)
 
 
 class User(BaseModel, AbstractUser):

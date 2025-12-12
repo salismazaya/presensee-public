@@ -1,20 +1,19 @@
-from django.contrib import admin
+import json
 
+from django.contrib import admin, messages
 # from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-
+from django.db import transaction
+from django.http import HttpRequest, HttpResponse
+from django.urls import path
 # from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
-from django.urls import path
-from django.db import transaction
-from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession, Data
-from django.http import HttpRequest, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
+from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
+                         Siswa, User)
 
 
 class AdminSite(admin.AdminSite):

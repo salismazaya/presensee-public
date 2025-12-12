@@ -1,7 +1,10 @@
-from django.core.management import BaseCommand
-from main.models import User, Kelas, Absensi, KunciAbsensi, Siswa
-from django.core import serializers
 import pickle
+
+from django.core import serializers
+from django.core.management import BaseCommand
+
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):

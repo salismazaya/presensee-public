@@ -3,6 +3,7 @@ import mimetypes
 import os
 
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.core.management import call_command
 from django.db import connection
 from django.http import Http404, HttpRequest, HttpResponse
@@ -12,8 +13,8 @@ from django.shortcuts import redirect, render
 from main.forms import SetupForm
 from main.helpers import redis
 # from main.helpers.auth import require_superuser_basic_auth
-from main.models import User, Data
-from django.contrib.auth import authenticate
+from main.models import Data, User
+
 
 def redirect_factory(to: str):
     def inner(*args, **kwargs):

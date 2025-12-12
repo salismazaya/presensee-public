@@ -1,10 +1,10 @@
 from django.conf import settings
-from django.urls import path, re_path
 from django.conf.urls.static import static
+from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
-from main.views import files, setup, redirect_factory, migrate, logo_view
+from main.views import files, logo_view, migrate, redirect_factory, setup
 
 urlpatterns = [
     path("admin", redirect_factory('/admin/')),

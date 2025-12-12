@@ -2,12 +2,12 @@ import asyncio
 import json
 import pickle
 import re
-import time
 import threading
+import time
+import uuid
 from datetime import datetime
 
 from asgiref.sync import async_to_sync, sync_to_async
-
 # from main.helpers import json as json_helpers
 from dateutil import parser as dateutil_parser
 from django.conf import settings
@@ -15,28 +15,22 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 from django.utils.crypto import get_random_string
+from lzstring import LZString
 from ninja import NinjaAPI
 from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
-from main.helpers import redis
-import uuid
 
-from main.api_schemas import (
-    ChangePasswordSchema,
-    DataUploadSchema,
-    ErrorSchema,
-    LoginSchema,
-    SuccessSchema,
-    DataCompressedUploadSchema,
-    PiketDataUploadSchema,
-)
+from main.api_schemas import (ChangePasswordSchema, DataCompressedUploadSchema,
+                              DataUploadSchema, ErrorSchema, LoginSchema,
+                              PiketDataUploadSchema, SuccessSchema)
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
+from main.helpers import redis
 from main.helpers.humanize import localize_month_to_string
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
-from django.utils import timezone
-from lzstring import LZString
+from main.models import (Absensi, AbsensiSession, Kelas, KunciAbsensi, Siswa,
+                         User)
 
 
 class HttpRequest(HttpRequest):
