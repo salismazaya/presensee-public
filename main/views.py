@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os
 
@@ -11,7 +12,7 @@ from django.shortcuts import redirect, render
 from main.forms import SetupForm
 from main.helpers import redis
 # from main.helpers.auth import require_superuser_basic_auth
-from main.models import User
+from main.models import User, Data
 from django.contrib.auth import authenticate
 
 def redirect_factory(to: str):
@@ -94,8 +95,36 @@ def spa_public(request: HttpRequest):
             return response
         except (FileNotFoundError, IsADirectoryError):
             continue
-    else:
-        raise Http404   
+    else: 
+        raise Http404
+
+
+def webmanifest(request: HttpRequest):
+    path = settings.VITE_PUBLIC_DIR / 'manifest.webmanifest'
+    with open(path, 'rb') as f:
+        content = f.read()
+
+    data: Data = Data.objects.filter_domain(request).last()
+    if data is None:
+        return HttpResponse(content, content_type = 'application/json')
+    
+    content = json.loads(content)
+    if data.nama_aplikasi:
+        content['name'] = data.nama_aplikasi
+        content['short_name'] = data.nama_aplikasi
+    
+    if data.deskripsi_sekolah:
+        content['description'] = data.deskripsi_sekolah
+
+    content = json.dumps(content)
+    return HttpResponse(content, content_type = 'application/json')
+
+
+def index(request: HttpRequest):
+    context = {
+        'BASE_API_URL': settings.BASE_URL + '/api'
+    }
+    return render(request, 'main/base.html', context)    
 
 
 def setup(request: HttpRequest):
@@ -140,3 +169,12 @@ def migrate(request: HttpRequest):
 
 
     
+def logo_view(request: HttpRequest, *args):
+    data: Data = Data.objects.filter_domain(request).last()
+    if data is None:
+        with open(settings.BASE_DIR / 'main/static/img/logo.png', 'rb') as f:
+            return HttpResponse(f.read(), content_type = 'image/png')
+    
+    with data.logo_sekolah.open('rb') as f:
+        content_type, _ = mimetypes.guess_file_type(f.name)
+        return HttpResponse(f.read(), content_type = content_type)

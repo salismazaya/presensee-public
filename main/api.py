@@ -438,14 +438,14 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                             conflicts.append(conflict)
 
         elif x.action == "lock":
-            KunciAbsensi.original_objects.update_or_create(
+            KunciAbsensi.objects.filter_domain(request).update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": True, "date": date, "kelas_id": payload["kelas"]},
             )
 
         elif x.action == "unlock":
-            KunciAbsensi.original_objects.update_or_create(
+            KunciAbsensi.objects.filter_domain(request).update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": False, "date": date, "kelas_id": payload["kelas"]},
@@ -616,10 +616,13 @@ def get_bulan_absensi(request: HttpRequest):
     return {"data": hasil}
 
 
-@api.get("/absensi", response={404: ErrorSchema, 200: SuccessSchema})
+@api.get("/absensi", response={404: ErrorSchema, 403: ErrorSchema, 200: SuccessSchema})
 def get_absensies(request: HttpRequest, date: str, kelas_id: int):
-    # TODO: handle error parsing
-    date = dateutil_parser.parse(date).date()
+    try:
+        date = dateutil_parser.parse(date).date()
+    except dateutil_parser._parser.ParserError:
+        return 403, {"detail": "Tanggal tidak valid"}
+    
     kelas = (
         Kelas.extra_objects.own(request.auth.pk)
         .filter_domain(request)
@@ -631,7 +634,6 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
         return 404, {"detail": "kelas tidak ditemukan"}
 
     result = {}
-
     siswas = kelas.siswas.all()
 
     for siswa in siswas:
@@ -656,7 +658,9 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
     if len(dates) >= 32:
         return 400, {"detail": "terlalu banyak input tanggal"}
 
-    total_siswa = Siswa.objects.filter(kelas__pk=kelas_id).count()
+    total_siswa = (
+        Siswa.objects.filter_domain(request).filter(kelas__pk=kelas_id).count()
+    )
 
     result = {}
 
@@ -667,13 +671,15 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
             return 400, {"detail": "gagal parsing %s" % date}
 
         total_absensi = (
-            Absensi.objects.filter(siswa__kelas__pk=kelas_id)
+            Absensi.objects.filter_domain(request)
+            .filter(siswa__kelas__pk=kelas_id)
             .filter(date=date_obj)
             .count()
         )
 
         total_tidak_masuk = (
-            Absensi.objects.filter(date=date_obj)
+            Absensi.objects.filter_domain(request)
+            .filter(date=date_obj)
             .filter(siswa__kelas__pk=kelas_id)
             .exclude(status=Absensi.StatusChoices.HADIR)
             .count()
