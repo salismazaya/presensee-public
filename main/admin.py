@@ -214,11 +214,16 @@ class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
         return super().has_add_permission(request)
 
 
+class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
+    list_filter = ('senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu')
+    list_display = ('id',)
+
+
 admin_site = AdminSite()
 admin_site.register(User, CustomAuthUserAdmin)
 admin_site.register(Absensi, AbsensiAdmin)
 admin_site.register(Kelas, KelasAdmin)
 admin_site.register(Siswa, SiswaAdmin)
 admin_site.register(KunciAbsensi, KunciAbsensiAdmin)
-admin_site.register(AbsensiSession)
 admin_site.register(Data, DataAdmin)
+admin_site.register(AbsensiSession, AbsensiSessionAdmin)

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import uuid
 
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
@@ -11,6 +12,10 @@ from .base import (AbsensiManager, AbsensiOriginalManager, BaseManager,
 class User(BaseModel, AbstractUser):
     objects: CustomUserManager = CustomUserManager()
     original_objects = UserManager()
+
+    class Meta:
+        verbose_name = verbose_name_plural = "Pengguna"
+        default_manager_name = "original_objects"
 
     class TypeChoices(models.TextChoices):
         WALI_KELAS = "wali_kelas", "Wali Kelas"
@@ -93,6 +98,7 @@ class Siswa(BaseModel):
     kelas = models.ForeignKey(Kelas, on_delete=models.PROTECT, related_name="siswas")
     nis = models.CharField(max_length=20, null=True, blank=True)
     nisn = models.CharField(max_length=20, null=True, blank=True)
+    photo = models.ImageField(null=True, blank=True)
 
     def __str__(self):
         return self.fullname
@@ -176,6 +182,7 @@ class AbsensiSession(BaseModel):
         verbose_name = verbose_name_plural = "Jadwal Absensi (QR)"
         default_manager_name = "original_objects"
 
+    id = models.UUIDField(primary_key = True, editable = False, default = uuid.uuid4)
     senin = models.BooleanField(default=False)
     selasa = models.BooleanField(default=False)
     rabu = models.BooleanField(default=False)
