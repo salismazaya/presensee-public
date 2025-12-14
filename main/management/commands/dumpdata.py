@@ -28,7 +28,7 @@ class Command(BaseCommand):
             # id tabel diatas tidak di-import
             del x['pk']
 
-        for x in result['siswas'] + result['siswas']:
+        for x in result['siswas'] + result['users']:
             del x['photo']
 
         output = pickle.dumps(result)

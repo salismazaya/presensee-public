@@ -5,6 +5,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
 from django.urls import path
 # from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
@@ -93,12 +94,32 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ("fullname",)
     list_filter = ("kelas",)
     list_display = ("id", "fullname", "kelas")
+    actions = ('export_siswa',)
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        del actions['delete_selected']
+        return actions
 
     def render_change_form(self, request, context, *args, **kwargs):
         context["adminform"].form.fields[
             "kelas"
-        ].queryset = Kelas.objects.filter_domain(request)
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
         return super().render_change_form(request, context, *args, **kwargs)
+    
+    @admin.action(description="Export kartu siswa")
+    def export_siswa(self, request, queryset):
+        siswas = queryset.prefetch_related('kelas')
+        data: Data = Data.objects.filter_domain(request).last()
+
+        context = {
+            'siswas': siswas,
+        }
+
+        if data and data.kop_sekolah:
+            context['kop_url'] = data.kop_sekolah.url
+        
+        return render(request, 'main/kartu.html', context)
 
 
 class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
@@ -192,7 +213,7 @@ class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def render_change_form(self, request, context, *args, **kwargs):
         context["adminform"].form.fields[
             "kelas"
-        ].queryset = Kelas.objects.filter_domain(request)
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
         return super().render_change_form(request, context, *args, **kwargs)
 
 
@@ -217,6 +238,13 @@ class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
 class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_filter = ('senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu')
     list_display = ('id',)
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        context["adminform"].form.fields[
+            "kelas"
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
+        return super().render_change_form(request, context, *args, **kwargs)
+
 
 
 admin_site = AdminSite()

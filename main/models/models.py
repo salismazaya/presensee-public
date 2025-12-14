@@ -170,7 +170,7 @@ class Absensi(BaseModel):
 
     @property
     def status(self):
-        return self.final_status
+        return getattr(self, 'final_status', self._status)
 
     @status.setter
     def status(self, value):
@@ -219,5 +219,5 @@ class Data(BaseModel):
     nama_sekolah = models.CharField(max_length=100)
     logo_sekolah = models.ImageField(null=True, blank=True)
     deskripsi_sekolah = models.TextField(null=True, blank=True)
-    kop_sekolah = models.ImageField(null=True, blank=True)
+    kop_sekolah = models.ImageField(null=True, blank=True, help_text="* Gunakan gambar format webp untuk kop sekolah")
     nama_aplikasi = models.CharField(max_length=50, default="Presensee")
