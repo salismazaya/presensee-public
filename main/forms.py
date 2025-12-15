@@ -9,7 +9,7 @@ from main.models import Kelas, User
 class UserCreationForm(BaseUserCreationForm):
     class Meta:
         model = User
-        fields = ('password1', 'password1', 'username',)
+        fields = ('password', 'password1', 'username',)
 
 
 def createKelasForm(kelas_id: int):

@@ -110,6 +110,11 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     @admin.action(description="Export kartu siswa")
     def export_siswa(self, request, queryset):
         siswas = queryset.prefetch_related('kelas')
+
+        if siswas.count() > 100:
+            messages.error(request, "Hanya bisa memproses maksimal 100 siswa")
+            return
+
         data: Data = Data.objects.filter_domain(request).last()
 
         context = {

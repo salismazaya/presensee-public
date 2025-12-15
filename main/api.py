@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime
 
 from asgiref.sync import async_to_sync, sync_to_async
+
 # from main.helpers import json as json_helpers
 from dateutil import parser as dateutil_parser
 from django.conf import settings
@@ -22,15 +23,20 @@ from ninja import NinjaAPI
 from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
-from main.api_schemas import (ChangePasswordSchema, DataCompressedUploadSchema,
-                              DataUploadSchema, ErrorSchema, LoginSchema,
-                              PiketDataUploadSchema, SuccessSchema)
+from main.api_schemas import (
+    ChangePasswordSchema,
+    DataCompressedUploadSchema,
+    DataUploadSchema,
+    ErrorSchema,
+    LoginSchema,
+    PiketDataUploadSchema,
+    SuccessSchema,
+)
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
 from main.helpers import redis
 from main.helpers.humanize import localize_month_to_string
-from main.models import (Absensi, AbsensiSession, Kelas, KunciAbsensi, Siswa,
-                         User)
+from main.models import Absensi, AbsensiSession, Kelas, KunciAbsensi, Siswa, User
 
 
 class HttpRequest(HttpRequest):
@@ -186,7 +192,6 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 
 
 @api.post("/piket/upload", response={403: ErrorSchema, 200: SuccessSchema})
-@transaction.atomic
 def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
     absensies = data
     invalids = []
@@ -274,8 +279,9 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
             new_absensies.append(new_absensi)
 
     # hit db
-    Absensi.original_objects.bulk_create(new_absensies)
-    Absensi.original_objects.bulk_update(updated_absensies, fields=["_status"])
+    with transaction.atomic():
+        Absensi.original_objects.bulk_create(new_absensies)
+        Absensi.original_objects.bulk_update(updated_absensies, fields=["_status"])
 
     # waiting data akan dihapus jika tidak diproses lebih dari 2 hari
     invalids_pickled = pickle.dumps(invalids)
@@ -286,7 +292,7 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
     return {"data": {"invalids": []}}
 
 
-@api.post("/upload", response={403: ErrorSchema, 200: SuccessSchema})
+@api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
 def upload(request: HttpRequest, data: DataUploadSchema):
     # TODO: terlalu spageti, ubah ke class based view
@@ -294,7 +300,12 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     conflicts = []
 
-    datas = sorted(data.data, key=lambda x: 0 if x.action == "absen" else 1)
+    # urutan: unlock, absen, lock
+    # tujuannya agar absen tidak terkunci
+    datas = sorted(
+        data.data,
+        key=lambda x: 0 if x.action == "unlock" else 1 if x.action == "absen" else 2,
+    )
 
     ddmmyy_pattern = re.compile(
         r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
@@ -312,7 +323,11 @@ def upload(request: HttpRequest, data: DataUploadSchema):
             )
 
         else:
-            date = dateutil_parser.parse(payload["date"])
+            try:
+                date = dateutil_parser.parse(payload["date"])
+            except dateutil_parser._parser.ParserError:
+                transaction.set_rollback(True)
+                return 400, {"detail": "gagal parsing tanggal %s" % payload["date"]}
 
         if x.action == "absen":
             updated_at_int = int(payload.get("updated_at", time.time()))
@@ -406,7 +421,9 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                         and not is_user_same
                         and previous_absensi_status
                     ):
-                        if previous_absensi_status == current_absensi_status:
+                        if (previous_absensi_status == current_absensi_status) or (
+                            current_absensi_status == Absensi.StatusChoices.WAIT
+                        ):
                             absensi.status = payload["status"]
                             absensi.updated_at = updated_at
                             absensi.by = user
@@ -616,7 +633,7 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
         date = dateutil_parser.parse(date).date()
     except dateutil_parser._parser.ParserError:
         return 403, {"detail": "Tanggal tidak valid"}
-    
+
     kelas = (
         Kelas.extra_objects.own(request.auth.pk)
         .filter_domain(request)
