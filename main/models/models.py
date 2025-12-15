@@ -1,13 +1,21 @@
+from datetime import timedelta
+import uuid
+
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.utils import timezone
-from .base import BaseModel, BaseQuerySet, BaseManager, CustomUserManager, AbsensiManager, AbsensiOriginalManager
-from datetime import timedelta
+
+from .base import (AbsensiManager, AbsensiOriginalManager, BaseManager,
+                   BaseModel, BaseQuerySet, CustomUserManager)
 
 
 class User(BaseModel, AbstractUser):
     objects: CustomUserManager = CustomUserManager()
     original_objects = UserManager()
+
+    class Meta:
+        verbose_name = verbose_name_plural = "Pengguna"
+        default_manager_name = "original_objects"
 
     class TypeChoices(models.TextChoices):
         WALI_KELAS = "wali_kelas", "Wali Kelas"
@@ -21,6 +29,7 @@ class User(BaseModel, AbstractUser):
     type = models.CharField(choices=TypeChoices.choices, max_length=20, null=True)
     token = models.CharField(max_length=50, null=True, blank=True, editable=False)
     date_joined = models.DateTimeField(default=timezone.now, verbose_name="Daftar pada")
+    photo = models.ImageField(null=True, blank=True)
 
     def __str__(self):
         display_name = self.username
@@ -89,6 +98,7 @@ class Siswa(BaseModel):
     kelas = models.ForeignKey(Kelas, on_delete=models.PROTECT, related_name="siswas")
     nis = models.CharField(max_length=20, null=True, blank=True)
     nisn = models.CharField(max_length=20, null=True, blank=True)
+    photo = models.ImageField(null=True, blank=True)
 
     def __str__(self):
         return self.fullname
@@ -157,11 +167,11 @@ class Absensi(BaseModel):
 
     def __str__(self):
         return "%s : %s : %s" % (self.date, self.siswa, self.status)
-    
+
     @property
     def status(self):
-        return self.final_status
-    
+        return getattr(self, 'final_status', self._status)
+
     @status.setter
     def status(self, value):
         self._status = value
@@ -172,6 +182,7 @@ class AbsensiSession(BaseModel):
         verbose_name = verbose_name_plural = "Jadwal Absensi (QR)"
         default_manager_name = "original_objects"
 
+    id = models.UUIDField(primary_key = True, editable = False, default = uuid.uuid4)
     senin = models.BooleanField(default=False)
     selasa = models.BooleanField(default=False)
     rabu = models.BooleanField(default=False)
@@ -198,3 +209,15 @@ class AbsensiSession(BaseModel):
             rv = self.jam_keluar
 
         return rv
+
+
+class Data(BaseModel):
+    class Meta:
+        verbose_name = verbose_name_plural = "Data Sekolah"
+        default_manager_name = "original_objects"
+
+    nama_sekolah = models.CharField(max_length=100)
+    logo_sekolah = models.ImageField(null=True, blank=True)
+    deskripsi_sekolah = models.TextField(null=True, blank=True)
+    kop_sekolah = models.ImageField(null=True, blank=True, help_text="* Gunakan gambar format webp untuk kop sekolah")
+    nama_aplikasi = models.CharField(max_length=50, default="Presensee")

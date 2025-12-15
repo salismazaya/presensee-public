@@ -1,20 +1,20 @@
-from django.contrib import admin
+import json
 
+from django.contrib import admin, messages
 # from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-
+from django.db import transaction
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
+from django.urls import path
 # from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
-from django.urls import path
-from django.db import transaction
-from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 
 # from django.contrib.auth.forms import UserChangeForm
 from main.forms import createKelasForm, createUserChangeForm
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
-from django.http import HttpRequest, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
+from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
+                         Siswa, User)
 
 
 class AdminSite(admin.AdminSite):
@@ -94,12 +94,37 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ("fullname",)
     list_filter = ("kelas",)
     list_display = ("id", "fullname", "kelas")
+    actions = ('export_siswa',)
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        del actions['delete_selected']
+        return actions
 
     def render_change_form(self, request, context, *args, **kwargs):
         context["adminform"].form.fields[
             "kelas"
-        ].queryset = Kelas.objects.filter_domain(request)
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
         return super().render_change_form(request, context, *args, **kwargs)
+    
+    @admin.action(description="Export kartu siswa")
+    def export_siswa(self, request, queryset):
+        siswas = queryset.prefetch_related('kelas')
+
+        if siswas.count() > 100:
+            messages.error(request, "Hanya bisa memproses maksimal 100 siswa")
+            return
+
+        data: Data = Data.objects.filter_domain(request).last()
+
+        context = {
+            'siswas': siswas,
+        }
+
+        if data and data.kop_sekolah:
+            context['kop_url'] = data.kop_sekolah.url
+        
+        return render(request, 'main/kartu.html', context)
 
 
 class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
@@ -193,8 +218,38 @@ class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def render_change_form(self, request, context, *args, **kwargs):
         context["adminform"].form.fields[
             "kelas"
-        ].queryset = Kelas.objects.filter_domain(request)
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
         return super().render_change_form(request, context, *args, **kwargs)
+
+
+class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
+    list_display = ("edit", "nama_sekolah", "nama_aplikasi")
+
+    def edit(self, obj):
+        return "Edit"
+
+    edit.short_description = ""
+
+    def has_delete_permission(self, *args, **kwargs):
+        return False
+
+    def has_add_permission(self, request):
+        if Data.objects.filter_domain(request).exists():
+            return False
+
+        return super().has_add_permission(request)
+
+
+class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
+    list_filter = ('senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu')
+    list_display = ('id',)
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        context["adminform"].form.fields[
+            "kelas"
+        ].queryset = Kelas.objects.filter_domain(request).filter(active = True)
+        return super().render_change_form(request, context, *args, **kwargs)
+
 
 
 admin_site = AdminSite()
@@ -203,4 +258,5 @@ admin_site.register(Absensi, AbsensiAdmin)
 admin_site.register(Kelas, KelasAdmin)
 admin_site.register(Siswa, SiswaAdmin)
 admin_site.register(KunciAbsensi, KunciAbsensiAdmin)
-admin_site.register(AbsensiSession)
+admin_site.register(Data, DataAdmin)
+admin_site.register(AbsensiSession, AbsensiSessionAdmin)

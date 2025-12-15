@@ -1,8 +1,10 @@
 import asyncio
 import json
+import pickle
 import re
-import time
 import threading
+import time
+import uuid
 from datetime import datetime
 
 from asgiref.sync import async_to_sync, sync_to_async
@@ -14,28 +16,27 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 from django.utils.crypto import get_random_string
+from lzstring import LZString
 from ninja import NinjaAPI
 from ninja.security import HttpBearer
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
-from main.helpers import redis
-import uuid
 
 from main.api_schemas import (
     ChangePasswordSchema,
+    DataCompressedUploadSchema,
     DataUploadSchema,
     ErrorSchema,
     LoginSchema,
-    SuccessSchema,
-    DataCompressedUploadSchema,
     PiketDataUploadSchema,
+    SuccessSchema,
 )
 from main.helpers import database as helpers_database
 from main.helpers import pdf as helpers_pdf
+from main.helpers import redis
 from main.helpers.humanize import localize_month_to_string
-from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User, AbsensiSession
-from django.utils import timezone
-from lzstring import LZString
+from main.models import Absensi, AbsensiSession, Kelas, KunciAbsensi, Siswa, User
 
 
 class HttpRequest(HttpRequest):
@@ -60,15 +61,16 @@ api = NinjaAPI(
         AnonRateThrottle("1/s"),
         AnonRateThrottle("30/m"),
         AuthRateThrottle("100/m"),
-    ]
+    ],
 )
 
-@api.get('/ping', auth = None, throttle = [AnonRateThrottle("5/s")])
+
+@api.get("/ping", auth=None, throttle=[AnonRateThrottle("5/s")])
 def heartbeat(request: HttpRequest):
     return HttpResponse("PONG")
 
 
-@api.get('/version', auth = None, throttle = [AnonRateThrottle("5/s")])
+@api.get("/version", auth=None, throttle=[AnonRateThrottle("5/s")])
 def get_version(request: HttpRequest):
     return HttpResponse("PONG")
 
@@ -91,7 +93,7 @@ def login(request: HttpRequest, data: LoginSchema):
     }
 
 
-@api.post('/change-password', response = {403: ErrorSchema, 200: SuccessSchema})
+@api.post("/change-password", response={403: ErrorSchema, 200: SuccessSchema})
 def change_password(request: HttpRequest, data: ChangePasswordSchema):
     if not request.auth.check_password(data.old_password):
         return 403, {"detail": "Password salah!"}
@@ -135,10 +137,10 @@ def get_siswa(request: HttpRequest):
     return {"data": results}
 
 
-@api.get("/jadwal", response={403: ErrorSchema, 200: SuccessSchema}, auth=None)
+@api.get("/jadwal", response={403: ErrorSchema, 200: SuccessSchema})
 def get_jadwal_absensi(request: HttpRequest):
-    # if request.auth.type != 'guru_piket':
-    #     return 403, {'detail': 'Forbidden'}
+    if request.auth.type != "guru_piket":
+        return 403, {"detail": "Forbidden"}
 
     results = {}
     kelass: list[Kelas] = Kelas.objects.filter_domain(request)
@@ -190,10 +192,31 @@ def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
 
 
 @api.post("/piket/upload", response={403: ErrorSchema, 200: SuccessSchema})
-@transaction.atomic
 def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
     absensies = data
     invalids = []
+
+    redis_client = redis.get_singleton_client()
+    current_domain = request.META["HTTP_HOST"]
+    waiting_data_key = f"piket_waiting_to_upload_{current_domain}"
+
+    waiting_data = redis_client.get(waiting_data_key)
+    if waiting_data is None:
+        waiting_data = []
+    else:
+        waiting_data = pickle.loads(waiting_data)
+
+    absensies.extend(waiting_data)
+
+    # TODO: implementasi minimal jumlah absensi untuk di-upload.
+    # TODO: bertujuan untuk membuat database bekerja dalam mode batch
+    # TODO: data sementara di simpan di waiting_data_key
+
+    # sort agar absen type masuk di-proses terlebih dahulu
+    absensies.sort(key=lambda x: 0 if x.type == "absen_masuk" else 1)
+
+    new_absensies = []
+    updated_absensies = []
 
     for absensi in absensies:
         date = datetime.fromtimestamp(absensi.timestamp).date()
@@ -236,7 +259,8 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
         if absensi.type == "absen_pulang":
             if absensi_obj:
                 absensi_obj.status = Absensi.StatusChoices.HADIR
-                absensi_obj.save()
+                # absensi_obj.save()
+                updated_absensies.append(absensi_obj)
             else:
                 invalids.append(absensi)
 
@@ -245,18 +269,30 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
                 timezone.now().date(), absensi_session.jam_keluar
             ).astimezone(settings.TIME_ZONE_OBJ)
 
-            Absensi.original_objects.create(
+            new_absensi = Absensi(
                 date=date,
                 siswa_id=absensi.siswa,
                 by_id=request.auth.pk,
                 wait_expired_at=jam_keluar,
                 status=Absensi.StatusChoices.WAIT,
             )
+            new_absensies.append(new_absensi)
 
-    return {"data": {"invalids": invalids}}
+    # hit db
+    with transaction.atomic():
+        Absensi.original_objects.bulk_create(new_absensies)
+        Absensi.original_objects.bulk_update(updated_absensies, fields=["_status"])
+
+    # waiting data akan dihapus jika tidak diproses lebih dari 2 hari
+    invalids_pickled = pickle.dumps(invalids)
+    redis_client.set(waiting_data_key, invalids_pickled, ex=86400 * 2)
+
+    # invalids berfungsi untuk mengembalikan data yang tidak valid ke client guru piket
+    # untuk sementara ini akan konstan return empty array
+    return {"data": {"invalids": []}}
 
 
-@api.post("/upload", response={403: ErrorSchema, 200: SuccessSchema})
+@api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
 def upload(request: HttpRequest, data: DataUploadSchema):
     # TODO: terlalu spageti, ubah ke class based view
@@ -264,23 +300,34 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
     conflicts = []
 
-    datas = sorted(data.data, key=lambda x: 0 if x.action == "absen" else 1)
+    # urutan: unlock, absen, lock
+    # tujuannya agar absen tidak terkunci
+    datas = sorted(
+        data.data,
+        key=lambda x: 0 if x.action == "unlock" else 1 if x.action == "absen" else 2,
+    )
 
-    ddmmyy_pattern = re.compile(r'^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$')
+    ddmmyy_pattern = re.compile(
+        r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
+    )
 
     for x in datas:
         payload = json.loads(x.data)
 
-        if re.match(ddmmyy_pattern, payload['date']):
-            dd, mm, yy = payload['date'].split("-")
+        if re.match(ddmmyy_pattern, payload["date"]):
+            dd, mm, yy = payload["date"].split("-")
             date = datetime(
                 year=2000 + int(yy),
                 month=int(mm),
                 day=int(dd),
             )
-        
+
         else:
-            date = dateutil_parser.parse(payload['date'])
+            try:
+                date = dateutil_parser.parse(payload["date"])
+            except dateutil_parser._parser.ParserError:
+                transaction.set_rollback(True)
+                return 400, {"detail": "gagal parsing tanggal %s" % payload["date"]}
 
         if x.action == "absen":
             updated_at_int = int(payload.get("updated_at", time.time()))
@@ -374,7 +421,9 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                         and not is_user_same
                         and previous_absensi_status
                     ):
-                        if previous_absensi_status == current_absensi_status:
+                        if (previous_absensi_status == current_absensi_status) or (
+                            current_absensi_status == Absensi.StatusChoices.WAIT
+                        ):
                             absensi.status = payload["status"]
                             absensi.updated_at = updated_at
                             absensi.by = user
@@ -400,14 +449,14 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                             conflicts.append(conflict)
 
         elif x.action == "lock":
-            KunciAbsensi.original_objects.update_or_create(
+            KunciAbsensi.objects.filter_domain(request).update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": True, "date": date, "kelas_id": payload["kelas"]},
             )
 
         elif x.action == "unlock":
-            KunciAbsensi.original_objects.update_or_create(
+            KunciAbsensi.objects.filter_domain(request).update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": False, "date": date, "kelas_id": payload["kelas"]},
@@ -418,7 +467,10 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
 REKAP_THREADING_LOCK = threading.Lock()
 
-@api.get('/get-rekap', response = {404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema})
+
+@api.get(
+    "/get-rekap", response={404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema}
+)
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
     cache_key = f"rekap_{bulan}_{tahun}_{kelas}"
 
@@ -575,10 +627,13 @@ def get_bulan_absensi(request: HttpRequest):
     return {"data": hasil}
 
 
-@api.get("/absensi", response={404: ErrorSchema, 200: SuccessSchema})
+@api.get("/absensi", response={404: ErrorSchema, 403: ErrorSchema, 200: SuccessSchema})
 def get_absensies(request: HttpRequest, date: str, kelas_id: int):
-    # TODO: handle error parsing
-    date = dateutil_parser.parse(date).date()
+    try:
+        date = dateutil_parser.parse(date).date()
+    except dateutil_parser._parser.ParserError:
+        return 403, {"detail": "Tanggal tidak valid"}
+
     kelas = (
         Kelas.extra_objects.own(request.auth.pk)
         .filter_domain(request)
@@ -590,7 +645,6 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
         return 404, {"detail": "kelas tidak ditemukan"}
 
     result = {}
-
     siswas = kelas.siswas.all()
 
     for siswa in siswas:
@@ -615,7 +669,9 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
     if len(dates) >= 32:
         return 400, {"detail": "terlalu banyak input tanggal"}
 
-    total_siswa = Siswa.objects.filter(kelas__pk=kelas_id).count()
+    total_siswa = (
+        Siswa.objects.filter_domain(request).filter(kelas__pk=kelas_id).count()
+    )
 
     result = {}
 
@@ -626,13 +682,15 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
             return 400, {"detail": "gagal parsing %s" % date}
 
         total_absensi = (
-            Absensi.objects.filter(siswa__kelas__pk=kelas_id)
+            Absensi.objects.filter_domain(request)
+            .filter(siswa__kelas__pk=kelas_id)
             .filter(date=date_obj)
             .count()
         )
 
         total_tidak_masuk = (
-            Absensi.objects.filter(date=date_obj)
+            Absensi.objects.filter_domain(request)
+            .filter(date=date_obj)
             .filter(siswa__kelas__pk=kelas_id)
             .exclude(status=Absensi.StatusChoices.HADIR)
             .count()

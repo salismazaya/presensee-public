@@ -1,13 +1,15 @@
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill
-from openpyxl.utils import get_column_letter
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.utils import timezone
 import calendar
-from main.models import Kelas, Siswa, Absensi
+
+import openpyxl
 from django.contrib import messages
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
+
 from main.admin import admin_site
+from main.models import Absensi, Kelas, Siswa
 
 
 def import_siswa(request):

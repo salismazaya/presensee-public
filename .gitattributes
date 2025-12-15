@@ -1,1 +1,2 @@
 *.min.js linguist-vendored
+migrations/*.py linguist-vendored
