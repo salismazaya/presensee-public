@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
 # from django.contrib.auth.forms import UserChangeForm
-from main.forms import createKelasForm, createUserChangeForm
+from main.forms import UserCreationForm, createKelasForm, createUserChangeForm
 from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
                          Siswa, User)
 
@@ -69,7 +69,7 @@ class FilterDomainMixin:
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password", "type")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "photo")}),
         (
             _("Permissions"),
             {
@@ -85,7 +85,7 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         if obj is None:
-            return AuthUserAdmin.get_form(self, request, obj, **kwargs)
+            return UserCreationForm
 
         return createUserChangeForm(obj.pk)
 

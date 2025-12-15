@@ -83,7 +83,7 @@ export default function About() {
                 className="flex items-center gap-4 p-4 hover:bg-base-200 transition-colors group"
               >
                 <div className="avatar placeholder size-10">
-                  <img src="/public/salis.webp" alt="" />
+                  <img src="/salis.webp" alt="" />
                 </div>
                 <div className="flex-grow">
                   <h3 className="font-bold group-hover:text-primary transition-colors">

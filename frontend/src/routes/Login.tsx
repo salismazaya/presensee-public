@@ -60,7 +60,7 @@ export default function Login() {
           <div className="text-center mb-8">
             <div className="w-24 h-24 mx-auto bg-primary/5 rounded-full flex items-center justify-center mb-4 p-2">
               <img
-                src="/public/logo.png"
+                src="/logo.png"
                 alt="Presensee Logo"
                 className="w-full h-full object-contain"
                 onError={(e) => {
