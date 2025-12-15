@@ -159,8 +159,8 @@ def export_absensi(request):
                     ws.column_dimensions[get_column_letter(col_num)].width = 5
 
             # --- Data Processing ---
-            siswas = Siswa.objects.filter(kelas=kelas).order_by('fullname')
-            absensi_qs = Absensi.objects.filter(
+            siswas = Siswa.original_objects.filter(kelas=kelas).order_by('fullname')
+            absensi_qs = Absensi.original_objects.filter(
                 siswa__kelas=kelas,
                 date__year=year,
                 date__month=month
