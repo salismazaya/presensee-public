@@ -35,6 +35,7 @@ Dibangun menggunakan stack modern: **Django** di backend, **React (Vite)** di fr
   * **Sekretaris** → Input absensi harian.
   * **Wali Kelas** → Monitoring, kunci absensi, dan lihat rekap.
   * **Kesiswaan** → Lihat rekap seluruh kelas.
+  * **Guru Piket** → Absensi siswa menggunakan QRCode.
   * **Admin** → Full Power.
 * 📊 **Rekap Pintar:** Filter otomatis berdasarkan Bulan, Minggu, atau Rentang Tanggal.
 * 📄 **Export & Share:** Generate laporan bulanan + fitur *native share* (WhatsApp/Telegram).

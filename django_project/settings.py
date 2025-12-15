@@ -21,11 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = "2.0.0rc0hotfix1"
+with open(BASE_DIR / '.version') as f:
+    PRESENSEE_VERSION = f.read()
 
 try:
     import pymysql
-
     pymysql.install_as_MySQLdb()
 except ImportError:
     pass
@@ -139,8 +139,6 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = os.environ.get("LANGUAGE_CODE", "id-ID")
 
 TIME_ZONE = os.environ.get("TIME_ZONE", "Asia/Jakarta")
-
-
 TIME_ZONE_OBJ = ZoneInfo(TIME_ZONE)
 
 USE_I18N = True

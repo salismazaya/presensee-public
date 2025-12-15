@@ -8,20 +8,13 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/wsgi/
 """
 
 import os
-from functools import lru_cache
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from django.core.wsgi import get_wsgi_application
+from django.core.wsgi import get_wsgi_application  # noqa: E402
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_project.settings')
 
-@lru_cache(1)
-def _django_application():
-    return get_wsgi_application()
-
-def application(*args):
-    django_application = _django_application()
-    return django_application(*args)
+application = get_wsgi_application()
