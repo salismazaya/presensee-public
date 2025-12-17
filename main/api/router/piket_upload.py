@@ -88,8 +88,9 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
 
         elif absensi.type == "absen_masuk" and absensi_obj is None:
             jam_keluar = datetime.combine(
-                timezone.now().date(), absensi_session.jam_keluar
-            ).astimezone(settings.TIME_ZONE_OBJ)
+                timezone.now().date(), absensi_session.jam_keluar,
+                tzinfo = settings.TIME_ZONE_OBJ
+            )
 
             new_absensi = Absensi(
                 date=date,

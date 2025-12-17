@@ -1,3 +1,5 @@
+import { non_blocking_db_execute } from "./worker";
+
 export interface AnalyticsData {
   summary: {
     totalHadir: number;
@@ -25,27 +27,25 @@ export interface AnalyticsData {
 
 const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
-export const getAnalyticsData = (
-  db: any,
+export const getAnalyticsData = async (
+  // db: any,
   startDate?: string,
   endDate?: string,
   kelasId?: number
-): AnalyticsData => {
+): Promise<AnalyticsData> => {
   let dateFilter = "";
   let classFilter = "";
   const params: any[] = [];
 
-  // 1. Setup Filter Query (Sama seperti sebelumnya)
   if (startDate && endDate) {
     dateFilter = `AND a.date BETWEEN ${startDate} AND ${endDate}`;
   }
-  
+
   if (kelasId) {
     classFilter = `AND s.kelas_id = ?`;
     params.push(kelasId);
   }
 
-  // 2. Query Summary (Sama seperti sebelumnya)
   const summaryQuery = `
     SELECT 
       SUM(CASE WHEN a.status = 'hadir' THEN 1 ELSE 0 END) as h,
@@ -58,30 +58,33 @@ export const getAnalyticsData = (
     JOIN siswa s ON a.siswa_id = s.id
     WHERE 1=1 ${dateFilter} ${classFilter}
   `;
-  
-  const summaryRes = db.exec(summaryQuery, params);
-  const summaryRow = summaryRes.length ? summaryRes[0].values[0] : [0,0,0,0,0,0];
+
+  // const summaryRes = db.exec(summaryQuery, params);
+  const summaryRes = await non_blocking_db_execute(summaryQuery, params);
+  const summaryRow = summaryRes.length ? summaryRes[0].values[0] : [0, 0, 0, 0, 0, 0];
   const [h, s, i, a, b, total] = summaryRow as number[];
 
   // 3. Query Trend Harian (Sama seperti sebelumnya)
   const trendQuery = `
     SELECT 
       a.date,
-      SUM(CASE WHEN a.status = 'H' THEN 1 ELSE 0 END) as hadir,
-      SUM(CASE WHEN a.status != 'H' THEN 1 ELSE 0 END) as absen
+      SUM(CASE WHEN a.status = 'hadir' THEN 1 ELSE 0 END) as hadir,
+      SUM(CASE WHEN a.status != 'hadir' THEN 1 ELSE 0 END) as absen
     FROM absensi a
     JOIN siswa s ON a.siswa_id = s.id
     WHERE 1=1 ${dateFilter} ${classFilter}
     GROUP BY a.date
     ORDER BY a.date ASC
   `;
-  const trendRes = db.exec(trendQuery, params);
-  const trendData = trendRes.length 
+  // const trendRes = db.exec(trendQuery, params);
+  const trendRes = await non_blocking_db_execute(trendQuery, params);
+
+  const trendData = trendRes.length
     ? trendRes[0].values.map((row: any) => ({
-        date: row[0],
-        hadir: row[1],
-        tidak_hadir: row[2]
-      }))
+      date: row[0],
+      hadir: row[1],
+      tidak_hadir: row[2]
+    }))
     : [];
 
 
@@ -95,10 +98,10 @@ export const getAnalyticsData = (
     GROUP BY day_num
   `;
 
-  const dayRes = db.exec(dayQuery, params);
-  
+  const dayRes = await non_blocking_db_execute(dayQuery, params);
+
   let mostProductive = { day: "-", percentage: 0 };
-  let leastProductive = { day: "-", percentage: 100 }; 
+  let leastProductive = { day: "-", percentage: 100 };
 
   if (dayRes.length > 0) {
     const rows = dayRes[0].values;
@@ -115,10 +118,10 @@ export const getAnalyticsData = (
         leastProductive = { day: dayName, percentage: Math.round(pct) };
       }
     });
-    
+
     // Handle jika hanya ada 1 hari data, maka least = most (atau reset jika logic butuh beda)
     if (rows.length === 1) {
-       leastProductive = { day: "-", percentage: 0 }; 
+      leastProductive = { day: "-", percentage: 0 };
     }
   } else {
     leastProductive = { day: "-", percentage: 0 };
@@ -138,12 +141,12 @@ export const getAnalyticsData = (
       ORDER BY percentage DESC
       LIMIT 5
     `;
-    const classRes = db.exec(classQuery); 
+    const classRes = await non_blocking_db_execute(classQuery, null);
     classPerfData = classRes.length
       ? classRes[0].values.map((row: any) => ({
-          name: row[0],
-          percentage: Math.round(row[1] as number),
-        }))
+        name: row[0],
+        percentage: Math.round(row[1] as number),
+      }))
       : [];
   }
 

@@ -480,6 +480,7 @@ export default function Scan() {
                     onError={(error) => console.log(error)}
                     scanDelay={2000}
                     sound={false}
+                    formats={["qr_code"]}
                     styles={{
                       container: { width: "100%", height: "100%" },
                       video: {
@@ -492,38 +493,33 @@ export default function Scan() {
 
                   {/* Flash Overlay */}
                   <div
-                    className={`absolute inset-0 z-50 ${
-                      flash == "ok" ? "bg-green-400/40" : "bg-red-400/40"
-                    } pointer-events-none transition-opacity duration-300 ease-out ${
-                      flash ? "opacity-100" : "opacity-0"
-                    }`}
+                    className={`absolute inset-0 z-50 ${flash == "ok" ? "bg-green-400/40" : "bg-red-400/40"
+                      } pointer-events-none transition-opacity duration-300 ease-out ${flash ? "opacity-100" : "opacity-0"
+                      }`}
                   ></div>
 
                   {/* Info Overlay */}
                   {overlayData && (
                     <div className="absolute bottom-10 left-0 right-0 z-20 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
                       <div
-                        className={`inline-block px-6 py-3 rounded-2xl shadow-lg border backdrop-blur-md ${
-                          overlayData[1].includes("ERLAMBAT")
+                        className={`inline-block px-6 py-3 rounded-2xl shadow-lg border backdrop-blur-md ${overlayData[1].includes("ERLAMBAT")
                             ? "bg-red-100/90 border-red-200"
                             : "bg-base-100/90 border-base-200"
-                        }`}
+                          }`}
                       >
                         <p
-                          className={`text-lg font-bold ${
-                            overlayData[1].includes("ERLAMBAT")
+                          className={`text-lg font-bold ${overlayData[1].includes("ERLAMBAT")
                               ? "text-red-600"
                               : "text-primary"
-                          }`}
+                            }`}
                         >
                           {overlayData[0]}
                         </p>
                         <p
-                          className={`text-sm font-medium ${
-                            overlayData[1].includes("ERLAMBAT")
+                          className={`text-sm font-medium ${overlayData[1].includes("ERLAMBAT")
                               ? "text-red-500"
                               : "text-base-content/70"
-                          }`}
+                            }`}
                         >
                           {overlayData[1]}
                         </p>
@@ -583,22 +579,19 @@ export default function Scan() {
                       key={log.timestamp + log.siswaId}
                       onClick={() => handleRowClick(log.siswaId)}
                       className={`card bg-base-100 shadow-sm border cursor-pointer group transform transition-all duration-300 ease-out 
-                      ${
-                        isNew
+                      ${isNew
                           ? "animate-pop-in bg-primary/10 border-primary"
                           : "animate-in fade-in slide-in-from-top-4"
-                      } 
-                      ${
-                        isActive
+                        } 
+                      ${isActive
                           ? "border-primary ring-1 ring-primary"
                           : "border-base-200 hover:border-primary/30"
-                      }`}
+                        }`}
                     >
                       <div className="card-body p-3 md:p-4 flex flex-row items-center gap-3 md:gap-4">
                         <div
-                          className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
-                            isNew ? "scale-110" : ""
-                          } ${iconClass}`}
+                          className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${isNew ? "scale-110" : ""
+                            } ${iconClass}`}
                         >
                           {log.status === "success" ? (
                             <svg
@@ -644,19 +637,17 @@ export default function Scan() {
 
                         <div className="flex-grow min-w-0">
                           <div
-                            className={`font-bold text-sm md:text-base truncate transition-colors ${
-                              isActive ? "text-primary" : ""
-                            }`}
+                            className={`font-bold text-sm md:text-base truncate transition-colors ${isActive ? "text-primary" : ""
+                              }`}
                           >
                             {log.name}
                           </div>
                           <div className="text-xs text-base-content/60 flex items-center gap-2 mt-0.5">
                             <span
-                              className={`badge badge-xs font-medium ${
-                                log.status === "late"
+                              className={`badge badge-xs font-medium ${log.status === "late"
                                   ? "badge-warning"
                                   : "badge-ghost"
-                              }`}
+                                }`}
                             >
                               {log.message || log.kelas}
                             </span>

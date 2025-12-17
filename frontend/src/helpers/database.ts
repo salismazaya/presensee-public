@@ -2,7 +2,7 @@ import Swal from "sweetalert2";
 import { refreshDatabase } from "./api";
 import { insert, insertStagingAbsens } from "./stagingDatabase";
 import type { ConflictData } from "../components/ConflictsList";
-import initSqlJs from "sql.js";
+import initSqlJs, { type Database } from "sql.js";
 
 // --- CONFIGURATION ---
 const DB_FILENAME = "presensee_db.sqlite";
@@ -230,7 +230,7 @@ export function unlockAbsensi(data: LockAbsensiProps) {
 
 export async function getLocalDatabase(): Promise<{
   exists: boolean;
-  db: any;
+  db: Database;
 }> {
   const SQL = await initSqlJs({
     locateFile: () => SQL_WASM_PATH,

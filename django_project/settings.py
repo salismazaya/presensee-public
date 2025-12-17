@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "cacheops",
+    # "cacheops",
 ]
 
 MIDDLEWARE = [
@@ -217,5 +217,5 @@ REDIS_URL = os.environ.get("REDIS_URL")
 CACHEOPS_REDIS = REDIS_URL
 
 CACHEOPS = {
-    "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
+    # "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
 }
