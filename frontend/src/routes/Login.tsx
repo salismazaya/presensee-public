@@ -22,7 +22,7 @@ export default function Login() {
 
         cookies.set("user_type", token.type);
         await serviceWorkerUtils.unregister();
-        await serviceWorkerUtils.register();
+        // await serviceWorkerUtils.register();
         window.location.href = "/";
 
       } catch (e: any) {

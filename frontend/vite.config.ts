@@ -24,7 +24,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: false,
+      injectRegister: 'script',
       strategies: "generateSW",
       // srcDir: "src",
       // filename: "sw.js",
