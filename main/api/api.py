@@ -14,7 +14,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import ExtractMonth, ExtractYear
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest as BaseHttpRequest, HttpResponse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from lzstring import LZString
@@ -34,7 +34,7 @@ from .schemas import (ChangePasswordSchema, DataCompressedUploadSchema,
                       PiketDataUploadSchema, SuccessSchema)
 
 
-class HttpRequest(HttpRequest):
+class HttpRequest(BaseHttpRequest):
     auth: User | None
 
 
