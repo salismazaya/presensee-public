@@ -72,7 +72,7 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
             Absensi.objects.filter_domain(request)
             .filter(date=date_obj)
             .filter(siswa__kelas__pk=kelas_id)
-            .exclude(status=Absensi.StatusChoices.HADIR)
+            .exclude(_status=Absensi.StatusChoices.HADIR)
             .count()
         )
 
