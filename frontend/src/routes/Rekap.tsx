@@ -165,7 +165,7 @@ export default function RekapRoute() {
                 Dashboard Absensi
               </h1>
               <p className="text-base-content/60">
-                Analitik performa kehadiran siswa real-time.
+                Analitik performa kehadiran siswa.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 w-full md:w-auto">
