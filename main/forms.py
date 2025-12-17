@@ -2,8 +2,9 @@ from django import forms
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
-from main.models import Kelas, User
+from main.models import Kelas, User, AbsensiSession
 
 
 class UserCreationForm(BaseUserCreationForm):
@@ -150,3 +151,40 @@ class SetupForm(forms.Form):
             self.add_error("password", "Password minimal 6 karakter.")
 
         return cleaned_data
+
+
+class AbsensiSessionForm(forms.ModelForm):
+    class Meta:
+        model = AbsensiSession
+        fields = "__all__"
+
+    def clean_kelas(self):
+        kelass = self.cleaned_data.get("kelas")
+        hari_query = None
+
+        for hari in ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]:
+            exists = self.cleaned_data.get(hari)
+            if exists:
+                if hari_query is None:
+                    hari_query = Q(**{hari: True})
+                else:
+                    hari_query |= Q(**{hari: True})
+
+
+        for kelas in kelass:
+            is_bentrok = (
+                AbsensiSession.original_objects.filter(
+                    kelas__in=[kelas.pk],
+                )
+                .filter(hari_query)
+            )
+
+            if self.instance:
+                is_bentrok = is_bentrok.exclude(pk = self.instance.pk)
+
+            is_bentrok = is_bentrok.exists()
+
+            if is_bentrok:
+                raise ValidationError("Jadwal kelas %s bentrok" % kelas.name)
+        
+        return kelass
