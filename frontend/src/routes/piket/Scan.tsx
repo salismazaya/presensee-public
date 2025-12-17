@@ -130,8 +130,8 @@ export default function Scan() {
   // Refs
   const localSiswas = useRef(getLocalSiswas());
   const localJadwal = useRef(getLocalJadwal());
-  const cancelSelectTimeout = useRef<number>(null);
-  const overlayTimeout = useRef<number>(null);
+  const cancelSelectTimeout = useRef<NodeJS.Timeout>(null);
+  const overlayTimeout = useRef<NodeJS.Timeout>(null);
   const latestTimeScan = useRef<number>(Date.now());
   const queueRef = useRef(queue);
 
