@@ -21,7 +21,10 @@ export default function Login() {
         setToken(token.token);
 
         cookies.set("user_type", token.type);
-        serviceWorkerUtils.unregister();
+        await serviceWorkerUtils.unregister();
+        await serviceWorkerUtils.register();
+        window.location.href = "/";
+
       } catch (e: any) {
         Swal.fire({
           title: "Gagal Masuk",

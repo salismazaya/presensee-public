@@ -24,13 +24,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "script",
+      injectRegister: false,
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.js",
-
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
-
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg",],
       manifest: {
         name: "Presensee",
         lang: "id",
@@ -42,7 +40,7 @@ export default defineConfig({
         orientation: "portrait",
         icons: [
           {
-            src: "/logo.png", // Hapus '/public', path root sudah mengarah ke public
+            src: "/logo.png",
             sizes: "192x192",
             type: "image/png",
           },
