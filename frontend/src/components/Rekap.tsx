@@ -42,11 +42,11 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
 
         let hadirRate = Math.floor(
           (s.jumlah_hadir * 100) /
-            (s.jumlah_alfa +
-              s.jumlah_izin +
-              s.jumlah_bolos +
-              s.jumlah_sakit +
-              s.jumlah_hadir)
+          (s.jumlah_alfa +
+            s.jumlah_izin +
+            s.jumlah_bolos +
+            s.jumlah_sakit +
+            s.jumlah_hadir)
         );
 
         if (isNaN(hadirRate)) {
@@ -88,11 +88,11 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
 
         let hadirRate = Math.floor(
           (s.jumlah_hadir * 100) /
-            (s.jumlah_alfa +
-              s.jumlah_izin +
-              s.jumlah_bolos +
-              s.jumlah_sakit +
-              s.jumlah_hadir)
+          (s.jumlah_alfa +
+            s.jumlah_izin +
+            s.jumlah_bolos +
+            s.jumlah_sakit +
+            s.jumlah_hadir)
         );
 
         if (isNaN(hadirRate)) {
@@ -162,8 +162,7 @@ ORDER BY skor ${ordering};
     let result: SiswaRekapProps[] = [];
 
     while (stmt.step()) {
-      const row = stmt.getAsObject();
-      // console.log({row})
+      const row: SiswaRekapProps = stmt.getAsObject() as any;
       result.push(row);
     }
 
@@ -205,11 +204,11 @@ ORDER BY skor ${ordering};
 
               let hadirRate = Math.floor(
                 (s.jumlah_hadir * 100) /
-                  (s.jumlah_alfa +
-                    s.jumlah_izin +
-                    s.jumlah_bolos +
-                    s.jumlah_sakit +
-                    s.jumlah_hadir)
+                (s.jumlah_alfa +
+                  s.jumlah_izin +
+                  s.jumlah_bolos +
+                  s.jumlah_sakit +
+                  s.jumlah_hadir)
               );
 
               if (isNaN(hadirRate)) {

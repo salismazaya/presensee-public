@@ -9,9 +9,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          react_utils: ["react-toastify", "react-day-picker", "react-router"],
-          sweetalert2: ["sweetalert2"],
-          lz_string: ["lz-string"],
+          react_utils: [
+            "react-toastify",
+            "react-day-picker",
+            "react-router",
+            "react-dom",
+            "lucide-react",
+          ],
+          utils: ["comlink", "universal-cookie", "sql.js", "lz-string", "sweetalert2", "axios"],
         },
       },
       input: {
@@ -28,8 +33,6 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: 'script',
       strategies: "generateSW",
-      // srcDir: "src",
-      // filename: "sw.js",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg",],
       manifest: {
         name: "Presensee",

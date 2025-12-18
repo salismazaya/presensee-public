@@ -266,7 +266,7 @@ export default function RekapRoute() {
       <main className="flex-grow p-4 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
 
         {/* HEADER & FILTERS */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-base-content flex items-center gap-2">
               <TrendingUp className="w-8 h-8 text-primary" />

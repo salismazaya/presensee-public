@@ -1,21 +1,21 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { refreshDatabase } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import Swal from "sweetalert2";
 import useGlobalLoading from "../hooks/useGlobalLoading";
 import useLastRefresh from "../hooks/useLastRefresh";
-import { getLocalDatabase, insertToLocalDatabase } from "../helpers/database";
-import LZString from "lz-string";
+import { getLocalDatabase } from "../helpers/database";
+import initSqlJs, { type Database } from "sql.js";
 
-export function DatabaseContextConsumer({ children }) {
-  const [db, setDb] = useState();
+export function DatabaseContextConsumer({ children }: { children: any }) {
+  const [db, setDb] = useState<Database>();
   const [token] = useToken();
   const [refreshDb, setRefreshDb] = useState(0);
   const [, setIsLoading] = useGlobalLoading();
   const [, setLastRefresh] = useLastRefresh();
 
   const config = {
-    locateFile: (filename) => `/${filename}`,
+    locateFile: (filename: string) => `/${filename}`,
   };
 
   const loaded = useRef(false);
@@ -26,7 +26,7 @@ export function DatabaseContextConsumer({ children }) {
 
     loaded.current = true;
 
-    initSqlJs(config).then(async (SQL) => {
+    initSqlJs(config).then(async () => {
       setIsLoading(true);
 
       const { exists, db } = await getLocalDatabase();
@@ -59,6 +59,12 @@ export function DatabaseContextConsumer({ children }) {
   );
 }
 
-const DatabaseContext = createContext();
+type DatabaseContextProps = [
+  Database | undefined,
+  number | null,
+  Dispatch<SetStateAction<number>> | null
+]
+
+const DatabaseContext = createContext<DatabaseContextProps>([undefined, null, null]);
 
 export default DatabaseContext;
