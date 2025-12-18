@@ -17,7 +17,7 @@ interface SharedDataProps {
   setGlobalLoading?: (l: boolean) => void;
   lastRefresh?: number;
   setLastRefresh?: (l: number) => void;
-  conflicts?: ConflictData[],
+  conflicts?: ConflictData[];
   setConflicts?: (l: ConflictData[]) => void;
 }
 
@@ -102,7 +102,7 @@ export function SharedDataContextConsumer({
     lastRefresh: lastRefresh,
     setLastRefresh: _setLastRefresh,
     conflicts,
-    setConflicts
+    setConflicts,
   };
 
   return (

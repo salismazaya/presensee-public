@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 import Login from "./routes/Login";
-import AuthenticatedLayout from "./layouts/AuthenticatedLayout";
+import AuthenticatedDatabaseLayout from "./layouts/AuthenticatedDatabaseLayout";
 
 import Dashboard from "./routes/Dashboard";
 import About from "./routes/About";
@@ -15,7 +15,6 @@ import MintaAbsensiKelas from "./routes/MintaRekapKelas";
 import { useEffect } from "react";
 import { getVersion } from "./helpers/api";
 import serviceWorkerUtils from "./helpers/serviceWorker";
-// import InstallPWA from "./components/InstallPWA";
 import { ToastContainer } from "react-toastify";
 import { SharedDataContextConsumer } from "./contexts/SharedDataContext";
 
@@ -49,49 +48,57 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route
               path="/"
-              element={<AuthenticatedLayout child={<Dashboard />} />}
+              element={<AuthenticatedDatabaseLayout child={<Dashboard />} />}
             />
 
             <Route
               path="/absensi-kelas"
-              element={<AuthenticatedLayout child={<AbsensiKelas />} />}
+              element={<AuthenticatedDatabaseLayout child={<AbsensiKelas />} />}
             />
 
             <Route
               path="/rekap"
-              element={<AuthenticatedLayout child={<Rekap />} />}
+              element={<AuthenticatedDatabaseLayout child={<Rekap />} />}
             />
 
             <Route
               path="/minta-rekap-kelas"
-              element={<AuthenticatedLayout child={<MintaAbsensiKelas />} />}
+              element={
+                <AuthenticatedDatabaseLayout child={<MintaAbsensiKelas />} />
+              }
             />
 
             <Route path="/minta-rekap">
               <Route
                 index
-                element={<AuthenticatedLayout child={<MintaRekap />} />}
+                element={<AuthenticatedDatabaseLayout child={<MintaRekap />} />}
               />
               <Route
                 path=":bulan_tahun"
-                element={<AuthenticatedLayout child={<MintaRekapDetail />} />}
+                element={
+                  <AuthenticatedDatabaseLayout child={<MintaRekapDetail />} />
+                }
               />
             </Route>
 
             <Route path="/absensi">
               <Route
                 index
-                element={<AuthenticatedLayout child={<Absensi />} />}
+                element={<AuthenticatedDatabaseLayout child={<Absensi />} />}
               />
               <Route
                 path=":absen_id"
-                element={<AuthenticatedLayout child={<AbsensiDetail />} />}
+                element={
+                  <AuthenticatedDatabaseLayout child={<AbsensiDetail />} />
+                }
               />
             </Route>
 
             <Route
               path="/change-password"
-              element={<AuthenticatedLayout child={<ChangePassword />} />}
+              element={
+                <AuthenticatedDatabaseLayout child={<ChangePassword />} />
+              }
             />
           </Routes>
         </BrowserRouter>

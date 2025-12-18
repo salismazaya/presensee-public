@@ -70,7 +70,7 @@ const ChartSection = React.memo(({ analytics, showRank }: { analytics: Analytics
       <div className="card bg-base-100 shadow-xl col-span-1 lg:col-span-2 border border-base-200">
         <div className="card-body p-4">
           <h2 className="card-title text-sm opacity-70 mb-2">Tren Kehadiran</h2>
-          <div className="h-[250px] w-full">
+          <div className="h-62.5 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.trend}>
                 <defs>
@@ -94,7 +94,7 @@ const ChartSection = React.memo(({ analytics, showRank }: { analytics: Analytics
       <div className="card bg-base-100 shadow-xl border border-base-200">
         <div className="card-body p-4 relative">
           <h2 className="card-title text-sm opacity-70 mb-2">Komposisi</h2>
-          <div className="h-[250px] w-full">
+          <div className="h-62.5 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -152,7 +152,7 @@ const ChartSection = React.memo(({ analytics, showRank }: { analytics: Analytics
         <div className="card bg-base-100 shadow-xl col-span-1 lg:col-span-3 border border-base-200">
           <div className="card-body p-4">
             <h2 className="card-title text-sm opacity-70">Ranking Kelas (Top 5)</h2>
-            <div className="h-[200px] w-full">
+            <div className="h-50 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.classPerformance} layout="vertical" margin={{ left: 10, right: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} horizontal={false} />
@@ -263,7 +263,7 @@ export default function RekapRoute() {
         </div>
       )}
 
-      <main className="flex-grow p-4 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
+      <main className="grow p-4 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
 
         {/* HEADER & FILTERS */}
         <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -357,7 +357,7 @@ export default function RekapRoute() {
               </select>
             </div>
 
-            <div className="card bg-base-100 shadow-xl border border-base-200 overflow-hidden min-h-[400px]">
+            <div className="card bg-base-100 shadow-xl border border-base-200 overflow-hidden min-h-100">
               <div className="overflow-x-auto p-1">
                 {/* CATATAN PENTING:
                            Pastikan komponen <Rekap /> di dalamnya sudah mengimplementasikan Virtual Scroll 
