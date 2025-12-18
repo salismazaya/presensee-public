@@ -10,7 +10,7 @@ from ..schemas import (ChangePasswordSchema, ErrorSchema, LoginSchema,
 
 @api.post("/login", auth=None, response={403: ErrorSchema, 200: SuccessSchema})
 def login(request: HttpRequest, data: LoginSchema):
-    user = User.objects.filter_domain(request).filter(username=data.username).first()
+    user = User.objects.filter(username=data.username).first()
 
     if user is None:
         return 403, {"detail": "Username/password salah"}

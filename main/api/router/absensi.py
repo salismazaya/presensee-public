@@ -14,12 +14,7 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
     except dateutil_parser._parser.ParserError:
         return 403, {"detail": "Tanggal tidak valid"}
 
-    kelas = (
-        Kelas.extra_objects.own(request.auth.pk)
-        .filter_domain(request)
-        .filter(pk=kelas_id)
-        .first()
-    )
+    kelas = Kelas.extra_objects.own(request.auth.pk).filter(pk=kelas_id).first()
 
     if kelas is None:
         return 404, {"detail": "kelas tidak ditemukan"}
@@ -28,11 +23,7 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
     siswas = kelas.siswas.all()
 
     for siswa in siswas:
-        absensi = (
-            Absensi.objects.filter_domain(request)
-            .filter(date=date, siswa__pk=siswa.pk)
-            .first()
-        )
+        absensi = Absensi.objects.filter(date=date, siswa__pk=siswa.pk).first()
 
         if absensi:
             result[siswa.pk] = absensi.status
@@ -49,9 +40,7 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
     if len(dates) >= 32:
         return 400, {"detail": "terlalu banyak input tanggal"}
 
-    total_siswa = (
-        Siswa.objects.filter_domain(request).filter(kelas__pk=kelas_id).count()
-    )
+    total_siswa = Siswa.objects.filter(kelas__pk=kelas_id).count()
 
     result = {}
 
@@ -62,15 +51,13 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
             return 400, {"detail": "gagal parsing %s" % date}
 
         total_absensi = (
-            Absensi.objects.filter_domain(request)
-            .filter(siswa__kelas__pk=kelas_id)
+            Absensi.objects.filter(siswa__kelas__pk=kelas_id)
             .filter(date=date_obj)
             .count()
         )
 
         total_tidak_masuk = (
-            Absensi.objects.filter_domain(request)
-            .filter(date=date_obj)
+            Absensi.objects.filter(date=date_obj)
             .filter(siswa__kelas__pk=kelas_id)
             .exclude(_status=Absensi.StatusChoices.HADIR)
             .count()

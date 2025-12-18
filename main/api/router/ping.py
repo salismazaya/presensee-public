@@ -1,8 +1,9 @@
+from django.conf import settings
 from django.http import HttpResponse
 from ninja.throttling import AnonRateThrottle
 
 from main.api.api import api
-from django.conf import settings
+
 from ..core.types import HttpRequest
 
 

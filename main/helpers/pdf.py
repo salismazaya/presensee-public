@@ -1,4 +1,3 @@
-import base64
 import zoneinfo
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -41,14 +40,14 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
     soup.find('span', attrs = {'id': 'tanggal_dibuat'}).string = now_str
     soup.find('span', attrs = {'id': 'bulan'}).string = month_str
 
-    siswas = Siswa.original_objects.filter(kelas__pk = kelas.pk).order_by('fullname')
+    siswas = Siswa.objects.filter(kelas__pk = kelas.pk).order_by('fullname')
 
     for h, siswa in enumerate(siswas, start = 1):
         background_color = 'odd-color'
 
         siswa_id = siswa.pk
         siswa_name = siswa.fullname[:30].upper()
-        siswa_absensies_queryset = Absensi.original_objects.filter(
+        siswa_absensies_queryset = Absensi.objects.filter(
             siswa__pk = siswa_id
         ).filter(
             date__year = year

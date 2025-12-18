@@ -13,7 +13,7 @@ def get_jadwal_absensi(request: HttpRequest):
         return 403, {"detail": "Forbidden"}
 
     results = {}
-    kelass: list[Kelas] = Kelas.objects.filter_domain(request)
+    kelass: list[Kelas] = Kelas.objects.all()
 
     for kelas in kelass:
         results[kelas.pk] = {

@@ -59,9 +59,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                 settings.TIME_ZONE_OBJ
             )
 
-            siswa = (
-                Siswa.objects.filter_domain(request).filter(pk=payload["siswa"]).first()
-            )
+            siswa = Siswa.objects.filter(pk=payload["siswa"]).first()
             if not siswa:
                 continue
 
@@ -69,8 +67,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                 siswa.kelas.wali_kelas and siswa.kelas.wali_kelas.pk == user.pk
             ) or siswa.kelas.sekretaris.filter(pk=user.pk).exists():
                 lock = (
-                    KunciAbsensi.objects.filter_domain(request)
-                    .filter(date=date)
+                    KunciAbsensi.objects.filter(date=date)
                     .filter(kelas__pk=siswa.kelas.pk)
                     .first()
                 )
@@ -81,11 +78,9 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                         "detail": f"Tidak bisa melanjutkan aksi. Absen tanggal {date} sedang dikunci, coba hubungi wali kelas atau operator"
                     }
 
-                absensi: Absensi = (
-                    Absensi.objects.filter_domain(request)
-                    .filter(siswa__pk=siswa.pk, date=date)
-                    .first()
-                )
+                absensi: Absensi = Absensi.objects.filter(
+                    siswa__pk=siswa.pk, date=date
+                ).first()
 
                 if absensi is None:
                     Absensi.objects.create(
@@ -173,14 +168,14 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                             conflicts.append(conflict)
 
         elif x.action == "lock":
-            KunciAbsensi.objects.filter_domain(request).update_or_create(
+            KunciAbsensi.objects.update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": True, "date": date, "kelas_id": payload["kelas"]},
             )
 
         elif x.action == "unlock":
-            KunciAbsensi.objects.filter_domain(request).update_or_create(
+            KunciAbsensi.objects.update_or_create(
                 date=date,
                 kelas__pk=payload["kelas"],
                 defaults={"locked": False, "date": date, "kelas_id": payload["kelas"]},

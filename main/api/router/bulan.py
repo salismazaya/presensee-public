@@ -12,8 +12,7 @@ def get_bulan_absensi(request: HttpRequest):
     user = request.auth
 
     queryset = (
-        Absensi.objects.filter_domain(request)
-        .annotate(
+        Absensi.objects.annotate(
             bulan_num=ExtractMonth("date"),
             tahun_num=ExtractYear("date"),
         )

@@ -19,7 +19,7 @@ REKAP_THREADING_LOCK = threading.Lock()
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
     cache_key = f"rekap_{bulan}_{tahun}_{kelas}"
 
-    kelas_obj = Kelas.objects.filter_domain(request).filter(pk=kelas).first()
+    kelas_obj = Kelas.objects.filter(pk=kelas).first()
 
     bulan_str = localize_month_to_string(bulan)
 

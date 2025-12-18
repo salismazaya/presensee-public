@@ -11,11 +11,11 @@ class Command(BaseCommand):
         parser.add_argument('output-path', type = str)
 
     def execute(self, *args, **options):
-        users = User.original_objects.all()
-        kelass = Kelas.original_objects.all()
-        siswas = Siswa.original_objects.all()
-        kuncis = KunciAbsensi.original_objects.all()
-        absensies = Absensi.original_objects.all()
+        users = User.objects.all()
+        kelass = Kelas.objects.all()
+        siswas = Siswa.objects.all()
+        kuncis = KunciAbsensi.objects.all()
+        absensies = Absensi.objects.all()
 
         result = {}
         result['users'] = serializers.serialize('python', users)

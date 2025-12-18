@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-from main.models import Kelas, User, AbsensiSession
+from main.models import AbsensiSession, Kelas, User
 
 
 class UserCreationForm(BaseUserCreationForm):
@@ -34,7 +34,7 @@ def createKelasForm(kelas_id: int):
                     )
 
                 kelas_wali_kelas = (
-                    Kelas.original_objects.exclude(pk=kelas_id)
+                    Kelas.objects.exclude(pk=kelas_id)
                     .filter(wali_kelas__pk=wali_kelas.pk)
                     .first()
                 )
@@ -55,7 +55,7 @@ def createKelasForm(kelas_id: int):
                     )
 
                 sekretaris_kelas = (
-                    Kelas.original_objects.exclude(pk=kelas_id)
+                    Kelas.objects.exclude(pk=kelas_id)
                     .filter(sekretaris__in=[sekretaris.pk])
                     .first()
                 )
@@ -81,10 +81,10 @@ def createUserChangeForm(user_id: int = None):
             new_type = self.cleaned_data.get("type")
 
             if user_id:
-                current_obj = User.original_objects.get(pk=user_id)
+                current_obj = User.objects.get(pk=user_id)
 
                 if current_obj.type != new_type:
-                    kelas_wali_kelas = Kelas.original_objects.filter(
+                    kelas_wali_kelas = Kelas.objects.filter(
                         wali_kelas__pk=user_id
                     ).first()
                     if new_type != "wali_kelas" and kelas_wali_kelas:
@@ -92,7 +92,7 @@ def createUserChangeForm(user_id: int = None):
                             f"{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}"
                         )
 
-                    kelas_sekretaris = Kelas.original_objects.filter(
+                    kelas_sekretaris = Kelas.objects.filter(
                         sekretaris__in=[user_id]
                     ).first()
                     if new_type != "sekretaris" and kelas_sekretaris:
@@ -173,7 +173,7 @@ class AbsensiSessionForm(forms.ModelForm):
 
         for kelas in kelass:
             is_bentrok = (
-                AbsensiSession.original_objects.filter(
+                AbsensiSession.objects.filter(
                     kelas__in=[kelas.pk],
                 )
                 .filter(hari_query)

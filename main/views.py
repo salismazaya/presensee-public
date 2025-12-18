@@ -19,25 +19,27 @@ from main.models import Data, User
 def redirect_factory(to: str):
     def inner(*args, **kwargs):
         return redirect(to)
-    
+
     return inner
 
 
 def files(request: HttpRequest, file_id: str):
     with redis.get_client() as redis_client:
         if not redis_client.exists(file_id):
-            response = HttpResponse(content = "File tidak ditemukan atau sudah kadaluarsa")
+            response = HttpResponse(
+                content="File tidak ditemukan atau sudah kadaluarsa"
+            )
             response.status_code = 404
             return response
-        
+
         data = redis_client.get(file_id)
-    
+
     filename = data[:100].rstrip().decode()
     mimetype = data[100:200].rstrip().decode()
     content = data[200:]
 
-    response = HttpResponse(content = content, content_type = mimetype)
-    response.headers['Content-Disposition'] = 'filename=%s' % filename
+    response = HttpResponse(content=content, content_type=mimetype)
+    response.headers["Content-Disposition"] = "filename=%s" % filename
 
     return response
 
@@ -52,122 +54,120 @@ def spa_assets(request: HttpRequest):
         file_path = dir.joinpath(path.removeprefix("/assets/"))
 
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 mimetype, _ = mimetypes.guess_type(file_path)
                 file = f.read()
-                response =  HttpResponse(file, content_type = mimetype)
+                response = HttpResponse(file, content_type=mimetype)
 
             return response
         except FileNotFoundError:
             continue
     else:
         raise Http404
-    
+
 
 def spa_public(request: HttpRequest):
-    dirs = [
-        settings.VITE_PUBLIC_DIR
-    ]
+    dirs = [settings.VITE_PUBLIC_DIR]
 
     for dir in dirs:
-        path = request.get_full_path().removeprefix("/public/").removeprefix('/')
-        if '.' not in path:
-            context = {
-                'BASE_API_URL': settings.BASE_URL + '/api'
-            }
-            
-            if request.COOKIES.get('user_type') == User.TypeChoices.GURU_PIKET:
+        path = request.get_full_path().removeprefix("/public/").removeprefix("/")
+        if "." not in path:
+            context = {"BASE_API_URL": settings.BASE_URL + "/api"}
+
+            if request.COOKIES.get("user_type") == User.TypeChoices.GURU_PIKET:
                 template = "piket.html"
             else:
                 template = "index.html"
-            
+
             return render(request, template, context)
-        
-        file_path =  dir / path
+
+        file_path = dir / path
         try:
             if not os.path.exists(file_path):
                 continue
 
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 mimetype, _ = mimetypes.guess_type(file_path)
                 file = f.read()
-                response =  HttpResponse(file, content_type = mimetype)
+                response = HttpResponse(file, content_type=mimetype)
 
             return response
         except (FileNotFoundError, IsADirectoryError):
             continue
-    else: 
+    else:
         raise Http404
 
 
 def webmanifest(request: HttpRequest):
-    path = settings.VITE_PUBLIC_DIR / 'manifest.webmanifest'
-    with open(path, 'rb') as f:
+    path = settings.VITE_PUBLIC_DIR / "manifest.webmanifest"
+    with open(path, "rb") as f:
         content = f.read()
 
-    data: Data = Data.objects.filter_domain(request).last()
+    data: Data = Data.objects.last()
     if data is None:
-        return HttpResponse(content, content_type = 'application/json')
-    
+        return HttpResponse(content, content_type="application/json")
+
     content = json.loads(content)
     if data.nama_aplikasi:
-        content['name'] = data.nama_aplikasi
-        content['short_name'] = data.nama_aplikasi
-    
+        content["name"] = data.nama_aplikasi
+        content["short_name"] = data.nama_aplikasi
+
     if data.deskripsi_sekolah:
-        content['description'] = data.deskripsi_sekolah
+        content["description"] = data.deskripsi_sekolah
 
     content = json.dumps(content)
-    return HttpResponse(content, content_type = 'application/json')
+    return HttpResponse(content, content_type="application/json")
+
 
 def setup(request: HttpRequest):
     is_db_exists = "main_absensi" in connection.introspection.table_names()
 
     if is_db_exists:
-        response = HttpResponse(content = "Setup sudah dilakukan")
+        response = HttpResponse(content="Setup sudah dilakukan")
         response.status_code = 403
         return response
-        
+
     form = SetupForm(request.POST or None)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if form.is_valid():
-            call_command("migrate") # python manage.py migrate
+            call_command("migrate")  # python manage.py migrate
 
-            user = User(username = form.cleaned_data['username'])
-            user.set_password(form.cleaned_data['password'])
+            user = User(username=form.cleaned_data["username"])
+            user.set_password(form.cleaned_data["password"])
             user.is_staff = True
             user.is_superuser = True
             user.save()
 
             # messages.success(request, "Silakan login.")
-            return redirect('/admin')
+            return redirect("/admin")
 
-    return render(request, 'main/setup.html', {'form': form})
+    return render(request, "main/setup.html", {"form": form})
 
 
 def migrate(request: HttpRequest):
-    if request.method == 'GET':
+    if request.method == "GET":
         context = {}
-        context['text'] = request.GET.get('text') or ''
+        context["text"] = request.GET.get("text") or ""
 
-        return render(request, 'main/migrate_login.html', context)
-    
-    user = authenticate(request, username = request.POST['username'], password = request.POST['password'])
+        return render(request, "main/migrate_login.html", context)
+
+    user = authenticate(
+        request, username=request.POST["username"], password=request.POST["password"]
+    )
     if not user or not user.is_superuser:
-        return redirect('/migrate?text=Ditolak')
-    
+        return redirect("/migrate?text=Ditolak")
+
     call_command("migrate")
-    return redirect('/migrate?text=Selesai')
+    return redirect("/migrate?text=Selesai")
 
 
-    
 def logo_view(request: HttpRequest, *args):
-    data: Data = Data.objects.filter_domain(request).last()
+    data: Data = Data.objects.last()
     if data is None:
-        with open(settings.BASE_DIR / 'main/static/img/logo.png', 'rb') as f:
-            return HttpResponse(f.read(), content_type = 'image/png')
-    
-    with data.logo_sekolah.open('rb') as f:
+        with open(settings.BASE_DIR / "main/static/img/logo.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/png")
+
+    with data.logo_sekolah.open("rb") as f:
         content_type, _ = mimetypes.guess_file_type(f.name)
-        return HttpResponse(f.read(), content_type = content_type)
+        return HttpResponse(f.read(), content_type=content_type)

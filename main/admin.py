@@ -1,7 +1,6 @@
 import json
 
 from django.contrib import admin, messages
-
 # from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import transaction
@@ -9,14 +8,15 @@ from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import path
-
 # from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
 # from django.contrib.auth.forms import UserChangeForm
-from main.forms import AbsensiSessionForm, UserCreationForm, createKelasForm, createUserChangeForm
-from main.models import Absensi, AbsensiSession, Data, Kelas, KunciAbsensi, Siswa, User
+from main.forms import (AbsensiSessionForm, UserCreationForm, createKelasForm,
+                        createUserChangeForm)
+from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
+                         Siswa, User)
 
 
 class AdminSite(admin.AdminSite):
@@ -31,17 +31,15 @@ class AdminSite(admin.AdminSite):
         if not old_kelas_id or not new_kelas_name:
             return HttpResponse("NOT_OK")
 
-        old_kelas = Kelas.objects.filter_domain(request).filter(pk=old_kelas_id).first()
+        old_kelas = Kelas.objects.filter(pk=old_kelas_id).first()
         if old_kelas is None:
             return HttpResponse("NOT_OK")
 
-        new_kelas = Kelas.original_objects.create(name=new_kelas_name)
+        new_kelas = Kelas.objects.create(name=new_kelas_name)
         old_kelas.active = False
         old_kelas.save()
 
-        Siswa.objects.filter_domain(request).filter(kelas__pk=old_kelas_id).update(
-            kelas_id=new_kelas.pk
-        )
+        Siswa.objects.filter(kelas__pk=old_kelas_id).update(kelas_id=new_kelas.pk)
 
         messages.success(
             request,
@@ -104,9 +102,9 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
         return actions
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields[
-            "kelas"
-        ].queryset = Kelas.objects.filter_domain(request).filter(active=True)
+        context["adminform"].form.fields["kelas"].queryset = Kelas.objects.filter(
+            active=True
+        )
         return super().render_change_form(request, context, *args, **kwargs)
 
     @admin.action(description="Export kartu siswa")
@@ -117,7 +115,7 @@ class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
             messages.error(request, "Hanya bisa memproses maksimal 100 siswa")
             return
 
-        data: Data = Data.objects.filter_domain(request).last()
+        data: Data = Data.objects.last()
 
         context = {
             "siswas": siswas,
@@ -155,12 +153,8 @@ class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
         return createKelasForm(obj.pk)
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields[
-            "wali_kelas"
-        ].queryset = User.objects.filter_domain(request)
-        context["adminform"].form.fields[
-            "sekretaris"
-        ].queryset = User.objects.filter_domain(request)
+        context["adminform"].form.fields["wali_kelas"].queryset = User.objects
+        context["adminform"].form.fields["sekretaris"].queryset = User.objects
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -203,12 +197,8 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         )
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields[
-            "siswa"
-        ].queryset = Siswa.objects.filter_domain(request)
-        context["adminform"].form.fields["by"].queryset = User.objects.filter_domain(
-            request
-        )
+        context["adminform"].form.fields["siswa"].queryset = Siswa.objects
+        context["adminform"].form.fields["by"].queryset = User.objects.all()
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -218,9 +208,9 @@ class KunciAbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_display = ("id", "kelas", "date", "locked")
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields[
-            "kelas"
-        ].queryset = Kelas.objects.filter_domain(request).filter(active=True)
+        context["adminform"].form.fields["kelas"].queryset = Kelas.objects.filter(
+            active=True
+        )
         return super().render_change_form(request, context, *args, **kwargs)
 
 
@@ -236,7 +226,7 @@ class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
         return False
 
     def has_add_permission(self, request):
-        if Data.objects.filter_domain(request).exists():
+        if Data.objects.exists():
             return False
 
         return super().has_add_permission(request)
@@ -244,33 +234,33 @@ class DataAdmin(FilterDomainMixin, admin.ModelAdmin):
 
 class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
     list_filter = ("senin", "selasa", "rabu", "kamis", "jumat", "sabtu")
-    list_display = ("id_", "kelas_", 'hari')
+    list_display = ("id_", "kelas_", "hari")
     form = AbsensiSessionForm
 
     def id_(self, obj):
         return obj.pk.hex[:8]
 
-    id_.short_description = ''
+    id_.short_description = ""
 
     def hari(self, obj):
         result = []
-        for x in ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']:
+        for x in ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]:
             if getattr(obj, x):
                 result.append(x.capitalize())
-        
+
         return ", ".join(result)
 
     def kelas_(self, obj):
         kelas_names = []
         for x in obj.kelas.all():
             kelas_names.append(x.name)
-        
+
         return ", ".join(kelas_names)
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields[
-            "kelas"
-        ].queryset = Kelas.objects.filter_domain(request).filter(active=True)
+        context["adminform"].form.fields["kelas"].queryset = Kelas.objects.filter(
+            active=True
+        )
         return super().render_change_form(request, context, *args, **kwargs)
 
     def save_msodel(self, request, obj: AbsensiSession, form, change):
@@ -283,8 +273,7 @@ class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
         kelass = obj.kelas.all()
         for kelas in kelass:
             is_bentrok = (
-                AbsensiSession.objects.filter_domain(request)
-                .filter(
+                AbsensiSession.objects.filter(
                     kelas__contains=[kelas.pk],
                 )
                 .filter(hari_query)
