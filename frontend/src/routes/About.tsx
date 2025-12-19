@@ -85,7 +85,7 @@ export default function About() {
                 <div className="avatar placeholder size-10">
                   <img src="/salis.webp" alt="" />
                 </div>
-                <div className="flex-grow">
+                <div className="grow">
                   <h3 className="font-bold group-hover:text-primary transition-colors">
                     Salis Mazaya
                   </h3>
@@ -134,7 +134,7 @@ export default function About() {
                   />
                 </svg>
               </div>
-              <div className="flex-grow font-medium">Ganti Password</div>
+              <div className="grow font-medium">Ganti Password</div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -172,7 +172,7 @@ export default function About() {
                   />
                 </svg>
               </div>
-              <div className="flex-grow font-bold">Logout</div>
+              <div className="grow font-bold">Logout</div>
             </button>
           </div>
         </div>

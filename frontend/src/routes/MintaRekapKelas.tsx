@@ -31,7 +31,7 @@ export default function MintaAbsensiKelas() {
     <div className="min-h-screen bg-base-200 flex flex-col font-sans pb-24">
       <Navbar />
 
-      <main className="flex-grow p-6 md:p-10">
+      <main className="grow p-6 md:p-10">
         <div className="max-w-5xl mx-auto">
           {/* Header Title */}
           <div className="mb-8">
@@ -75,7 +75,7 @@ export default function MintaAbsensiKelas() {
                       </div>
 
                       {/* Nama Kelas (Vertically Centered) */}
-                      <div className="flex-grow">
+                      <div className="grow">
                         <h2 className="font-bold text-lg text-base-content group-hover:text-primary transition-colors">
                           {k.name}
                         </h2>

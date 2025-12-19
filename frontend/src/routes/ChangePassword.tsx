@@ -62,7 +62,7 @@ export default function ChangePassword() {
     <div className="flex flex-col min-h-screen bg-base-200">
       <Navbar />
 
-      <div className="flex-grow flex items-center justify-center p-4">
+      <div className="grow flex items-center justify-center p-4">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-2xl font-bold text-center justify-center mb-6">

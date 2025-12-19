@@ -90,7 +90,7 @@ export default function MintaRekapDetail() {
     <div className="min-h-screen bg-base-200 flex flex-col font-sans pb-24">
       <Navbar />
 
-      <main className="flex-grow p-6 md:p-10 flex flex-col items-center justify-center">
+      <main className="grow p-6 md:p-10 flex flex-col items-center justify-center">
         <div className="max-w-xl w-full space-y-6">
           
           {/* Header Info */}
