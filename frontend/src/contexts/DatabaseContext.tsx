@@ -28,7 +28,7 @@ export function DatabaseContextConsumer({ children }: { children: any }) {
 
     initSqlJs(config).then(async () => {
       setIsLoading(true);
-
+      console.log(navigator.storage)
       const { exists, db } = await getLocalDatabase();
       try {
         if (!exists) {

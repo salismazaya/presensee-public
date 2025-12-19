@@ -20,8 +20,8 @@ export async function non_blocking_db_prepare(sql: string, params?: any) {
   return stmt;
 }
 
-export async function remove_statement_ptr(stmt_ptr: number) {
-  await getWorker().remove_statement_ptr(stmt_ptr);
+export function remove_statement_ptr(stmt_ptr: number) {
+  getWorker().remove_statement_ptr(stmt_ptr);
 }
 
 export async function non_blocking_db_step(stmt_ptr: number) {
