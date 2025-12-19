@@ -43,10 +43,7 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
     for absensi in absensies:
         date = datetime.fromtimestamp(absensi.timestamp).date()
         absensi_obj: Absensi = (
-            Absensi.objects.filter_domain(request)
-            .filter(siswa_id=absensi.siswa)
-            .filter(date=date)
-            .first()
+            Absensi.objects.filter(siswa_id=absensi.siswa).filter(date=date).first()
         )
 
         match date.strftime("%A"):
@@ -65,11 +62,10 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
             case "Sunday":
                 continue
 
-        siswa_obj = Siswa.objects.filter_domain(request).get(pk=absensi.siswa)
+        siswa_obj = Siswa.objects.get(pk=absensi.siswa)
 
         absensi_session: AbsensiSession = (
-            AbsensiSession.objects.filter_domain(request)
-            .filter(kelas__in=[siswa_obj.kelas_id])
+            AbsensiSession.objects.filter(kelas__in=[siswa_obj.kelas_id])
             .filter(**{nameOfDay: True})
             .first()
         )
@@ -88,8 +84,9 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
 
         elif absensi.type == "absen_masuk" and absensi_obj is None:
             jam_keluar = datetime.combine(
-                timezone.now().date(), absensi_session.jam_keluar,
-                tzinfo = settings.TIME_ZONE_OBJ
+                timezone.now().date(),
+                absensi_session.jam_keluar,
+                tzinfo=settings.TIME_ZONE_OBJ,
             )
 
             new_absensi = Absensi(
@@ -103,8 +100,8 @@ def piket_upload(request: HttpRequest, data: list[PiketDataUploadSchema]):
 
     # hit db
     with transaction.atomic():
-        Absensi.original_objects.bulk_create(new_absensies)
-        Absensi.original_objects.bulk_update(updated_absensies, fields=["_status"])
+        Absensi.objects.bulk_create(new_absensies)
+        Absensi.objects.bulk_update(updated_absensies, fields=["_status"])
 
     # waiting data akan dihapus jika tidak diproses lebih dari 2 hari
     invalids_pickled = pickle.dumps(invalids)

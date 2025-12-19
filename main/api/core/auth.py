@@ -10,5 +10,5 @@ class AuthBearer(HttpBearer):
         if not token:
             return
 
-        user = User.objects.filter_domain(request).filter(token=token).first()
+        user = User.objects.filter(token=token).first()
         return user

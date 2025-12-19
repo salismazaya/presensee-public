@@ -2,40 +2,63 @@
 
 import datetime
 
-import django.db.models.manager
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('main', '0011_remove_absensi_status_absensi__status_and_more'),
+        ("main", "0011_remove_absensi_status_absensi__status_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AbsensiSession',
+            name="AbsensiSession",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('senin', models.BooleanField(default=False)),
-                ('selasa', models.BooleanField(default=False)),
-                ('rabu', models.BooleanField(default=False)),
-                ('kamis', models.BooleanField(default=False)),
-                ('jumat', models.BooleanField(default=False)),
-                ('sabtu', models.BooleanField(default=False)),
-                ('jam_masuk', models.TimeField(verbose_name='Jam Masuk (Absen Dimulai)')),
-                ('jam_masuk_toleransi', models.DurationField(default=datetime.timedelta(seconds=900), verbose_name='Waktu Toleransi Masuk')),
-                ('jam_keluar_mulai_absen', models.TimeField(blank=True, null=True, verbose_name='Jam Pulang (Absen Pulang Dimulai)')),
-                ('jam_keluar', models.TimeField(verbose_name='Jam Keluar')),
-                ('kelas', models.ManyToManyField(related_name='jadwal_kelas', to='main.kelas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("senin", models.BooleanField(default=False)),
+                ("selasa", models.BooleanField(default=False)),
+                ("rabu", models.BooleanField(default=False)),
+                ("kamis", models.BooleanField(default=False)),
+                ("jumat", models.BooleanField(default=False)),
+                ("sabtu", models.BooleanField(default=False)),
+                (
+                    "jam_masuk",
+                    models.TimeField(verbose_name="Jam Masuk (Absen Dimulai)"),
+                ),
+                (
+                    "jam_masuk_toleransi",
+                    models.DurationField(
+                        default=datetime.timedelta(seconds=900),
+                        verbose_name="Waktu Toleransi Masuk",
+                    ),
+                ),
+                (
+                    "jam_keluar_mulai_absen",
+                    models.TimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Jam Pulang (Absen Pulang Dimulai)",
+                    ),
+                ),
+                ("jam_keluar", models.TimeField(verbose_name="Jam Keluar")),
+                (
+                    "kelas",
+                    models.ManyToManyField(
+                        related_name="jadwal_kelas", to="main.kelas"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Jadwal Absensi (QR)',
-                'verbose_name_plural': 'Jadwal Absensi (QR)',
-                'default_manager_name': 'original_objects',
+                "verbose_name": "Jadwal Absensi (QR)",
+                "verbose_name_plural": "Jadwal Absensi (QR)",
             },
-            managers=[
-                ('original_objects', django.db.models.manager.Manager()),
-            ],
         ),
     ]

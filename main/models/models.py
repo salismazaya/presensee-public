@@ -2,18 +2,12 @@ import os
 import uuid
 from datetime import timedelta
 
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
-from .base import (
-    AbsensiManager,
-    AbsensiOriginalManager,
-    BaseManager,
-    BaseModel,
-    BaseQuerySet,
-    CustomUserManager,
-)
+from .base import (AbsensiManager, BaseManager, BaseModel, BaseQuerySet,
+                   CustomUserManager)
 
 
 def random_filename(instance, filename):
@@ -23,11 +17,9 @@ def random_filename(instance, filename):
 
 class User(BaseModel, AbstractUser):
     objects: CustomUserManager = CustomUserManager()
-    original_objects = UserManager()
-
+    
     class Meta:
         verbose_name = verbose_name_plural = "Pengguna"
-        default_manager_name = "original_objects"
 
     class TypeChoices(models.TextChoices):
         WALI_KELAS = "wali_kelas", "Wali Kelas"
@@ -81,7 +73,6 @@ class Kelas(BaseModel):
 
     class Meta:
         verbose_name = verbose_name_plural = "Kelas"
-        default_manager_name = "original_objects"
 
     name = models.CharField(verbose_name="Nama Kelas", max_length=50, unique=True)
     wali_kelas = models.OneToOneField(
@@ -104,7 +95,6 @@ class Kelas(BaseModel):
 class Siswa(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Siswa"
-        default_manager_name = "original_objects"
 
     fullname = models.CharField(verbose_name="Nama Lengkap", max_length=50)
     kelas = models.ForeignKey(Kelas, on_delete=models.PROTECT, related_name="siswas")
@@ -120,7 +110,6 @@ class KunciAbsensi(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Kunci Absensi"
         unique_together = ("kelas", "date")
-        default_manager_name = "original_objects"
 
     date = models.DateField(default=timezone.now, verbose_name="Tanggal")
     kelas = models.ForeignKey(Kelas, on_delete=models.CASCADE)
@@ -134,7 +123,6 @@ class Absensi(BaseModel):
     class Meta:
         unique_together = ("date", "siswa")
         verbose_name = verbose_name_plural = "Absensi"
-        default_manager_name = "original_objects"
 
         constraints = [
             models.CheckConstraint(
@@ -145,7 +133,6 @@ class Absensi(BaseModel):
         ]
 
     objects = AbsensiManager()
-    original_objects = AbsensiOriginalManager()
 
     class SafeStatusChoices(models.TextChoices):
         HADIR = "hadir", "Hadir"
@@ -192,7 +179,6 @@ class Absensi(BaseModel):
 class AbsensiSession(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Jadwal Absensi (QR)"
-        default_manager_name = "original_objects"
 
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     senin = models.BooleanField(default=False)
@@ -220,7 +206,6 @@ class AbsensiSession(BaseModel):
 class Data(BaseModel):
     class Meta:
         verbose_name = verbose_name_plural = "Data Sekolah"
-        default_manager_name = "original_objects"
 
     nama_sekolah = models.CharField(max_length=100)
     logo_sekolah = models.ImageField(null=True, blank=True)

@@ -11,26 +11,22 @@ from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
 
 @api.get("/data")
 def get_data(request: HttpRequest):
-    kelas_qs = Kelas.objects.filter_domain(request).filter(active=True)
+    kelas_qs = Kelas.objects.filter(active=True)
 
-    absensi_qs = Absensi.objects.filter_domain(request).filter(
-        siswa__kelas__active=True
-    )
+    absensi_qs = Absensi.objects.filter(siswa__kelas__active=True)
 
-    siswa_qs = Siswa.objects.filter_domain(request).filter(kelas__active=True)
+    siswa_qs = Siswa.objects.filter(kelas__active=True)
 
-    lock_absensi_qs = (
-        KunciAbsensi.objects.filter_domain(request)
-        .filter(kelas__active=True)
-        .filter(locked=True)
+    lock_absensi_qs = KunciAbsensi.objects.filter(kelas__active=True).filter(
+        locked=True
     )
 
     user = request.auth
 
     if user.type == User.TypeChoices.KESISWAAN:
-        kelas_qs = kelas_qs.filter_domain(request).filter(active=True)
-        absensi_qs = absensi_qs.filter_domain(request).filter(siswa__kelas__active=True)
-        siswa_qs = siswa_qs.filter_domain(request).filter(kelas__active=True)
+        kelas_qs = kelas_qs.filter(active=True)
+        absensi_qs = absensi_qs.filter(siswa__kelas__active=True)
+        siswa_qs = siswa_qs.filter(kelas__active=True)
 
     elif user.type == User.TypeChoices.WALI_KELAS:
         kelas_qs = kelas_qs.filter(wali_kelas__pk=user.pk)
