@@ -163,7 +163,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     def kelas(self, obj):
         return obj.siswa.kelas
 
-    list_display = ("id", "date", "siswa", "kelas", "final_status")
+    list_display = ("id", "date", "siswa", "kelas", "final_status_")
     list_filter = (
         "date",
         "siswa__kelas",
@@ -171,7 +171,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ("siswa__fullname", "status")
     readonly_fields = ("created_at", "updated_at")
 
-    def final_status(self, obj):
+    def final_status_(self, obj):
         final_status = obj.status
 
         if obj._status == Absensi.StatusChoices.WAIT:
@@ -181,7 +181,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
 
         return obj.status.capitalize()
 
-    final_status.short_description = "Status"
+    final_status_.short_description = "Status"
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -193,7 +193,8 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .exclude(final_status=Absensi.StatusChoices.WAIT)
+            # .exclude(final_status=Absensi.StatusChoices.WAIT)
+            # WAIT jangan di exclude karena akan di cek di line 180an
         )
 
     def render_change_form(self, request, context, *args, **kwargs):

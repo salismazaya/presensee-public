@@ -16,7 +16,14 @@ export default defineConfig({
             "react-dom",
             "lucide-react",
           ],
-          utils: ["comlink", "universal-cookie", "sql.js", "lz-string", "sweetalert2", "axios"],
+          utils: [
+            "comlink",
+            "universal-cookie",
+            "sql.js",
+            "lz-string",
+            "sweetalert2",
+            "axios",
+          ],
         },
       },
       input: {
@@ -31,9 +38,9 @@ export default defineConfig({
     comlink(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: 'script',
+      injectRegister: "script",
       strategies: "generateSW",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg",],
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
       manifest: {
         name: "Presensee",
         lang: "id",
@@ -59,13 +66,11 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,wasm,json}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [
-          /^\/api/,
-          /^\/admin/,
-          /^\/files/,
+        globPatterns: [
+          "**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,wasm,json}",
         ],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/admin/, /^\/files/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
@@ -89,21 +94,24 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
             options: {
-              cacheName: 'images-cache',
+              cacheName: "images-cache",
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 hari
-              }
-            }
-          }
+              },
+            },
+          },
         ],
+      },
+      devOptions: {
+        enabled: true,
       },
     }),
   ],
   worker: {
-    plugins: () => [comlink()]
-  }
+    plugins: () => [comlink()],
+  },
 });

@@ -42,7 +42,7 @@ def get_jadwal_absensi(request: HttpRequest):
                 results[kelas.pk][day] = {
                     "jam_masuk": absensi_session.jam_masuk.strftime("%H:%M"),
                     "jam_masuk_sampai": jam_masuk_sampai.strftime("%H:%M"),
-                    "jam_keluar": absensi_session.safe_jam_keluar,
+                    "jam_keluar": absensi_session.jam_keluar_mulai_absen,
                 }
             else:
                 results[kelas.pk][day] = None

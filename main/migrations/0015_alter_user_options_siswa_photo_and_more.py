@@ -74,12 +74,16 @@ class Migration(migrations.Migration):
                 (
                     "jam_keluar_mulai_absen",
                     models.TimeField(
-                        blank=True,
-                        null=True,
-                        verbose_name="Jam Pulang (Absen Pulang Dimulai)",
+                        null=True, verbose_name="Jam Pulang (Absen Pulang Dimulai)"
                     ),
                 ),
-                ("jam_keluar", models.TimeField(verbose_name="Jam Keluar")),
+                (
+                    "jam_keluar",
+                    models.TimeField(
+                        help_text="* Jika siswa tidak kembali absen pada jam ini. Maka, dianggap bolos",
+                        verbose_name="Jam Keluar",
+                    ),
+                ),
                 (
                     "kelas",
                     models.ManyToManyField(

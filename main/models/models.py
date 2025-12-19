@@ -193,20 +193,14 @@ class AbsensiSession(BaseModel):
         verbose_name="Waktu Toleransi Masuk", default=timedelta(minutes=15)
     )
     jam_keluar_mulai_absen = models.TimeField(
-        null=True, blank=True, verbose_name="Jam Pulang (Absen Pulang Dimulai)"
+        null=True, verbose_name="Jam Pulang (Absen Pulang Dimulai)"
     )
-    jam_keluar = models.TimeField(verbose_name="Jam Keluar")
+    jam_keluar = models.TimeField(
+        verbose_name="Jam Keluar",
+        help_text="* Jika siswa tidak kembali absen pada jam ini. Maka, dianggap bolos",
+    )
 
     kelas = models.ManyToManyField(Kelas, related_name="jadwal_kelas")
-
-    @property
-    def safe_jam_keluar(self):
-        """mendapatkan jam_keluar_mulai_absen. jika null return jam_keluar"""
-        rv = self.jam_keluar_mulai_absen
-        if rv is None:
-            rv = self.jam_keluar
-
-        return rv
 
 
 class Data(BaseModel):

@@ -19,6 +19,8 @@ interface SharedDataProps {
   setLastRefresh?: (l: number) => void;
   conflicts?: ConflictData[];
   setConflicts?: (l: ConflictData[]) => void;
+  setSiswasKelasName?: (d: { id: number; kelasName: string }[]) => void;
+  siswasKelasName: Record<number, string>;
 }
 
 export function SharedDataContextConsumer({
@@ -56,6 +58,22 @@ export function SharedDataContextConsumer({
   const [lastRefresh, setLastRefresh] = useState<number | undefined>(
     currentLastRefresh
   );
+
+  const [siswasKelasName, _setSiswasKelasName] = useState<
+    Record<number, string>
+  >({});
+
+  function setSiswasKelasName(data: { id: number; kelasName: string }[]) {
+    const tempSiswasKelasName: any = {};
+    data.forEach((x) => {
+      tempSiswasKelasName[x.id] = x.kelasName;
+    });
+
+    _setSiswasKelasName({
+      ...siswasKelasName,
+      ...tempSiswasKelasName,
+    });
+  }
 
   const _setLastRefresh = (lastRefresh: number) => {
     localStorage.setItem("LAST_REFRESH", lastRefresh.toString());
@@ -103,6 +121,8 @@ export function SharedDataContextConsumer({
     setLastRefresh: _setLastRefresh,
     conflicts,
     setConflicts,
+    siswasKelasName,
+    setSiswasKelasName,
   };
 
   return (
@@ -119,6 +139,8 @@ export function SharedDataContextConsumer({
   );
 }
 
-const SharedDataContext = createContext<SharedDataProps>({});
+const SharedDataContext = createContext<SharedDataProps>({
+  siswasKelasName: {},
+});
 
 export default SharedDataContext;

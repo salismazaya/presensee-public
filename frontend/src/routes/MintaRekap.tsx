@@ -24,7 +24,7 @@ export default function MintaRekap() {
     <div className="min-h-screen bg-base-200 flex flex-col font-sans pb-24">
       <Navbar />
 
-      <main className="flex-grow p-6 md:p-10">
+      <main className="grow p-6 md:p-10">
         <div className="max-w-4xl mx-auto">
           
           {/* Header Section */}

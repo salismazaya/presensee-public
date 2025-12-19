@@ -6,7 +6,7 @@ import useUser from "../hooks/useUser";
 import {
   getAbsensies,
   getIsLocked,
-  getKelas,
+  getKelasFirst,
   getSiswa,
   lockAbsensi,
   unlockAbsensi,
@@ -174,7 +174,7 @@ export default function Absensi() {
   useEffect(() => {
     if (dataServerLoaded.current) return;
     // load hanya sekali. biar user tidak bingung di-spam notif
-    
+
     if (!token || !kelas) return;
 
     // Format key: Jum, 21-11-25
@@ -190,45 +190,48 @@ export default function Absensi() {
       return `20${yy}-${mm}-${dd}`;
     });
 
-    getAbsensiesProgress(token, formattedDates, kelas).then((ap) => {
-      const newAbsensiesProgress: any = {};
+    getAbsensiesProgress(token, formattedDates, kelas)
+      .then((ap) => {
+        const newAbsensiesProgress: any = {};
 
-      Object.keys(ap).forEach((key) => {
-        const datetime = new Date(key);
-        // const [dd, mm, yy] = key.split("-");
-        const formattedKey = formatDate(datetime);
-        
-        const oldAbsensiProgress = progressAbsensi[formattedKey];
-        // console.log(progressAbsensi)
-        const absensiProgress = {
-          totalTidakMasuk: ap[key].total_tidak_masuk,
-          isComplete: ap[key].is_complete,
-        };
+        Object.keys(ap).forEach((key) => {
+          const datetime = new Date(key);
+          // const [dd, mm, yy] = key.split("-");
+          const formattedKey = formatDate(datetime);
 
-        // console.log(formattedKey, oldAbsensiProgress, absensiProgress);
+          const oldAbsensiProgress = progressAbsensi[formattedKey];
+          // console.log(progressAbsensi)
+          const absensiProgress = {
+            totalTidakMasuk: ap[key].total_tidak_masuk,
+            isComplete: ap[key].is_complete,
+          };
 
-        if (!oldAbsensiProgress.isComplete && absensiProgress.isComplete) {
-          newAbsensiesProgress[formattedKey] = absensiProgress;
-        } else {
-          newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
-        }
+          // console.log(formattedKey, oldAbsensiProgress, absensiProgress);
+
+          if (!oldAbsensiProgress.isComplete && absensiProgress.isComplete) {
+            newAbsensiesProgress[formattedKey] = absensiProgress;
+          } else {
+            newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
+          }
+        });
+
+        toast.success("Menerima data dari server", {
+          autoClose: 1000,
+          closeOnClick: true,
+        });
+
+        setProgressAbsensi(newAbsensiesProgress);
+      })
+      .finally(() => {
+        dataServerLoaded.current = true;
       });
-
-      toast.success("Menerima data dari server", {
-        autoClose: 1000,
-        closeOnClick: true,
-      });
-
-      setProgressAbsensi(newAbsensiesProgress);
-    }).finally(() => {
-      dataServerLoaded.current = true;
-    });
   }, [absensies, token]);
 
   useEffect(() => {
     if (!db || !kelas) return;
-    const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
-    if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
+    getKelasFirst({ db, whereQuery: `id=${kelas}` }).then((currentKelas) => {
+      if (currentKelas) setKelasName(currentKelas.name);
+    });
   }, [db, kelas]);
 
   const handleToggleLock = (
@@ -259,7 +262,7 @@ export default function Absensi() {
     <div className="min-h-screen bg-base-200 flex flex-col font-sans h-screen overflow-hidden">
       <Navbar />
 
-      <main className="flex-grow p-4 md:p-6 flex flex-col h-full overflow-hidden">
+      <main className="grow p-4 md:p-6 flex flex-col h-full overflow-hidden">
         <div className="max-w-5xl w-full mx-auto flex flex-col gap-4 h-full">
           {/* HEADER CONTROLS */}
           <div className="flex-none flex flex-row justify-between items-center bg-base-100 p-3 md:p-4 rounded-2xl shadow-sm border border-base-300">
@@ -267,7 +270,7 @@ export default function Absensi() {
               <div className="text-[10px] md:text-xs font-bold text-base-content/50 uppercase tracking-wider">
                 Kelas
               </div>
-              <div className="text-xl md:text-2xl font-bold text-primary truncate max-w-[150px]">
+              <div className="text-xl md:text-2xl font-bold text-primary truncate max-w-37.5">
                 {kelasName || "..."}
               </div>
             </div>
@@ -292,7 +295,7 @@ export default function Absensi() {
                 </svg>
               </button>
 
-              <div className="px-3 text-center w-[120px] md:w-[140px]">
+              <div className="px-3 text-center w-30 md:w-35">
                 <div className="font-bold text-sm md:text-base">
                   {monthNamesFull[viewDate.getMonth()]}
                 </div>
@@ -323,7 +326,7 @@ export default function Absensi() {
           </div>
 
           {/* TABLE AREA */}
-          <div className="card bg-base-100 shadow-xl rounded-2xl border border-base-300 flex-grow flex flex-col overflow-hidden">
+          <div className="card bg-base-100 shadow-xl rounded-2xl border border-base-300 grow flex flex-col overflow-hidden">
             <div className="flex-none grid grid-cols-12 gap-2 px-4 py-3 bg-base-100 border-b border-base-200 z-20 font-bold text-sm text-base-content/70 sticky top-0 shadow-sm">
               <div className="col-span-4 md:col-span-3 pl-2">Tanggal</div>
               <div className="col-span-3 md:col-span-3 text-center">Status</div>
@@ -333,7 +336,7 @@ export default function Absensi() {
               </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto scrollbar-thin pb-20">
+            <div className="grow overflow-y-auto scrollbar-thin pb-20">
               {filteredDates.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-40 text-base-content/40">
                   <p>Tidak ada data tanggal.</p>
@@ -346,8 +349,7 @@ export default function Absensi() {
                 const { day, date, month } = formatDisplayDate(dateString);
                 const [dd, mm, yy] = dateString.split(", ")[1].split("-");
                 const dateForLink = `20${yy}-${mm}-${dd}`;
-                
-                
+
                 let locked = false;
                 if (kelas)
                   locked = getIsLocked({
@@ -358,7 +360,8 @@ export default function Absensi() {
                 locked = locked || user?.type === "kesiswaan";
 
                 const isComplete = progressAbsensi[dateString].isComplete;
-                const totalTidakMasuk = progressAbsensi[dateString].totalTidakMasuk;
+                const totalTidakMasuk =
+                  progressAbsensi[dateString].totalTidakMasuk;
                 // console.log(dateString, isComplete);
 
                 return (
