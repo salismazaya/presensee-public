@@ -3,6 +3,12 @@ import { refreshDatabase } from "./api";
 import { insert, insertStagingAbsens } from "./stagingDatabase";
 import type { ConflictData } from "../components/ConflictsList";
 import initSqlJs, { type Database } from "sql.js";
+import {
+  non_blocking_db_get_as_object,
+  non_blocking_db_prepare,
+  non_blocking_db_step,
+  remove_statement_ptr
+} from "./worker";
 
 // --- CONFIGURATION ---
 const DB_FILENAME = "presensee_db.sqlite";
@@ -266,7 +272,7 @@ export async function getLocalDatabase(): Promise<{
       db,
     };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     // Error biasanya terjadi jika file belum ada (pengguna baru)
     // Maka kita kembalikan database baru yang kosong
     console.log("Database belum ditemukan di OPFS, inisialisasi baru.");
@@ -325,13 +331,38 @@ export interface KelasProps {
   name: string;
 }
 
-export function getKelas(data: DatabaseProps) {
+export async function getKelas(data: DatabaseProps) {
   let sql = "SELECT * FROM kelas";
   if (data.whereQuery) sql += " WHERE " + data.whereQuery;
   const stmt = data.db.prepare(sql);
   const result: KelasProps[] = [];
   while (stmt.step()) result.push(stmt.getAsObject());
   return result;
+}
+
+export async function getSiswasKelasName(
+  siswasId: number[]
+): Promise<{ siswa_id: number; kelas_name: string }[]> {
+  let sql = "SELECT siswa.id as siswa_id, kelas.name as kelas_name FROM siswa ";
+  sql += "INNER JOIN kelas ON siswa.kelas_id = kelas.id WHERE ";
+  sql += siswasId
+    .map((siswaId) => {
+      return `siswa.id = ${siswaId}`;
+    })
+    .join(" OR ");
+
+  const stmt_ptr = await non_blocking_db_prepare(sql);
+  const result = [];
+  while (await non_blocking_db_step(stmt_ptr)) {
+    result.push((await non_blocking_db_get_as_object(stmt_ptr)) as any);
+  }
+  remove_statement_ptr(stmt_ptr);
+  return result;
+}
+
+export async function getKelasFirst(data: DatabaseProps) {
+  const result = await getKelas(data);
+  return result[0];
 }
 
 export function purgeConflictAbsensi() {

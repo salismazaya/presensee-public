@@ -176,9 +176,11 @@ export default function AbsensiDetail() {
   useEffect(() => {
     if (db && kelas) {
       const allSiswas = getSiswa({ db, whereQuery: `kelas_id=${kelas}` });
-      const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
+      // const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
+      getKelas({ db, whereQuery: `id=${kelas}` }).then((currentKelas) => {
+        if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
+      });
 
-      if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
       setTimeout(() => setSiswas(allSiswas), 300); // Sedikit delay agar tidak blocking UI render awal
     }
   }, [db, kelas]);

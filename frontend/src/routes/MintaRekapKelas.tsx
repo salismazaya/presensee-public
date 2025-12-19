@@ -14,10 +14,11 @@ export default function MintaAbsensiKelas() {
 
   useEffect(() => {
     if (db) {
-      const kelas = getKelas({
-        db,
-      });
-      setListKelas(kelas);
+      // const kelas = getKelas({
+      //   db,
+      // });
+      // setListKelas(kelas);
+      getKelas({db}).then(kelas => setListKelas(kelas))
     }
   }, [db]);
 

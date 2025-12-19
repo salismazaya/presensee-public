@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import useDatabase from "../hooks/useDatabase";
-import { getKelas } from "../helpers/database";
+// import { getKelasFirst } from "../helpers/database";
+import {
+  non_blocking_db_get_as_object,
+  non_blocking_db_prepare,
+  non_blocking_db_step,
+} from "../helpers/worker";
+import useSiswasKelasName from "../hooks/useSiswasKelasName";
+import { getSiswasKelasName } from "../helpers/database";
 
 interface SiswaRekapProps {
   id: number;
@@ -19,10 +26,10 @@ interface RekapRrops {
   ordering?: "DESC" | "ASC";
   kelasId?: number;
   startDate?: string;
-  endDate?: string
+  endDate?: string;
 }
 
-function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
+function RekapMini({ siswas }: { siswas: SiswaRekapProps[] }) {
   const topSiswas = siswas.slice(0, 5);
 
   let downSiswas: SiswaRekapProps[] = [];
@@ -31,22 +38,18 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
     downSiswas = siswas.slice(siswas.length - 5, siswas.length);
   }
 
+  const [siswasKelasName] = useSiswasKelasName();
+
   return (
     <>
       {topSiswas.map((s, i) => {
-        const kelas = getKelas({
-          db,
-          whereQuery: `id=${s.kelas_id}`,
-        })[0];
-        if (!kelas) return;
-
         let hadirRate = Math.floor(
           (s.jumlah_hadir * 100) /
-          (s.jumlah_alfa +
-            s.jumlah_izin +
-            s.jumlah_bolos +
-            s.jumlah_sakit +
-            s.jumlah_hadir)
+            (s.jumlah_alfa +
+              s.jumlah_izin +
+              s.jumlah_bolos +
+              s.jumlah_sakit +
+              s.jumlah_hadir)
         );
 
         if (isNaN(hadirRate)) {
@@ -57,7 +60,7 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
           <tr key={s.id}>
             <th>{i + 1}</th>
             <td>{s.fullname}</td>
-            <td>{kelas.name}</td>
+            <td>{siswasKelasName[s.id] || ""}</td>
             <td>{hadirRate}%</td>
             <td>{s.jumlah_alfa}</td>
             <td>{s.jumlah_bolos}</td>
@@ -80,19 +83,13 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
       )}
 
       {downSiswas.map((s, i) => {
-        const kelas = getKelas({
-          db,
-          whereQuery: `id=${s.kelas_id}`,
-        })[0];
-        if (!kelas) return;
-
         let hadirRate = Math.floor(
           (s.jumlah_hadir * 100) /
-          (s.jumlah_alfa +
-            s.jumlah_izin +
-            s.jumlah_bolos +
-            s.jumlah_sakit +
-            s.jumlah_hadir)
+            (s.jumlah_alfa +
+              s.jumlah_izin +
+              s.jumlah_bolos +
+              s.jumlah_sakit +
+              s.jumlah_hadir)
         );
 
         if (isNaN(hadirRate)) {
@@ -105,7 +102,7 @@ function RekapMini({ db, siswas }: { db: any; siswas: SiswaRekapProps[] }) {
               {siswas.length - downSiswas.length + i + 1}
             </th>
             <td>{s.fullname}</td>
-            <td>{kelas.name}</td>
+            <td>{siswasKelasName[s.id] || "-"}</td>
             <td>{hadirRate}%</td>
 
             <td>{s.jumlah_alfa}</td>
@@ -128,11 +125,25 @@ export default function Rekap(props: RekapRrops) {
 
   const [allsiswas, setAllSiswas] = useState<SiswaRekapProps[]>([]);
   const [siswas, setSiswas] = useState<typeof allsiswas>([]);
+  const [siswasKelasName, setSiswasKelasName] = useSiswasKelasName();
+
+  useEffect(() => {
+    if (allsiswas.length == 0 || !db) return;
+
+    getSiswasKelasName(allsiswas.map((s) => s.id)).then((siswasKelasName) => {
+      setSiswasKelasName(
+        siswasKelasName.map((s) => {
+          return { id: s.siswa_id, kelasName: s.kelas_name };
+        })
+      );
+    });
+  }, [allsiswas, db]);
 
   useEffect(() => {
     if (!db) return;
 
-    let sql = `
+    setTimeout(async () => {
+      let sql = `
 SELECT 
     s.id,
     s.fullname,
@@ -158,20 +169,23 @@ GROUP BY s.id, s.fullname, s.kelas_id
 ORDER BY skor ${ordering};
     `;
 
-    const stmt = db.prepare(sql);
-    let result: SiswaRekapProps[] = [];
+      const stmt_ptr = await non_blocking_db_prepare(sql);
+      let result: SiswaRekapProps[] = [];
 
-    while (stmt.step()) {
-      const row: SiswaRekapProps = stmt.getAsObject() as any;
-      result.push(row);
-    }
+      while (await non_blocking_db_step(stmt_ptr)) {
+        const row: SiswaRekapProps = (await non_blocking_db_get_as_object(
+          stmt_ptr
+        )) as any;
+        result.push(row);
+      }
 
-    if (props.kelasId) {
-      result = result.filter((a) => a.kelas_id == props.kelasId);
-    }
+      if (props.kelasId) {
+        result = result.filter((a) => a.kelas_id == props.kelasId);
+      }
 
-    setAllSiswas(result);
-    setSiswas(result);
+      setAllSiswas(result);
+      setSiswas(result);
+    }, 0);
   }, [db, ordering, kelasId, startDate, endDate]);
 
   //   return siswas.map((s) => <p>{s.fullname}</p>);
@@ -193,22 +207,16 @@ ORDER BY skor ${ordering};
           </tr>
         </thead>
         <tbody>
-          {!props.full && <RekapMini db={db} siswas={siswas}></RekapMini>}
+          {!props.full && <RekapMini siswas={siswas}></RekapMini>}
           {props.full &&
             allsiswas.map((s, i) => {
-              const kelas = getKelas({
-                db,
-                whereQuery: `id=${s.kelas_id}`,
-              })[0];
-              if (!kelas) return;
-
               let hadirRate = Math.floor(
                 (s.jumlah_hadir * 100) /
-                (s.jumlah_alfa +
-                  s.jumlah_izin +
-                  s.jumlah_bolos +
-                  s.jumlah_sakit +
-                  s.jumlah_hadir)
+                  (s.jumlah_alfa +
+                    s.jumlah_izin +
+                    s.jumlah_bolos +
+                    s.jumlah_sakit +
+                    s.jumlah_hadir)
               );
 
               if (isNaN(hadirRate)) {
@@ -219,7 +227,7 @@ ORDER BY skor ${ordering};
                 <tr key={s.id}>
                   <th>{i + 1}</th>
                   <td>{s.fullname}</td>
-                  <td>{kelas.name}</td>
+                  <td>{siswasKelasName[s.id] || "-"}</td>
                   <td>{hadirRate}%</td>
 
                   <td>{s.jumlah_alfa}</td>

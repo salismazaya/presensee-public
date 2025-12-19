@@ -6,7 +6,7 @@ import useUser from "../hooks/useUser";
 import {
   getAbsensies,
   getIsLocked,
-  getKelas,
+  getKelasFirst,
   getSiswa,
   lockAbsensi,
   unlockAbsensi,
@@ -174,7 +174,7 @@ export default function Absensi() {
   useEffect(() => {
     if (dataServerLoaded.current) return;
     // load hanya sekali. biar user tidak bingung di-spam notif
-    
+
     if (!token || !kelas) return;
 
     // Format key: Jum, 21-11-25
@@ -190,45 +190,48 @@ export default function Absensi() {
       return `20${yy}-${mm}-${dd}`;
     });
 
-    getAbsensiesProgress(token, formattedDates, kelas).then((ap) => {
-      const newAbsensiesProgress: any = {};
+    getAbsensiesProgress(token, formattedDates, kelas)
+      .then((ap) => {
+        const newAbsensiesProgress: any = {};
 
-      Object.keys(ap).forEach((key) => {
-        const datetime = new Date(key);
-        // const [dd, mm, yy] = key.split("-");
-        const formattedKey = formatDate(datetime);
-        
-        const oldAbsensiProgress = progressAbsensi[formattedKey];
-        // console.log(progressAbsensi)
-        const absensiProgress = {
-          totalTidakMasuk: ap[key].total_tidak_masuk,
-          isComplete: ap[key].is_complete,
-        };
+        Object.keys(ap).forEach((key) => {
+          const datetime = new Date(key);
+          // const [dd, mm, yy] = key.split("-");
+          const formattedKey = formatDate(datetime);
 
-        // console.log(formattedKey, oldAbsensiProgress, absensiProgress);
+          const oldAbsensiProgress = progressAbsensi[formattedKey];
+          // console.log(progressAbsensi)
+          const absensiProgress = {
+            totalTidakMasuk: ap[key].total_tidak_masuk,
+            isComplete: ap[key].is_complete,
+          };
 
-        if (!oldAbsensiProgress.isComplete && absensiProgress.isComplete) {
-          newAbsensiesProgress[formattedKey] = absensiProgress;
-        } else {
-          newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
-        }
+          // console.log(formattedKey, oldAbsensiProgress, absensiProgress);
+
+          if (!oldAbsensiProgress.isComplete && absensiProgress.isComplete) {
+            newAbsensiesProgress[formattedKey] = absensiProgress;
+          } else {
+            newAbsensiesProgress[formattedKey] = oldAbsensiProgress;
+          }
+        });
+
+        toast.success("Menerima data dari server", {
+          autoClose: 1000,
+          closeOnClick: true,
+        });
+
+        setProgressAbsensi(newAbsensiesProgress);
+      })
+      .finally(() => {
+        dataServerLoaded.current = true;
       });
-
-      toast.success("Menerima data dari server", {
-        autoClose: 1000,
-        closeOnClick: true,
-      });
-
-      setProgressAbsensi(newAbsensiesProgress);
-    }).finally(() => {
-      dataServerLoaded.current = true;
-    });
   }, [absensies, token]);
 
   useEffect(() => {
     if (!db || !kelas) return;
-    const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
-    if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
+    getKelasFirst({ db, whereQuery: `id=${kelas}` }).then((currentKelas) => {
+      if (currentKelas) setKelasName(currentKelas.name);
+    });
   }, [db, kelas]);
 
   const handleToggleLock = (
@@ -346,8 +349,7 @@ export default function Absensi() {
                 const { day, date, month } = formatDisplayDate(dateString);
                 const [dd, mm, yy] = dateString.split(", ")[1].split("-");
                 const dateForLink = `20${yy}-${mm}-${dd}`;
-                
-                
+
                 let locked = false;
                 if (kelas)
                   locked = getIsLocked({
@@ -358,7 +360,8 @@ export default function Absensi() {
                 locked = locked || user?.type === "kesiswaan";
 
                 const isComplete = progressAbsensi[dateString].isComplete;
-                const totalTidakMasuk = progressAbsensi[dateString].totalTidakMasuk;
+                const totalTidakMasuk =
+                  progressAbsensi[dateString].totalTidakMasuk;
                 // console.log(dateString, isComplete);
 
                 return (
