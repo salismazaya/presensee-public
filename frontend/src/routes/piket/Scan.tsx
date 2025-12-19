@@ -3,7 +3,7 @@ import Navbar from "../../components/Navbar";
 import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import PiketFooter from "../../components/PiketFooter";
-import LZString from "lz-string";
+
 import { getJadwal, getSiswas, uploadPiketDatabase } from "../../helpers/api";
 import useToken from "../../hooks/useToken";
 
@@ -42,48 +42,60 @@ type JadwalProps = Record<
     { jam_masuk: string; jam_masuk_sampai: string; jam_keluar: string }
   >
 >;
-
-// --- HELPER STORAGE ---
-
-// Helper: Visual Logs (Hanya untuk history di layar)
-function getVisualLogs(): ScanLog[] {
-  let compressed = localStorage.getItem("PIKET_LOGS_VIEW");
-  if (!compressed) return [];
-  return JSON.parse(LZString.decompress(compressed));
+// Helper Inti untuk OPFS
+async function writeOPFS(fileName: string, data: any) {
+  const root = await navigator.storage.getDirectory();
+  const fileHandle = await root.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(JSON.stringify(data));
+  await writable.close();
 }
 
-function setVisualLogs(datas: ScanLog[]) {
-  const compressed = LZString.compress(JSON.stringify(datas));
-  localStorage.setItem("PIKET_LOGS_VIEW", compressed);
+async function readOPFS(fileName: string, defaultValue: any) {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const fileHandle = await root.getFileHandle(fileName);
+    const file = await fileHandle.getFile();
+    const content = await file.text();
+    return JSON.parse(content);
+  } catch (e) {
+    return defaultValue;
+  }
 }
 
-// Helper: Upload Queue (Data bersih untuk diupload)
-function getUploadQueue(): UploadData[] {
-  let compressed = localStorage.getItem("PIKET_UPLOAD_QUEUE");
-  if (!compressed) return [];
-  return JSON.parse(LZString.decompress(compressed));
+// --- Visual Logs ---
+async function getVisualLogs(): Promise<ScanLog[]> {
+  return await readOPFS("visual_logs.json", []);
 }
 
-function setUploadQueue(datas: UploadData[]) {
-  const compressed = LZString.compress(JSON.stringify(datas));
-  localStorage.setItem("PIKET_UPLOAD_QUEUE", compressed);
+async function setVisualLogs(datas: ScanLog[]) {
+  await writeOPFS("visual_logs.json", datas);
 }
 
-// Helper: Siswa & Jadwal (Sama seperti sebelumnya)
-function getLocalSiswas(): Record<string, Siswa> {
-  let compressed = localStorage.getItem("PIKET_SISWA_DATA");
-  if (!compressed) return {};
-  return JSON.parse(LZString.decompress(compressed));
+// --- Upload Queue ---
+async function getUploadQueue(): Promise<UploadData[]> {
+  return await readOPFS("upload_queue.json", []);
 }
-function setLocalSiswas(siswas: Siswa[]) {
-  const compressed = LZString.compress(JSON.stringify(siswas));
-  localStorage.setItem("PIKET_SISWA_DATA", compressed);
+
+async function setUploadQueue(datas: UploadData[]) {
+  await writeOPFS("upload_queue.json", datas);
 }
-function getLocalJadwal(): JadwalProps {
-  return JSON.parse(localStorage.getItem("PIKET_JADWAL") || "{}");
+
+// --- Siswa & Jadwal ---
+async function getLocalSiswas(): Promise<Record<string, Siswa>> {
+  return await readOPFS("siswa_data.json", {});
 }
-function setLocalJadwal(jadwal: JadwalProps) {
-  localStorage.setItem("PIKET_JADWAL", JSON.stringify(jadwal));
+
+async function setLocalSiswas(siswas: Siswa[]) {
+  await writeOPFS("siswa_data.json", siswas);
+}
+
+async function getLocalJadwal(): Promise<JadwalProps> {
+  return await readOPFS("jadwal.json", {});
+}
+
+async function setLocalJadwal(jadwal: JadwalProps) {
+  await writeOPFS("jadwal.json", jadwal);
 }
 
 const getTodayDateString = () => {
@@ -107,33 +119,42 @@ export default function Scan() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Data State
-  const [logs, _setLogs] = useState<ScanLog[]>(() => {
-    const savedLogs = getVisualLogs();
-    const todayStr = getTodayDateString();
-
-    // Filter: Hanya ambil log yang tanggalnya SAMA dengan hari ini
-    const todayLogs = savedLogs.filter((log) => log.date === todayStr);
-
-    // Jika ada data lama yang terbuang, update localStorage agar bersih
-    if (todayLogs.length !== savedLogs.length) {
-      console.log("Membersihkan log lama...");
-      setVisualLogs(todayLogs);
-    }
-
-    return todayLogs;
-  });
-  const [queue, _setQueue] = useState<UploadData[]>(getUploadQueue()); // State antrian upload
+  const [logs, _setLogs] = useState<ScanLog[]>([]);
+  const [queue, _setQueue] = useState<UploadData[]>([]);
 
   // Hooks
   const [token] = useToken();
 
   // Refs
-  const localSiswas = useRef(getLocalSiswas());
-  const localJadwal = useRef(getLocalJadwal());
+  const localSiswas = useRef<Record<string, Siswa>>({});
+  const localJadwal = useRef<JadwalProps>({});
   const cancelSelectTimeout = useRef<NodeJS.Timeout>(null);
   const overlayTimeout = useRef<NodeJS.Timeout>(null);
   const latestTimeScan = useRef<number>(Date.now());
   const queueRef = useRef(queue);
+
+  // Effect
+  useEffect(() => {
+    setTimeout(async () => {
+      const savedLogs = await getVisualLogs();
+      const todayStr = getTodayDateString();
+
+      // Filter: Hanya ambil log yang tanggalnya SAMA dengan hari ini
+      const todayLogs = savedLogs.filter((log) => log.date === todayStr);
+
+      // Jika ada data lama yang terbuang, update localStorage agar bersih
+      if (todayLogs.length !== savedLogs.length) {
+        console.log("Membersihkan log lama...");
+        setVisualLogs(todayLogs);
+      }
+
+      return todayLogs;
+    }, 0);
+
+    getUploadQueue().then((queue) => setQueue(queue));
+    getLocalSiswas().then((siswas) => (localSiswas.current = siswas));
+    getLocalJadwal().then((jadwal) => (localJadwal.current = jadwal));
+  }, []);
 
   // Wrapper untuk update Logs & Queue
   const setLogs = (datas: ScanLog[]) => {
