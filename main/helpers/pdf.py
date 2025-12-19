@@ -1,4 +1,3 @@
-import base64
 import zoneinfo
 from pathlib import Path
 from tempfile import NamedTemporaryFile

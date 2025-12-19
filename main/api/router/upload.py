@@ -12,8 +12,12 @@ from main.api.api import api
 from main.api.core.types import HttpRequest
 from main.models import Absensi, KunciAbsensi, Siswa
 
-from ..schemas import (DataCompressedUploadSchema, DataUploadSchema,
-                       ErrorSchema, SuccessSchema)
+from ..schemas import (
+    DataCompressedUploadSchema,
+    DataUploadSchema,
+    ErrorSchema,
+    SuccessSchema,
+)
 
 
 @api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
@@ -147,6 +151,8 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                     ):
                         if (previous_absensi_status == current_absensi_status) or (
                             current_absensi_status == Absensi.StatusChoices.WAIT
+                            # jika status absensi adalah wait, berarti diabsen guru piket
+                            # jadi boleh ditimpa
                         ):
                             absensi.status = payload["status"]
                             absensi.updated_at = updated_at

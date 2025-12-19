@@ -312,7 +312,6 @@ export default function Scan() {
     let absenType: "absen_pulang" | "absen_masuk" = "absen_masuk";
     const [inH, inM] = jadwalToday.jam_masuk.split(":").map(Number);
     const startMinutes = inH * 60 + inM;
-    console.log({currentMinutes, startMinutes})
 
     if (currentMinutes < outMinutes) {
       // FASE MASUK
