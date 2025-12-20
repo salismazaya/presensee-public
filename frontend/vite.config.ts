@@ -70,7 +70,13 @@ export default defineConfig({
           "**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,wasm,json}",
         ],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/admin/, /^\/files/],
+        navigateFallbackDenylist: [
+          /^\/api/,
+          /^\/admin/,
+          /^\/files/,
+          /^\/setup/,
+          /^\/migrate/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
