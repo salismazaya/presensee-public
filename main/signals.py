@@ -29,8 +29,8 @@ def save_photo_handler(sender, **kwargs):
         pk=instance.pk
     ).first()
 
-    if not instance.photo and current_instance.photo:
-        # user uncentang photo
+    # user uncentang photo
+    if not instance.photo and current_instance and current_instance.photo:
         current_instance.photo.delete(save=False)
         return
 
