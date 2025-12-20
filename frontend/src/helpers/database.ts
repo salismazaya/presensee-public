@@ -273,8 +273,6 @@ export async function getLocalDatabase(): Promise<{
     };
   } catch (error) {
     console.log(error);
-    // Error biasanya terjadi jika file belum ada (pengguna baru)
-    // Maka kita kembalikan database baru yang kosong
     console.log("Database belum ditemukan di OPFS, inisialisasi baru.");
     const db = new SQL.Database();
     return {

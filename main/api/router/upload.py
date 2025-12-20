@@ -6,6 +6,7 @@ from datetime import datetime
 from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from lzstring import LZString
 
 from main.api.api import api
@@ -56,6 +57,13 @@ def upload(request: HttpRequest, data: DataUploadSchema):
             except dateutil_parser._parser.ParserError:
                 transaction.set_rollback(True)
                 return 400, {"detail": "gagal parsing tanggal %s" % payload["date"]}
+
+        # tanggal harus dalam rentang 1 Januari 2020 - hari diabsen
+        date_is_invalid = (date.date() > timezone.now().date()) or (
+            date.date().year < 2020
+        )
+        if date_is_invalid:
+            continue
 
         if x.action == "absen":
             updated_at_int = int(payload.get("updated_at", time.time()))

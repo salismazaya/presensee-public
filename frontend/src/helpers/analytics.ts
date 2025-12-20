@@ -9,7 +9,6 @@ export interface AnalyticsData {
     totalBolos: number;
     attendanceRate: number;
   };
-  // Tambahkan Interface Insight
   insights: {
     mostProductiveDay: { day: string; percentage: number };
     leastProductiveDay: { day: string; percentage: number };
@@ -25,7 +24,15 @@ export interface AnalyticsData {
   }[];
 }
 
-const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const DAYS_ID = [
+  "Minggu",
+  "Senin",
+  "Selasa",
+  "Rabu",
+  "Kamis",
+  "Jumat",
+  "Sabtu",
+];
 
 export const getAnalyticsData = async (
   // db: any,
@@ -59,12 +66,13 @@ export const getAnalyticsData = async (
     WHERE 1=1 ${dateFilter} ${classFilter}
   `;
 
-  // const summaryRes = db.exec(summaryQuery, params);
-  const summaryRes = await non_blocking_db_execute(summaryQuery, params);
-  const summaryRow = summaryRes.length ? summaryRes[0].values[0] : [0, 0, 0, 0, 0, 0];
+  const summaryRes = await non_blocking_db_execute(summaryQuery, params, false);
+  const summaryRow = summaryRes.length
+    ? summaryRes[0].values[0]
+    : [0, 0, 0, 0, 0, 0];
   const [h, s, i, a, b, total] = summaryRow as number[];
 
-  // 3. Query Trend Harian (Sama seperti sebelumnya)
+  // 3. Query Trend Harian
   const trendQuery = `
     SELECT 
       a.date,
@@ -77,16 +85,15 @@ export const getAnalyticsData = async (
     ORDER BY a.date ASC
   `;
   // const trendRes = db.exec(trendQuery, params);
-  const trendRes = await non_blocking_db_execute(trendQuery, params);
+  const trendRes = await non_blocking_db_execute(trendQuery, params, false);
 
   const trendData = trendRes.length
     ? trendRes[0].values.map((row: any) => ({
-      date: row[0],
-      hadir: row[1],
-      tidak_hadir: row[2]
-    }))
+        date: row[0],
+        hadir: row[1],
+        tidak_hadir: row[2],
+      }))
     : [];
-
 
   const dayQuery = `
     SELECT 
@@ -98,7 +105,7 @@ export const getAnalyticsData = async (
     GROUP BY day_num
   `;
 
-  const dayRes = await non_blocking_db_execute(dayQuery, params);
+  const dayRes = await non_blocking_db_execute(dayQuery, params, false);
 
   let mostProductive = { day: "-", percentage: 0 };
   let leastProductive = { day: "-", percentage: 100 };
@@ -141,12 +148,12 @@ export const getAnalyticsData = async (
       ORDER BY percentage DESC
       LIMIT 5
     `;
-    const classRes = await non_blocking_db_execute(classQuery, null);
+    const classRes = await non_blocking_db_execute(classQuery, null, false);
     classPerfData = classRes.length
       ? classRes[0].values.map((row: any) => ({
-        name: row[0],
-        percentage: Math.round(row[1] as number),
-      }))
+          name: row[0],
+          percentage: Math.round(row[1] as number),
+        }))
       : [];
   }
 
@@ -161,7 +168,7 @@ export const getAnalyticsData = async (
     },
     insights: {
       mostProductiveDay: mostProductive,
-      leastProductiveDay: leastProductive
+      leastProductiveDay: leastProductive,
     },
     trend: trendData,
     classPerformance: classPerfData,

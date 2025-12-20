@@ -10,9 +10,10 @@ function getWorker(): typeof import("./_worker") {
 }
 export async function non_blocking_db_execute(
   query: string,
-  params: any
+  params?: any,
+  singleton?: boolean
 ): Promise<any> {
-  return await getWorker().db_execute(query, params);
+  return await getWorker().db_execute(query, params, singleton);
 }
 
 export async function non_blocking_db_prepare(sql: string, params?: any) {

@@ -23,6 +23,13 @@ def redirect_factory(to: str):
     return inner
 
 
+def index_view(request: HttpRequest):
+    if request.COOKIES.get('user_type') is None:
+        return redirect("/login")
+    
+    return spa_public(request)
+
+
 def files(request: HttpRequest, file_id: str):
     with redis.get_client() as redis_client:
         if not redis_client.exists(file_id):

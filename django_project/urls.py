@@ -4,7 +4,8 @@ from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
-from main.views import files, logo_view, migrate, redirect_factory, setup
+from main.views import (files, index_view, logo_view, migrate,
+                        redirect_factory, setup)
 
 urlpatterns = [
     path("admin", redirect_factory("/admin/")),
@@ -14,6 +15,7 @@ urlpatterns = [
     re_path(r"^setup/?$", setup),
     re_path(r"^migrate/?$", migrate),
     re_path(r"^(img/|public/)?logo\.png$", logo_view),
+    path("", index_view),
 ]
 
 if settings.SERVE_MEDIA_USING_DJANGO:

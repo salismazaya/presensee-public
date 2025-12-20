@@ -3,12 +3,23 @@ import { getLocalDatabase } from "./database";
 
 let db: Database | null = null;
 
-export async function db_execute(query: string, params: any) {
-  if (!db) {
-    const localDb = await getLocalDatabase();
-    db = localDb.db;
+export async function db_execute(
+  query: string,
+  params?: any,
+  singleton?: boolean
+) {
+  let localDb: Database | null = null;
+  if (singleton === true || singleton === undefined) {
+    if (!db) {
+      localDb = (await getLocalDatabase()).db;
+      db = localDb;
+    } else {
+      localDb = db;
+    }
+  } else {
+    localDb = (await getLocalDatabase()).db;
   }
-  return db.exec(query, params);
+  return localDb.exec(query, params);
 }
 
 const STATEMENT_POINTERS: Record<number, Statement> = {};

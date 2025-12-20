@@ -1,5 +1,3 @@
-// import { BrowserRouter } from "react-router";
-// import { ToastContainer } from "react-toastify";
 import { SharedDataContextConsumer } from "./contexts/SharedDataContext";
 import { useEffect } from "react";
 import { getVersion } from "./helpers/api";

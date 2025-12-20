@@ -24,7 +24,6 @@ export default function Login() {
         await serviceWorkerUtils.unregister();
         // await serviceWorkerUtils.register();
         window.location.href = "/";
-
       } catch (e: any) {
         Swal.fire({
           title: "Gagal Masuk",
@@ -32,8 +31,8 @@ export default function Login() {
           icon: "error",
           confirmButtonText: "Coba Lagi",
         });
-      } finally {
         setIsLoading(false);
+      } finally {
       }
     } else {
       Swal.fire({
@@ -156,7 +155,7 @@ export default function Login() {
 
         <div className="bg-base-200/50 p-4 text-center rounded-b-2xl border-t border-base-200">
           <p className="text-xs text-base-content/50">
-            &copy; {new Date().getFullYear()} Presensee. All rights reserved.
+            © {new Date().getFullYear()} Salis Mazaya. Publicly available.
           </p>
         </div>
       </div>

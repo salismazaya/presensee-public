@@ -172,7 +172,7 @@ export default function About() {
 
       <div className="text-center pt-4 pb-8">
         <p className="text-xs text-base-content/30">
-          Built with React & DaisyUI
+          © {new Date().getFullYear()} Salis Mazaya. Publicly available.
         </p>
       </div>
     </main>
