@@ -176,9 +176,11 @@ export default function AbsensiDetail() {
   useEffect(() => {
     if (db && kelas) {
       const allSiswas = getSiswa({ db, whereQuery: `kelas_id=${kelas}` });
-      const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
+      // const currentKelas = getKelas({ db, whereQuery: `id=${kelas}` });
+      getKelas({ db, whereQuery: `id=${kelas}` }).then((currentKelas) => {
+        if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
+      });
 
-      if (currentKelas.length >= 1) setKelasName(currentKelas[0].name);
       setTimeout(() => setSiswas(allSiswas), 300); // Sedikit delay agar tidak blocking UI render awal
     }
   }, [db, kelas]);
@@ -431,7 +433,7 @@ export default function AbsensiDetail() {
             >
               <div className="card-body p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 {/* Nama & Status Text */}
-                <div className="flex-grow">
+                <div className="grow">
                   <h3 className="font-bold text-lg leading-tight">
                     {siswa.fullname}
                   </h3>
@@ -452,7 +454,7 @@ export default function AbsensiDetail() {
                 </div>
 
                 {/* Button Group Actions */}
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {/* Mobile: Grid kecil, Desktop: Flex row */}
                   <div className="join w-full grid grid-cols-5 md:flex shadow-sm">
                     {statusOptions.map((opt, i) => (

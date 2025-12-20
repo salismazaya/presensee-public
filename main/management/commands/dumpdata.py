@@ -1,18 +1,21 @@
-from django.core.management import BaseCommand
-from main.models import User, Kelas, Absensi, KunciAbsensi, Siswa
-from django.core import serializers
 import pickle
+
+from django.core import serializers
+from django.core.management import BaseCommand
+
+from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('output-path', type = str)
 
     def execute(self, *args, **options):
-        users = User.original_objects.all()
-        kelass = Kelas.original_objects.all()
-        siswas = Siswa.original_objects.all()
-        kuncis = KunciAbsensi.original_objects.all()
-        absensies = Absensi.original_objects.all()
+        users = User.objects.all()
+        kelass = Kelas.objects.all()
+        siswas = Siswa.objects.all()
+        kuncis = KunciAbsensi.objects.all()
+        absensies = Absensi.objects.all()
 
         result = {}
         result['users'] = serializers.serialize('python', users)
@@ -24,6 +27,9 @@ class Command(BaseCommand):
         for x in result['absensies'] + result['kuncis']:
             # id tabel diatas tidak di-import
             del x['pk']
+
+        for x in result['siswas'] + result['users']:
+            del x['photo']
 
         output = pickle.dumps(result)
 

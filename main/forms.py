@@ -2,112 +2,138 @@ from django import forms
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
-from main.models import Kelas, User
+from main.models import AbsensiSession, Kelas, User
 
 
 class UserCreationForm(BaseUserCreationForm):
     class Meta:
         model = User
-        fields = ('password1', 'password1', 'username')
+        fields = (
+            "password1",
+            "password2",
+            "username",
+        )
+
+    usable_password = forms.CharField(widget=forms.HiddenInput(attrs={"value": "1"}))
 
 
 def createKelasForm(kelas_id: int):
     class KelasForm(forms.ModelForm):
         class Meta:
             model = Kelas
-            fields = '__all__'
-        
+            fields = "__all__"
+
         def clean_wali_kelas(self):
-            wali_kelas = self.cleaned_data.get('wali_kelas')
+            wali_kelas = self.cleaned_data.get("wali_kelas")
             if wali_kelas:
                 if wali_kelas.type != User.TypeChoices.WALI_KELAS:
-                    raise ValidationError(f'type user {wali_kelas.username} bukan wali kelas')
+                    raise ValidationError(
+                        f"type user {wali_kelas.username} bukan wali kelas"
+                    )
 
-                kelas_wali_kelas = Kelas.original_objects.exclude(pk = kelas_id).filter(wali_kelas__pk = wali_kelas.pk).first()
+                kelas_wali_kelas = (
+                    Kelas.objects.exclude(pk=kelas_id)
+                    .filter(wali_kelas__pk=wali_kelas.pk)
+                    .first()
+                )
                 if kelas_wali_kelas:
-                    raise ValidationError(f'{wali_kelas.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
-                
+                    raise ValidationError(
+                        f"{wali_kelas.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}"
+                    )
+
             return wali_kelas
 
         def clean_sekretaris(self):
-            sekretariss = self.cleaned_data.get('sekretaris', [])
+            sekretariss = self.cleaned_data.get("sekretaris", [])
 
             for sekretaris in sekretariss:
                 if sekretaris.type != User.TypeChoices.SEKRETARIS:
-                    raise ValidationError(f'type user {sekretaris.username} bukan sekretaris')
+                    raise ValidationError(
+                        f"type user {sekretaris.username} bukan sekretaris"
+                    )
 
-                sekretaris_kelas = Kelas.original_objects.exclude(pk = kelas_id).filter(sekretaris__in = [sekretaris.pk]).first()
+                sekretaris_kelas = (
+                    Kelas.objects.exclude(pk=kelas_id)
+                    .filter(sekretaris__in=[sekretaris.pk])
+                    .first()
+                )
                 if sekretaris_kelas:
-                    raise ValidationError(f'{sekretaris.username} sedang menjadi sekretaris di {sekretaris_kelas.name}')
+                    raise ValidationError(
+                        f"{sekretaris.username} sedang menjadi sekretaris di {sekretaris_kelas.name}"
+                    )
 
             return sekretariss
 
-    
     return KelasForm
 
 
 def createUserChangeForm(user_id: int = None):
-    class UserChangeForm(BaseUserChangeForm):        
+    class UserChangeForm(BaseUserChangeForm):
         class Meta:
             model = User
-            fields = '__all__'
-        
-        date_joined = forms.DateTimeField(required = False)
+            fields = "__all__"
+
+        date_joined = forms.DateTimeField(required=False)
 
         def clean_type(self):
-            new_type = self.cleaned_data.get('type')
+            new_type = self.cleaned_data.get("type")
 
             if user_id:
-                current_obj = User.original_objects.get(pk = user_id)
+                current_obj = User.objects.get(pk=user_id)
 
                 if current_obj.type != new_type:
-                    kelas_wali_kelas = Kelas.original_objects.filter(wali_kelas__pk = user_id).first()
+                    kelas_wali_kelas = Kelas.objects.filter(
+                        wali_kelas__pk=user_id
+                    ).first()
                     if new_type != "wali_kelas" and kelas_wali_kelas:
-                        raise ValidationError(f'{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}')
-                    
-                    kelas_sekretaris = Kelas.original_objects.filter(sekretaris__in = [user_id]).first()
+                        raise ValidationError(
+                            f"{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}"
+                        )
+
+                    kelas_sekretaris = Kelas.objects.filter(
+                        sekretaris__in=[user_id]
+                    ).first()
                     if new_type != "sekretaris" and kelas_sekretaris:
-                        raise ValidationError(f'{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}')
+                        raise ValidationError(
+                            f"{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}"
+                        )
 
             return new_type
-        
+
     return UserChangeForm
 
 
 class SetupForm(forms.Form):
     class Meta:
         model = User
-        fields = ['username', 'password', 'confirm_password']
+        fields = ["username", "password", "confirm_password"]
         widgets = {
-            'username': forms.TextInput(attrs={
-                'placeholder': 'Masukkan username',
-                'class': 'form-control'
-            }),
+            "username": forms.TextInput(
+                attrs={"placeholder": "Masukkan username", "class": "form-control"}
+            ),
         }
 
     username = forms.CharField(
-        label = "Username",
-        widget = forms.TextInput(attrs = {
-            'placeholder': 'Masukan username',
-            'class': 'form-control'
-        })
+        label="Username",
+        widget=forms.TextInput(
+            attrs={"placeholder": "Masukan username", "class": "form-control"}
+        ),
     )
 
     confirm_password = forms.CharField(
-        label = "Konfirmasi Password",
-        widget = forms.PasswordInput(attrs = {
-            'placeholder': 'Ulangi password',
-            'class': 'form-control'
-        })
+        label="Konfirmasi Password",
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Ulangi password", "class": "form-control"}
+        ),
     )
-    
+
     password = forms.CharField(
-        label = "Password",
-        widget=forms.PasswordInput(attrs = {
-            'placeholder': 'Masukkan password',
-            'class': 'form-control'
-        })
+        label="Password",
+        widget=forms.PasswordInput(
+            attrs={"placeholder": "Masukkan password", "class": "form-control"}
+        ),
     )
 
     def clean(self):
@@ -118,10 +144,47 @@ class SetupForm(forms.Form):
         # 1. Cek apakah password cocok
         if password and confirm_password and password != confirm_password:
             # Menambahkan error spesifik ke field 'confirm_password'
-            self.add_error('confirm_password', "Password tidak cocok.")
+            self.add_error("confirm_password", "Password tidak cocok.")
 
         # 2. Cek panjang password (opsional, bisa juga via settings.py)
         if password and len(password) < 6:
-            self.add_error('password', "Password minimal 6 karakter.")
+            self.add_error("password", "Password minimal 6 karakter.")
 
         return cleaned_data
+
+
+class AbsensiSessionForm(forms.ModelForm):
+    class Meta:
+        model = AbsensiSession
+        fields = "__all__"
+
+    def clean_kelas(self):
+        kelass = self.cleaned_data.get("kelas")
+        hari_query = None
+
+        for hari in ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]:
+            exists = self.cleaned_data.get(hari)
+            if exists:
+                if hari_query is None:
+                    hari_query = Q(**{hari: True})
+                else:
+                    hari_query |= Q(**{hari: True})
+
+
+        for kelas in kelass:
+            is_bentrok = (
+                AbsensiSession.objects.filter(
+                    kelas__in=[kelas.pk],
+                )
+                .filter(hari_query)
+            )
+
+            if self.instance:
+                is_bentrok = is_bentrok.exclude(pk = self.instance.pk)
+
+            is_bentrok = is_bentrok.exists()
+
+            if is_bentrok:
+                raise ValidationError("Jadwal kelas %s bentrok" % kelas.name)
+        
+        return kelass

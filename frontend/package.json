@@ -11,20 +11,27 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "@yudiel/react-qr-scanner": "^2.4.1",
     "axios": "^1.11.0",
+    "comlink": "^4.4.2",
+    "lucide-react": "^0.561.0",
     "lz-string": "^1.5.0",
     "react": "^19.1.1",
     "react-day-picker": "^9.9.0",
     "react-dom": "^19.1.1",
     "react-router": "^7.8.2",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.6.0",
+    "sql.js": "^1.13.0",
     "sweetalert2": "^11.23.0",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "universal-cookie": "^8.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@types/sql.js": "^1.4.9",
     "@vitejs/plugin-react": "^5.0.0",
     "daisyui": "^5.1.7",
     "eslint": "^9.33.0",
@@ -33,6 +40,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2",
+    "vite-plugin-comlink": "^5.3.0",
     "vite-plugin-pwa": "^1.1.0"
   }
 }

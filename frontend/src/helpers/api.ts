@@ -11,6 +11,13 @@ interface User {
   kelas?: number;
 }
 
+interface PiketUploadData {
+  siswaId: number;
+  timestamp: number;
+  type: "absen_pulang" | "absen_masuk";
+  // date: string;
+}
+
 export function getApiBaseUrl() {
   let baseUrl = sessionStorage.getItem("DJANGO_API_BASE_URL");
 
@@ -59,17 +66,83 @@ export async function getMe(token: string): Promise<User> {
   }
 }
 
+export async function getJadwal(
+  token: string
+): Promise<
+  Record<
+    string,
+    Record<
+      string,
+      { jam_masuk: string; jam_masuk_sampai: string; jam_keluar: string }
+    >
+  >
+> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/jadwal", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function getSiswas(token: string): Promise<any> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const response = await axios.get(baseUrl + "/siswas", {
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return response.data.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
 export async function login(
   username: string,
   password: string
-): Promise<string> {
+): Promise<{ token: string; username: string; type: string }> {
   const baseUrl = getApiBaseUrl();
   try {
     const response = await axios.post(baseUrl + "/login", {
       username,
       password,
     });
-    return response.data.data.token;
+    return {
+      token: response.data.data.token,
+      username: response.data.data.username,
+      type: response.data.data.type,
+    };
   } catch (e: any) {
     if (e instanceof AxiosError) {
       if (
@@ -96,6 +169,55 @@ export async function refreshDatabase(token: string): Promise<string> {
       },
     });
     return response.data;
+  } catch (e: any) {
+    if (e instanceof AxiosError) {
+      if (
+        (e.response?.status ?? 0) >= 500 &&
+        (e.response?.status ?? 0) <= 510
+      ) {
+        throw new Error("Server sedang offline");
+      } else if (!e.response?.data.detail) {
+        throw new Error("Tidak ada internet");
+      } else {
+        throw new Error(e.response?.data.detail);
+      }
+    }
+    throw new Error();
+  }
+}
+
+export async function uploadPiketDatabase(
+  token: string,
+  data: PiketUploadData[]
+): Promise<PiketUploadData[]> {
+  const baseUrl = getApiBaseUrl();
+
+  try {
+    const response = await axios.post(
+      baseUrl + "/piket/upload",
+      data.map((d) => {
+        return {
+          siswa: d.siswaId,
+          ...d,
+        };
+      }),
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    const invalids: PiketUploadData[] = response.data.data.invalids.map(
+      (invalid: any) => {
+        const res: PiketUploadData = {
+          siswaId: invalid.siswa,
+          timestamp: invalid.timestamp,
+          type: invalid.type,
+        };
+        return res;
+      }
+    );
+    return invalids;
   } catch (e: any) {
     if (e instanceof AxiosError) {
       if (

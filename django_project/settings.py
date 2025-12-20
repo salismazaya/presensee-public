@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import dj_database_url
 
@@ -20,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-PRESENSEE_VERSION = '2.0.0rc0hotfix1'
+with open(BASE_DIR / '.version') as f:
+    PRESENSEE_VERSION = f.read()
 
 try:
     import pymysql
@@ -32,85 +34,85 @@ except ImportError:
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = []
 
-if os.environ.get('ALLOWED_HOSTS'):
-    ALLOWED_HOSTS.extend(os.environ.get('ALLOWED_HOSTS').split(','))
+if os.environ.get("ALLOWED_HOSTS"):
+    ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS").split(","))
 
-if os.environ.get('CSRF_TRUSTED_ORIGINS'):
-    CSRF_TRUSTED_ORIGINS = os.environ['CSRF_TRUSTED_ORIGINS'].split(',')
+if os.environ.get("CSRF_TRUSTED_ORIGINS"):
+    CSRF_TRUSTED_ORIGINS = os.environ["CSRF_TRUSTED_ORIGINS"].split(",")
 
 # Application definition
 
 INSTALLED_APPS = [
-    'main',
-    'jazzmin',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'cacheops',
+    "main",
+    "jazzmin",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "cacheops",
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.gzip.GZipMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
 ]
 
-ROOT_URLCONF = 'django_project.urls'
+ROOT_URLCONF = "django_project.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
             # BASE_DIR.joinpath('frontend/dist')
         ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
 if not DEBUG:
-    TEMPLATES[0]['DIRS'].append(BASE_DIR.joinpath('frontend/dist'))
+    TEMPLATES[0]["DIRS"].append(BASE_DIR.joinpath("frontend/dist"))
 
-WSGI_APPLICATION = 'django_project.wsgi.application'
+WSGI_APPLICATION = "django_project.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES['default'] = dj_database_url.parse(DATABASE_URL)
+    DATABASES["default"] = dj_database_url.parse(DATABASE_URL)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -134,12 +136,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', 'id-ID')
+LANGUAGE_CODE = os.environ.get("LANGUAGE_CODE", "id-ID")
 
-TIME_ZONE = os.environ.get('TIME_ZONE', 'Asia/Jakarta')
-
-from zoneinfo import ZoneInfo
-
+TIME_ZONE = os.environ.get("TIME_ZONE", "Asia/Jakarta")
 TIME_ZONE_OBJ = ZoneInfo(TIME_ZONE)
 
 USE_I18N = True
@@ -150,29 +149,34 @@ USE_TZ = True
 
 # Whitenoise
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.environ.get('STATIC_ROOT', BASE_DIR / 'staticfiles')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.environ.get("STATIC_ROOT", BASE_DIR / "staticfiles")
 
 if not DEBUG:
-    VITE_ASSETS_DIR = BASE_DIR.joinpath('frontend/dist/assets')
-    VITE_PUBLIC_DIR = BASE_DIR.joinpath('frontend/dist')
+    VITE_ASSETS_DIR = BASE_DIR.joinpath("frontend/dist/assets")
+    VITE_PUBLIC_DIR = BASE_DIR.joinpath("frontend/dist")
+
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "media/"
+SERVE_MEDIA_USING_DJANGO = os.environ.get("SERVE_MEDIA_USING_DJANGO", "True") == "True"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = 'main.User'
+AUTH_USER_MODEL = "main.User"
 
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
 
 JAZZMIN_SETTINGS = {
     "site_title": "Presensee Admin",
@@ -182,23 +186,36 @@ JAZZMIN_SETTINGS = {
     "copyright": "Salis Mazaya Miftah Malik",
     "custom_links": {
         "main": [
-            {
-                'name': 'Import Siswa',
-                'url': 'admin:import_siswa'
-            },
-            {
-                'name': 'Export Absensi',
-                'url': 'admin:export_absensi'
-            },
+            {"name": "Import Siswa", "url": "admin:import_siswa", "icon": "fa fa-cloud-upload"},
+            {"name": "Export Absensi", "url": "admin:export_absensi", "icon": "fa fa-cloud-download"},
         ]
+    },
+    "user_avatar": "photo",
+    "order_with_respect_to": [
+        "main.absensi",
+        "main.siswa",
+        "main.kelas",
+        "main.absensisession",
+        "main.kunciabsensi",
+        "main.user",
+    ],
+    "icons": {
+        "main.absensi": "fa fa-book",
+        "main.siswa": "fa fa-user",
+        "main.kelas": "fa fa-users",
+        "main.absensisession": "fa fa-square",
+        "main.kunciabsensi": "fa fa-lock",
+        "main.user": "fa fa-link",
+        "main.data": "fa fa-home",
+
+
     }
 }
 
-REDIS_URL = os.environ.get('REDIS_URL')
+REDIS_URL = os.environ.get("REDIS_URL")
 
 CACHEOPS_REDIS = REDIS_URL
 
 CACHEOPS = {
-    'main.*': {'ops': ('fetch', 'get', 'exists'), 'timeout': 60 * 60 * 12},
+    "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
 }
-

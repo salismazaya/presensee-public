@@ -7,8 +7,8 @@ COPY frontend/package.json frontend/bun.lock ./
 RUN bun install
 
 COPY frontend/ ./
+ENV VITE_PIKET_PATH="/"
 RUN bun run build
-
 
 ### ---- Stage 2: Backend ----
 FROM surnet/alpine-wkhtmltopdf:3.22.0-024b2b2-small

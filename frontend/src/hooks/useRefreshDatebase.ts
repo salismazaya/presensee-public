@@ -5,6 +5,6 @@ export default function useRefreshDatabase() {
   const [, refreshDb, setRefreshDb] = useContext(DatabaseContext);
 
   return () => {
-    setRefreshDb((refreshDb as number) + 1);
+    setRefreshDb && setRefreshDb((refreshDb as number) + 1);
   };
 }

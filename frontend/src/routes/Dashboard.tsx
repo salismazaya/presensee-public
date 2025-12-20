@@ -229,7 +229,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-base-200 flex flex-col font-sans">
       <Navbar />
 
-      <main className="flex-grow p-4 md:p-8">
+      <main className="grow p-4 md:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Section: Header & Status Card */}
           {user?.type === "sekretaris" && (

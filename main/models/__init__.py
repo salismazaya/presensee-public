@@ -1,1 +1,2 @@
-from .models import Absensi, Kelas, Siswa, User, KunciAbsensi
+from .models import (Absensi, AbsensiSession, Data, Kelas,  # noqa: F401
+                     KunciAbsensi, Siswa, User)

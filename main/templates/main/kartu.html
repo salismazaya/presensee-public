@@ -1,0 +1,258 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kartu Siswa - Print A4</title>
+    <style>
+      /* --- Reset & Base --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      body {
+        background-color: #e0e0e0;
+        padding: 20px;
+      }
+
+      /* --- Grid A4 --- */
+      .page {
+        width: 210mm;
+        /* height: 297mm; */
+        background: white;
+        margin: 0 auto;
+        padding: 8mm; /* Margin sedikit diperkecil agar muat longgar */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        column-gap: 5mm;
+        row-gap: 4mm;
+      }
+
+      /* --- Container Kartu --- */
+      .card {
+        width: 100%;
+        height: 54mm;
+        border: 1px dashed #999;
+        background: #fff;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      /* --- Header (Kop) Full --- */
+      .card-header {
+        width: 100%;
+        height: 40px; /* Tinggi header sedikit dikurangi untuk ruang konten */
+        background: #f4f4f4;
+        border-bottom: 2px solid #333;
+      }
+      .card-header img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* --- Body Layout (Flexbox 3 Kolom: Foto | Teks | QR) --- */
+      .card-body {
+        flex: 1;
+        padding: 6px 8px; /* Padding atas bawah dikit */
+        display: flex;
+        align-items: center; /* Vertikal center */
+        gap: 8px;
+      }
+
+      /* --- 1. Foto (Diperkecil - Ukuran 2x3) --- */
+      .student-photo-container {
+        width: 22mm; /* Lebar diperkecil */
+        height: 30mm; /* Tinggi proporsional */
+        background-color: #eee;
+        border: 1px solid #ccc;
+        flex-shrink: 0; /* Jangan menciut */
+      }
+      .student-photo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* --- 2. Data Siswa (Tengah) --- */
+      .student-details {
+        flex: 1; /* Mengisi sisa ruang di tengah */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden; /* Agar teks panjang tidak merusak layout */
+      }
+
+      .detail-item {
+        margin-bottom: 2px;
+        line-height: 1.1;
+      }
+
+      .detail-label {
+        font-size: 6pt; /* Label kecil saja */
+        text-transform: uppercase;
+        color: #666;
+      }
+
+      .detail-value {
+        font-weight: 700;
+        color: #000;
+        font-size: 9pt;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Nama Siswa Special Style */
+      .is-name {
+        font-size: 10.5pt; /* Nama tetap terbaca jelas */
+        color: #1a252f;
+        margin-bottom: 4px;
+        white-space: normal; /* Nama boleh turun baris jika kepanjangan */
+        line-height: 1.1;
+      }
+
+      /* --- 3. QR Code (Area Besar & Terpisah) --- */
+      .qr-area {
+        width: 102px;
+        height: 102px;
+        background: #fff;
+        padding: 2px;
+        border: 2px solid #222; /* Border tebal agar kontras */
+        border-radius: 4px;
+        flex-shrink: 0; /* QR Tidak boleh gepeng */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .qr-area img {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated; /* Agar QR tajam saat diprint */
+      }
+
+      /* Tombol Print */
+      @media print {
+        body {
+          background: none;
+          padding: 0;
+        }
+        .btn-print {
+          display: none;
+        }
+        .page {
+          margin: 0;
+          box-shadow: none;
+          page-break-after: always;
+        }
+      }
+      .btn-print {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        background: #27ae60;
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: bold;
+        /* size: 100px; */
+        /* text-size-adjust: calc(3); */
+        font-size: 40px;
+        z-index: 10;
+      }
+    </style>
+    <script src="{% static 'js/qrcode.min.js' %}"></script>
+  </head>
+  <body>
+    <button class="btn-print" onclick="window.print()">
+      🖨️ Cetak Kartu
+    </button>
+
+    <div class="page" id="cardContainer">
+      {% for siswa in siswas %}
+
+      <div class="card">
+        {% if kop_url %}
+        <div class="card-header">
+          <img src="{{kop_url}}" alt="Header" />
+        </div>
+        {% endif %}
+
+        <div class="card-body">
+          <div class="student-photo-container">
+            {% if siswa.photo %}
+            <img
+              width="200"
+              height="300"
+              src="{{siswa.photo.url}}"
+              alt="Foto"
+            />
+            {% else %}
+            <img
+              src="https://placehold.co/200x300/ccc/fff?text=2x3"
+              alt="Foto"
+            />
+            {% endif %}
+          </div>
+
+          <div class="student-details">
+            <div class="detail-item">
+              <div class="detail-label">Nama</div>
+              <div class="detail-value is-name">{{siswa.fullname}}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">NIS</div>
+              <div
+                class="detail-value"
+                style="font-family: monospace; font-size: 10pt"
+              >
+                {% if siswa.nisn %}
+                <span>{{siswa.nisn}}</span>
+                {% else %}
+                <span>-</span>
+                {%endif%}
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Kelas</div>
+              <div class="detail-value">
+                {% if siswa.kelas %}
+                <span>{{siswa.kelas.name}}</span>
+                {% else %}
+                <span>-</span>
+                {%endif%}
+              </div>
+            </div>
+          </div>
+
+          <div class="qr-area" id="qr-{{siswa.pk}}"></div>
+        </div>
+      </div>
+
+    {% if forloop.counter|divisibleby:"10" %}
+      <div style="margin: 20px;"></div>
+      <div style="margin: 20px;"></div>
+      {% endif%}
+      {% endfor %}
+    </div>
+
+    <script>
+      "{% for siswa in siswas %}";
+      new QRCode(document.getElementById("qr-{{siswa.pk}}"), "{{siswa.pk}}");
+      "{% endfor %}";
+    </script>
+  </body>
+</html>
