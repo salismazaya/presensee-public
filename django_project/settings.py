@@ -21,11 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_URL = os.environ.get("BASE_URL")
 
-with open(BASE_DIR / '.version') as f:
+with open(BASE_DIR / ".version") as f:
     PRESENSEE_VERSION = f.read()
 
 try:
     import pymysql
+
     pymysql.install_as_MySQLdb()
 except ImportError:
     pass
@@ -183,11 +184,19 @@ JAZZMIN_SETTINGS = {
     "site_header": "Presensee",
     "site_brand": "Presensee",
     "login_logo": "/img/logo.png",
-    "copyright": "Salis Mazaya Miftah Malik",
+    "copyright": "Salis Mazaya",
     "custom_links": {
         "main": [
-            {"name": "Import Siswa", "url": "admin:import_siswa", "icon": "fa fa-cloud-upload"},
-            {"name": "Export Absensi", "url": "admin:export_absensi", "icon": "fa fa-cloud-download"},
+            {
+                "name": "Import Siswa",
+                "url": "admin:import_siswa",
+                "icon": "fa fa-cloud-upload",
+            },
+            {
+                "name": "Export Absensi",
+                "url": "admin:export_absensi",
+                "icon": "fa fa-cloud-download",
+            },
         ]
     },
     "user_avatar": "photo",
@@ -207,9 +216,7 @@ JAZZMIN_SETTINGS = {
         "main.kunciabsensi": "fa fa-lock",
         "main.user": "fa fa-link",
         "main.data": "fa fa-home",
-
-
-    }
+    },
 }
 
 REDIS_URL = os.environ.get("REDIS_URL")

@@ -184,3 +184,7 @@ testdata.pkl
 
 media/*
 !media/.gitkeep
+
+tenant
+/data
+tenant_staticfiles

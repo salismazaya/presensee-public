@@ -1,17 +1,18 @@
-from django.db.models.signals import pre_save, post_delete
+from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from main.models import Siswa, User
 from typing import Union
 
 
-@receiver(post_delete, sender=User)
-@receiver(post_delete, sender=Siswa)
+@receiver(pre_delete, sender=User)
+@receiver(pre_delete, sender=Siswa)
 def delete_photo_handler(sender, **kwargs):
     """hapus photo ketika instance dihapus"""
 
     instance = kwargs["instance"]
     if instance.photo:
-        instance.photo.delete(save=False)
+        # save=True invoke .save()
+        instance.photo.delete(save=True)
 
 
 @receiver(pre_save, sender=User)
@@ -31,6 +32,7 @@ def save_photo_handler(sender, **kwargs):
 
     # user uncentang photo
     if not instance.photo and current_instance and current_instance.photo:
+        # save=False agar tidak invoke .save() dan terjadi rekursif error
         current_instance.photo.delete(save=False)
         return
 
