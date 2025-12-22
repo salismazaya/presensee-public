@@ -13,12 +13,8 @@ from main.api.api import api
 from main.api.core.types import HttpRequest
 from main.models import Absensi, KunciAbsensi, Siswa
 
-from ..schemas import (
-    DataCompressedUploadSchema,
-    DataUploadSchema,
-    ErrorSchema,
-    SuccessSchema,
-)
+from ..schemas import (DataCompressedUploadSchema, DataUploadSchema,
+                       ErrorSchema, SuccessSchema)
 
 
 @api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
