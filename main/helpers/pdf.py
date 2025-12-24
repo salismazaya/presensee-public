@@ -1,4 +1,3 @@
-import zoneinfo
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -31,8 +30,7 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
 
     soup.find('span', attrs = {'id': 'kelas'}).string = kelas.name
 
-    tz = zoneinfo.ZoneInfo('Asia/Jakarta')
-    now = timezone.now().astimezone(tz)
+    now = timezone.now()
     now_str = now.strftime('%d/%m/%Y %H:%M WIB')
 
     month_str = "%s %s" % (localize_month_to_string(month), year)
