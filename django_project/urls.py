@@ -4,8 +4,7 @@ from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
-from main.views import (files, index_view, logo_view, migrate,
-                        redirect_factory, setup)
+from main.views import files, index_view, logo_view, migrate, redirect_factory, setup
 
 urlpatterns = [
     path("admin", redirect_factory("/admin/")),
@@ -28,6 +27,10 @@ if not settings.DEBUG:
         [
             # path untuk serve assets react
             re_path(r"^index.html$", redirect_factory("/")),
+            re_path(
+                r"^assets/presensee_wasm_bg.wasm$",
+                redirect_factory("/presensee_wasm_bg.wasm"),
+            ),
             re_path(r"^assets/.*$", spa_assets),
             re_path(r"^public/.*$", spa_public),
             re_path(r"^manifest.webmanifest$", webmanifest),
