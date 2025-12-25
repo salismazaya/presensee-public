@@ -26,8 +26,10 @@ import { useEffect, useRef, useState } from "react";
 import useKelas from "../hooks/useKelas";
 import ConflictsList from "../components/ConflictsList";
 import { toast } from "react-toastify";
+import { ConstantsContextConsumer } from "../contexts/ConstantsContext";
+import useConstants from "../hooks/useConstants";
 
-export default function Dashboard() {
+function _Dashboard() {
   const db = useDatabase();
   const [token] = useToken();
   const refreshLocalDatabase = useRefreshDatabase();
@@ -39,6 +41,19 @@ export default function Dashboard() {
   const [kelasId] = useKelas();
   const stagingDatabase = getStagingDatabase();
   const loaded = useRef(false);
+
+  const constants = useConstants();
+
+  useEffect(() => {
+    if (!constants.WELCOME_MESSAGE) return;
+    const isWelcome = localStorage.getItem("IS_NOT_WELCOME");
+    if (!isWelcome) {
+      Swal.fire({
+        html: constants.WELCOME_MESSAGE,
+      });
+      localStorage.setItem("IS_NOT_WELCOME", "1");
+    }
+  }, [constants.WELCOME_MESSAGE]);
 
   useEffect(() => {
     if (loaded.current) return;
@@ -370,7 +385,6 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="p-0">
-              {/* Mengatur agar Rekap tidak terlalu mepet pinggir jika ia punya padding internal */}
               <Rekap full={false} type="onemonth" />
             </div>
           </div>
@@ -379,5 +393,13 @@ export default function Dashboard() {
 
       <Footer active="home" />
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ConstantsContextConsumer>
+      <_Dashboard />
+    </ConstantsContextConsumer>
   );
 }
