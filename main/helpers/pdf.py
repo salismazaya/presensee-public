@@ -31,7 +31,7 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
     soup.find('span', attrs = {'id': 'kelas'}).string = kelas.name
 
     now = timezone.now()
-    now_str = now.strftime('%d/%m/%Y %H:%M WIB')
+    now_str = now.strftime('%d/%m/%Y %H:%M')
 
     month_str = "%s %s" % (localize_month_to_string(month), year)
 
