@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
+import useConstants from "../hooks/useConstants";
+import { ConstantsContextConsumer } from "../contexts/ConstantsContext";
+import parse from "html-react-parser";
 
-export default function About() {
+function _About() {
   const navigate = useNavigate();
 
   const version = localStorage.getItem("VERSION") || "";
+
+  const constants = useConstants();
+
   const handleLogout = () => {
     Swal.fire({
       title: "Logout?",
@@ -55,9 +61,7 @@ export default function About() {
           </p>
 
           <p className="text-base-content/80 leading-relaxed text-justify">
-            Presensee adalah aplikasi absensi siswa untuk sekolah yang dirancang
-            dengan arsitektur Offline-First. Antarmuka dibuat interaktif agar
-            memudahkan proses absensi.
+            {parse(constants.WELCOME_MESSAGE)}
           </p>
         </div>
       </div>
@@ -73,13 +77,13 @@ export default function About() {
           <div className="divide-y divide-base-200">
             {/* Developer 1 */}
             <a
-              href="https://mazaya.is-a.dev"
+              href={constants.AUTHOR_SITE}
               target="_blank"
               className="flex items-center gap-4 p-4 hover:bg-base-200 transition-colors group"
             >
               <div className="grow">
                 <h3 className="font-bold group-hover:text-primary transition-colors">
-                  Salis Mazaya
+                  {constants.AUTHOR_NAME}
                 </h3>
                 <p className="text-xs text-base-content/60">
                   Fullstack Developer
@@ -172,9 +176,18 @@ export default function About() {
 
       <div className="text-center pt-4 pb-8">
         <p className="text-xs text-base-content/30">
-          © {new Date().getFullYear()} Salis Mazaya. Publicly available.
+          © {new Date().getFullYear()} {constants.AUTHOR_NAME}. Publicly
+          available.
         </p>
       </div>
     </main>
+  );
+}
+
+export default function About() {
+  return (
+    <ConstantsContextConsumer>
+      <_About />
+    </ConstantsContextConsumer>
   );
 }

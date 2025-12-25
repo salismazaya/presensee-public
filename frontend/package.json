@@ -14,6 +14,7 @@
     "@yudiel/react-qr-scanner": "^2.4.1",
     "axios": "^1.11.0",
     "comlink": "^4.4.2",
+    "html-react-parser": "^5.2.11",
     "lucide-react": "^0.561.0",
     "lz-string": "^1.5.0",
     "react": "^19.1.1",
