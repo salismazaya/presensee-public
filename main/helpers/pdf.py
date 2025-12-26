@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, Siswa
+from django.db.models import F
 
 HELPERS_DIR = Path(__file__).parent
 
@@ -51,6 +52,8 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
             date__year = year
         ).filter(
             date__month = month
+        ).annotate(
+            status = F('_status')
         )
 
         siswa_alfa_total = siswa_absensies_queryset.filter(status = Absensi.StatusChoices.ALFA).count()

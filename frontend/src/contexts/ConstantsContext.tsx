@@ -26,6 +26,7 @@ export function ConstantsContextConsumer({
   });
 
   useEffect(() => {
+    // setTimeout(() => {
     init().then(() => {
       setConstants({
         AUTHOR_NAME: get_author_name(),
@@ -34,6 +35,7 @@ export function ConstantsContextConsumer({
         WELCOME_MESSAGE: get_welcome_message(),
       });
     });
+    // }, 1000);
   }, []);
 
   return <ConstantsContext value={constans}>{children}</ConstantsContext>;

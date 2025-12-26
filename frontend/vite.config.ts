@@ -80,6 +80,15 @@ export default defineConfig({
         ],
         runtimeCaching: [
           {
+            urlPattern: /.*\.wasm$/,
+            handler: "CacheFirst",
+            options: {
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/,
             handler: "CacheFirst",
             options: {
