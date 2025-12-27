@@ -12,6 +12,7 @@ from django.shortcuts import redirect, render
 # from django.contrib import messages
 from main.forms import SetupForm
 from main.helpers import redis
+
 # from main.helpers.auth import require_superuser_basic_auth
 from main.models import Data, User
 
@@ -24,9 +25,9 @@ def redirect_factory(to: str):
 
 
 def index_view(request: HttpRequest):
-    if request.COOKIES.get('user_type') is None:
+    if request.COOKIES.get("user_type") is None:
         return redirect("/login")
-    
+
     return spa_public(request)
 
 
@@ -178,3 +179,14 @@ def logo_view(request: HttpRequest, *args):
     with data.logo_sekolah.open("rb") as f:
         content_type, _ = mimetypes.guess_file_type(f.name)
         return HttpResponse(f.read(), content_type=content_type)
+
+
+def presensee_wasm_bg(request: HttpRequest):
+    path = settings.VITE_PUBLIC_DIR / "presensee_wasm_bg.wasm"
+
+    try:
+        with open(path, "rb") as f:
+            res = HttpResponse(f.read(), content_type="application/wasm")
+            return res
+    except:  # noqa: E722
+        raise Http404

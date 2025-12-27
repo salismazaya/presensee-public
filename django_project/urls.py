@@ -21,7 +21,7 @@ if settings.SERVE_MEDIA_USING_DJANGO:
     urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
 
 if not settings.DEBUG:
-    from main.views import spa_assets, spa_public, webmanifest
+    from main.views import spa_assets, spa_public, webmanifest, presensee_wasm_bg
 
     urlpatterns.extend(
         [
@@ -29,15 +29,11 @@ if not settings.DEBUG:
             re_path(r"^index.html$", redirect_factory("/")),
             re_path(
                 r"^assets/presensee_wasm_bg.wasm$",
-                redirect_factory("/presensee_wasm_bg.wasm"),
+                presensee_wasm_bg,
             ),
             re_path(r"^assets/.*$", spa_assets),
             re_path(r"^public/.*$", spa_public),
             re_path(r"^manifest.webmanifest$", webmanifest),
-            # re_path(r"^registerSW\.js/?$", spa_public),
-            # re_path(r"^manifest\.webmanifest/?$", spa_public),
-            # re_path(r"^sw\.js/?.*$", spa_public),
-            # re_path(r"^workbox-.*\.js/?$", spa_public),
             # serve semua route kecuali prefix static/
             # path ini untuk route spa react
             re_path(r"^(?!static/).*$", spa_public, name="spa"),
