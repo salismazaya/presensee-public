@@ -107,7 +107,9 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
         soup.find('table').append(tr_tag)
 
 
-    pdf_file = NamedTemporaryFile('wb', suffix = '.pdf')
+    # pdf_file = NamedTemporaryFile('wb', suffix = '.pdf') WINDOWS ISSUE
+    pdf_file = NamedTemporaryFile('wb', suffix = '.pdf', delete = False, delete_on_close = True)
+
     try:
         html_result = soup.prettify()
 
@@ -117,3 +119,4 @@ def generate_pdf(kelas: Kelas, month: int, year: int):
             return f.read()
     finally:
         pdf_file.close()
+        # pdf_file.delete()
