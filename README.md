@@ -9,7 +9,7 @@ _Software ini GRATIS_
 
 # **Presensee 📱**
 
-![Presensee Banner](frontend/public/logo.png)
+![Presensee Intro](screenshots/intro.jpg)
 
 > **Sistem Absensi Modern dengan Arsitektur Offline-First — cepat, ringan, dan tetap jalan meskipun tanpa internet.**
 
