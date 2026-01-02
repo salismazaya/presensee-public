@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import useUser from "../hooks/useUser";
 import {
   getAbsensies,
@@ -72,6 +72,8 @@ function getDates() {
 }
 
 export default function Absensi() {
+  const navigate = useNavigate();
+
   const [user] = useUser();
   const dateNowString = formatDate(new Date());
   const today = new Date();
@@ -377,54 +379,62 @@ export default function Absensi() {
                             }
                         `}
                   >
-                    {/* Kolom Tanggal & CAP */}
-                    <div className="col-span-4 md:col-span-3 pl-2">
-                      <div className="flex flex-row items-center gap-3">
-                        {/* Tanggal Angka */}
-                        <div
-                          className={`text-xl font-bold w-8 text-center ${
-                            isSunday ? "text-error" : "text-base-content"
-                          }`}
-                        >
-                          {date}
-                        </div>
-
-                        {/* Hari & Bulan */}
-                        <div className="flex flex-col justify-center">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-xs font-bold uppercase ${
-                                isToday ? "text-primary" : "opacity-70"
-                              }`}
-                            >
-                              {day}
-                            </span>
-
-                            {/* === CAP HARI INI === */}
-                            {isToday && (
-                              <span className="badge badge-xs md:badge-sm badge-primary font-bold shadow-sm animate-pulse text-[7px] lg:text-[9px] p-0.5">
-                                HARI INI
-                              </span>
-                            )}
+                    <div
+                      className="contents"
+                      onClick={() => {
+                        const url = "/absensi/" + dateForLink;
+                        navigate(url);
+                      }}
+                    >
+                      {/* Kolom Tanggal & CAP */}
+                      <div className="col-span-4 md:col-span-3 pl-2">
+                        <div className="flex flex-row items-center gap-3">
+                          {/* Tanggal Angka */}
+                          <div
+                            className={`text-xl font-bold w-8 text-center ${
+                              isSunday ? "text-error" : "text-base-content"
+                            }`}
+                          >
+                            {date}
                           </div>
-                          <span className="text-[10px] uppercase tracking-wider opacity-50">
-                            {month}
-                          </span>
+
+                          {/* Hari & Bulan */}
+                          <div className="flex flex-col justify-center">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs font-bold uppercase ${
+                                  isToday ? "text-primary" : "opacity-70"
+                                }`}
+                              >
+                                {day}
+                              </span>
+
+                              {/* === CAP HARI INI === */}
+                              {isToday && (
+                                <span className="badge badge-xs md:badge-sm badge-primary font-bold shadow-sm animate-pulse text-[7px] lg:text-[9px] p-0.5">
+                                  HARI INI
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider opacity-50">
+                              {month}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Status */}
-                    <div className="col-span-3 md:col-span-3 flex justify-center">
-                      {isComplete ? (
-                        <span className="badge badge-success font-bold badge-md text-base-100 border-none shadow-sm">
-                          Selesai
-                        </span>
-                      ) : (
-                        <span className="badge badge-ghost badge-md opacity-50 bg-base-200">
-                          Belum
-                        </span>
-                      )}
+                      {/* Status */}
+                      <div className="col-span-3 md:col-span-3 flex justify-center">
+                        {isComplete ? (
+                          <span className="badge badge-success font-bold badge-md text-base-100 border-none shadow-sm">
+                            Selesai
+                          </span>
+                        ) : (
+                          <span className="badge badge-ghost badge-md opacity-50 bg-base-200">
+                            Belum
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* TM */}
