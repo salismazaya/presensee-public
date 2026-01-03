@@ -18,7 +18,7 @@ class UserCreationForm(BaseUserCreationForm):
 
     usable_password = forms.CharField(widget=forms.HiddenInput(attrs={"value": "1"}))
 
-
+# TODO: hapus form factory karena user dan kelas sudah dalam satu interface
 def createKelasForm(kelas_id: int):
     class KelasForm(forms.ModelForm):
         class Meta:
@@ -69,38 +69,51 @@ def createKelasForm(kelas_id: int):
     return KelasForm
 
 
+# TODO: hapus form factory karena user dan kelas sudah dalam satu interface
 def createUserChangeForm(user_id: int = None):
     class UserChangeForm(BaseUserChangeForm):
         class Meta:
             model = User
             fields = "__all__"
 
+        id = forms.IntegerField(widget=forms.HiddenInput())
         date_joined = forms.DateTimeField(required=False)
+        type = forms.ChoiceField(
+            choices=[(None, "----"), *User.TypeChoices.choices],
+            widget=forms.Select(attrs={"class": "vTextField"}),
+        )
+        kelas = forms.CharField(
+            # choices=[(None, '----')],
+            required=False,
+            widget=forms.Select(attrs={"class": "vTextField"}),
+            help_text="",
+        )
 
-        def clean_type(self):
-            new_type = self.cleaned_data.get("type")
+        # karena user dan kelas sudah dalam satu interface, ini tidak dibutuhkan
+        # def clean_type(self):
+        #     new_type = self.cleaned_data.get("type")
 
-            if user_id:
-                current_obj = User.objects.get(pk=user_id)
+        #     if user_id:
+        #         current_obj = User.objects.get(pk=user_id)
 
-                if current_obj.type != new_type:
-                    kelas_wali_kelas = Kelas.objects.filter(
-                        wali_kelas__pk=user_id
-                    ).first()
-                    if new_type != "wali_kelas" and kelas_wali_kelas:
-                        raise ValidationError(
-                            f"{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}"
-                        )
+        #         if current_obj.type != new_type:
+        #             kelas_wali_kelas = Kelas.objects.filter(
+        #                 wali_kelas__pk=user_id
+        #             ).first()
+        #             if new_type != "wali_kelas" and kelas_wali_kelas:
+        #                 raise ValidationError(
+        #                     f"{current_obj.username} sedang menjadi wali kelas di {kelas_wali_kelas.name}"
+        #                 )
 
-                    kelas_sekretaris = Kelas.objects.filter(
-                        sekretaris__in=[user_id]
-                    ).first()
-                    if new_type != "sekretaris" and kelas_sekretaris:
-                        raise ValidationError(
-                            f"{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}"
-                        )
+        #             kelas_sekretaris = Kelas.objects.filter(
+        #                 sekretaris__in=[user_id]
+        #             ).first()
+        #             if new_type != "sekretaris" and kelas_sekretaris:
+        #                 raise ValidationError(
+        #                     f"{current_obj.username} sedang menjadi sekretaris di {kelas_sekretaris.name}"
+        #                 )
 
-            return new_type
+        #     return new_type
 
     return UserChangeForm
 
@@ -170,21 +183,17 @@ class AbsensiSessionForm(forms.ModelForm):
                 else:
                     hari_query |= Q(**{hari: True})
 
-
         for kelas in kelass:
-            is_bentrok = (
-                AbsensiSession.objects.filter(
-                    kelas__in=[kelas.pk],
-                )
-                .filter(hari_query)
-            )
+            is_bentrok = AbsensiSession.objects.filter(
+                kelas__in=[kelas.pk],
+            ).filter(hari_query)
 
             if self.instance:
-                is_bentrok = is_bentrok.exclude(pk = self.instance.pk)
+                is_bentrok = is_bentrok.exclude(pk=self.instance.pk)
 
             is_bentrok = is_bentrok.exists()
 
             if is_bentrok:
                 raise ValidationError("Jadwal kelas %s bentrok" % kelas.name)
-        
+
         return kelass
