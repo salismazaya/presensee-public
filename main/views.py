@@ -12,7 +12,6 @@ from django.shortcuts import redirect, render
 # from django.contrib import messages
 from main.forms import SetupForm
 from main.helpers import redis
-
 # from main.helpers.auth import require_superuser_basic_auth
 from main.models import Data, User
 

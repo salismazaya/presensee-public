@@ -6,13 +6,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
-from .base import (
-    AbsensiManager,
-    BaseManager,
-    BaseModel,
-    BaseQuerySet,
-    CustomUserManager,
-)
+from .base import (AbsensiManager, BaseManager, BaseModel, BaseQuerySet,
+                   CustomUserManager)
 
 
 def random_filename(instance, filename):

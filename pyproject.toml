@@ -1,5 +1,5 @@
 [project]
-name = "absen-siswa"
+name = "presensee"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -31,3 +31,8 @@ dependencies = [
 
 [tool.uv.sources]
 django-cacheops = { git = "https://github.com/salismazaya/django-cacheops", rev = "salis" }
+
+[dependency-groups]
+dev = [
+    "isort>=7.0.0",
+]

@@ -3,23 +3,19 @@ import json
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import transaction
-from django.db.models import Q, Subquery, OuterRef
+from django.db.models import OuterRef, Q, Subquery
+from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
-from django.forms import model_to_dict
 from django.urls import path
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.html import format_html
 
-
-from main.forms import (
-    AbsensiSessionForm,
-    UserCreationForm,
-    createKelasForm,
-    createUserChangeForm,
-)
-from main.models import Absensi, AbsensiSession, Data, Kelas, KunciAbsensi, Siswa, User
+from main.forms import (AbsensiSessionForm, UserCreationForm, createKelasForm,
+                        createUserChangeForm)
+from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
+                         Siswa, User)
 
 
 class AdminSite(admin.AdminSite):
