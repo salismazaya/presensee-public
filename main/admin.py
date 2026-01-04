@@ -12,10 +12,13 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
-from main.forms import (AbsensiSessionForm, UserCreationForm, createKelasForm,
-                        createUserChangeForm)
-from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
-                         Siswa, User)
+from main.forms import (
+    AbsensiSessionForm,
+    UserCreationForm,
+    createKelasForm,
+    createUserChangeForm,
+)
+from main.models import Absensi, AbsensiSession, Data, Kelas, KunciAbsensi, Siswa, User
 
 
 class AdminSite(admin.AdminSite):
@@ -169,7 +172,9 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     @transaction.atomic
     def save_model(self, request, obj, form, change):
         def rv_func():
-            return admin.ModelAdmin.save_model(self, request, obj, form, change)
+            return super(CustomAuthUserAdmin, self).save_model(
+                request, obj, form, change
+            )
 
         if not change:
             return rv_func()
@@ -197,6 +202,9 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
                 self.clear_role(obj)
                 kelas.sekretaris.add(obj)
                 kelas.save()
+
+        else:
+            self.clear_role(obj)
 
         return rv_func()
 
