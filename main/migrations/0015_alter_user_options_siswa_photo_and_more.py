@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="* Gunakan gambar format webp untuk kop sekolah",
                 null=True,
-                upload_to="",
+                upload_to=main.models.models.random_filename,
             ),
         ),
         migrations.AlterField(
