@@ -18,7 +18,7 @@ import useDatabase from "../hooks/useDatabase";
 import useToken from "../hooks/useToken";
 import useRefreshDatabase from "../hooks/useRefreshDatebase";
 import useGlobalLoading from "../hooks/useGlobalLoading";
-import { ping, uploadDatabase } from "../helpers/api";
+import { uploadDatabase } from "../helpers/api";
 import useUser from "../hooks/useUser";
 import Rekap from "../components/Rekap";
 import useLastRefresh from "../hooks/useLastRefresh";
@@ -26,6 +26,7 @@ import { useEffect, useRef, useState } from "react";
 import useKelas from "../hooks/useKelas";
 import ConflictsList from "../components/ConflictsList";
 import { toast } from "react-toastify";
+import useOnline from "../hooks/useOnline";
 
 export default function Dashboard() {
   const db = useDatabase();
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [kelasId] = useKelas();
   const stagingDatabase = getStagingDatabase();
   const loaded = useRef(false);
+  const isOnline = useOnline();
 
   useEffect(() => {
     if (loaded.current) return;
@@ -61,32 +63,35 @@ export default function Dashboard() {
     setAbsensiesHariIni(absensies);
     setSiswasKelas(siswasKelas);
 
-    ping()
-      .then(async () => {
-        if (getStagingDatabase().length > 0) {
-          const res = await uploadDatabase(token);
-          res.conflicts.forEach((conflict) => {
-            insertConflictAbsensi(conflict);
-          });
+    setTimeout(async () => {
+      if (isOnline !== true) return;
 
-          clearStagingDatabase();
-          await refreshRemoteDatabase({
-            db,
-            token,
-          });
-          refreshLocalDatabase();
-          setLastRefresh(new Date().getTime());
+      loaded.current = true;
 
-          toast.success("Auto upload sukses!", {
-            autoClose: 2000,
-            closeOnClick: true,
-          });
-        }
-      })
-      .finally(() => {
-        loaded.current = true;
-      });
-  }, [db, kelasId, token]);
+      if (getStagingDatabase().length > 0) {
+        const res = await uploadDatabase(token);
+        res.conflicts.forEach((conflict) => {
+          insertConflictAbsensi(conflict);
+        });
+
+        clearStagingDatabase();
+        await refreshRemoteDatabase({
+          db,
+          token,
+        });
+        refreshLocalDatabase();
+        setLastRefresh(new Date().getTime());
+
+        toast.success("Auto upload sukses!", {
+          autoClose: 2000,
+          closeOnClick: true,
+        });
+      }
+    }, 0);
+    // .finally(() => {
+    //   loaded.current = true;
+    // });
+  }, [db, kelasId, token, isOnline]);
 
   const handleRefresh = async () => {
     const { isConfirmed } = await Swal.fire({
