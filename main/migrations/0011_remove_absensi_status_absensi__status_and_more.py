@@ -46,6 +46,7 @@ class Migration(migrations.Migration):
                 ],
                 max_length=20,
                 null=True,
+                blank=True,
             ),
         ),
         migrations.AddConstraint(
@@ -58,5 +59,5 @@ class Migration(migrations.Migration):
                 ),
                 name="wait_expired_at_must_not_null_while_status_is_wait",
             ),
-        )
+        ),
     ]

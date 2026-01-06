@@ -2,6 +2,8 @@ import { createContext, useEffect, useState, type JSX } from "react";
 import { getMe } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import type { ConflictData } from "../components/ConflictsList";
+import { OnlineContextConsumer } from "./OnlineContext";
+import useOnline from "../hooks/useOnline";
 
 export interface User {
   username: string;
@@ -28,6 +30,18 @@ export function SharedDataContextConsumer({
 }: {
   children: JSX.Element;
 }) {
+  return (
+    <OnlineContextConsumer>
+      <_SharedDataContextConsumer>{children}</_SharedDataContextConsumer>
+    </OnlineContextConsumer>
+  );
+}
+
+export function _SharedDataContextConsumer({
+  children,
+}: {
+  children: JSX.Element;
+}) {
   const currentKelasString = localStorage.getItem("ACTIVE_KELAS");
   let currentKelas = undefined;
 
@@ -47,6 +61,8 @@ export function SharedDataContextConsumer({
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
 
   const [conflicts, setConflicts] = useState<ConflictData[]>([]);
+
+  const isOnline = useOnline();
 
   const currentLastRefreshString = localStorage.getItem("LAST_REFRESH");
 
@@ -79,7 +95,7 @@ export function SharedDataContextConsumer({
     localStorage.setItem("LAST_REFRESH", lastRefresh.toString());
     setLastRefresh(lastRefresh);
   };
-
+ 
   useEffect(() => {
     if (!token) {
       setIsLogout(true);
@@ -87,7 +103,8 @@ export function SharedDataContextConsumer({
 
     if (token) {
       const currentUser = localStorage.getItem("USER");
-      if (!currentUser) {
+
+      if (!currentUser || isOnline === true) {
         getMe(token)
           .then((user) => {
             setUser(user);
@@ -108,7 +125,7 @@ export function SharedDataContextConsumer({
         setUser(user);
       }
     }
-  }, [token]);
+  }, [token, isOnline]);
 
   const data: SharedDataProps = {
     kelas,

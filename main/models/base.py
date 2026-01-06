@@ -19,6 +19,25 @@ class BaseModel(models.Model):
 
 
 class CustomUserManager(BaseManager, UserManager):
+    # def get_queryset(self):
+    #     return (
+    #         super()
+    #         .get_queryset()
+    #         .annotate(
+    #             _display_name=models.functions.Concat(
+    #                 models.F("first_name"), models.Value(" "), models.F("last_name")
+    #             )
+    #         )
+    #         .annotate(
+    #             display_name=models.Case(
+    #                 models.When(
+    #                     models.Q(_display_name=models.Value(" ")),
+    #                     then=models.Value(None),
+    #                 ),
+    #                 default=models.F("_display_name"),
+    #             )
+    #         )
+    #     )
     pass
 
 

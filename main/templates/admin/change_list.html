@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %} {% block extrajs %} {{block.super}}
+<!-- <script>
+  const rows = document.querySelectorAll("tr[role='row'] a");
+  rows.forEach((row) => {
+    const id = row.href.split("/").reverse()[2];
+
+    const element = row.parentElement.parentElement;
+    element.style.cursor = "pointer";
+
+    element.addEventListener("click", () => {
+      window.location.href = id + "/change/";
+    });
+  });
+</script> -->
+{% endblock %}

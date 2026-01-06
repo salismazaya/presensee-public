@@ -1,0 +1,116 @@
+{% extends "admin/change_form.html" %} {% block extrahead %} {{block.super}}
+<style>
+  div.help-block.red {
+    color: #007bff;
+  }
+</style>
+{% endblock %} {% block extrajs %} {{block.super}}
+<script>
+  let initialKelasValue = null;
+
+  $(document).ready(function () {
+    const user_id = $("#id_id").val();
+    const field_kelas = $("div.field-kelas");
+    const input_type = $("#id_type");
+    const input_kelas = $("#id_kelas");
+
+    input_type.select2();
+    input_kelas.select2();
+
+    const sekretariss = JSON.parse(`{{sekretariss|safe}}`);
+    const wali_kelass = JSON.parse(`{{wali_kelass|safe}}`);
+    const kelass = JSON.parse(`{{kelass|safe}}`);
+
+    const allUsers = [...sekretariss, ...wali_kelass];
+
+    const searchUser = (user_id) => allUsers.find((user) => user.id == user_id);
+
+    const searchKelas = (kelas_id) => kelass.find((k) => k.id == kelas_id);
+
+    const hideKelas = () => field_kelas.hide();
+    const showKelas = () => field_kelas.show();
+
+    const transfromKelas = () => {
+      const value = input_type.val();
+
+      if (value === "sekretaris") {
+        showKelas();
+        field_kelas.find("label").text("Sekretaris untuk");
+      } else if (value === "wali_kelas") {
+        showKelas();
+        field_kelas.find("label").text("Wali Kelas untuk");
+      } else {
+        hideKelas();
+        return;
+      }
+
+      const selectedKelasId = input_kelas.val();
+      if (!selectedKelasId || selectedKelasId === "----") return;
+
+      const kelas = searchKelas(selectedKelasId);
+      if (!kelas) return;
+
+      const waliKelasUser = searchUser(kelas.wali_kelas_id);
+      const sekretarisUsers = kelas.sekretaris_ids
+        .map(searchUser)
+        .filter(Boolean);
+
+      let message = "";
+
+      if (value === "sekretaris" && sekretarisUsers.length) {
+        message =
+          "Sekretaris saat ini: " +
+          sekretarisUsers.map((u) => u.name).join(", ");
+      }
+
+      if (value === "wali_kelas" && waliKelasUser) {
+        message = "Wali kelas saat ini: " + waliKelasUser.name;
+      }
+
+      field_kelas.find("div.help-block.red").html(message);
+    };
+
+    /* ===============================
+     OPTION & INIT VALUE
+     =============================== */
+
+    input_kelas.append($("<option>", { value: "----", text: "----" }));
+
+    kelass.forEach((kelas) => {
+      input_kelas.append(
+        $("<option>", {
+          value: kelas.id,
+          id: "id" + kelas.id,
+          text: kelas.name,
+        })
+      );
+    });
+
+    // set kelas awal user
+    const targetUser = allUsers.find((user) => user.id == user_id);
+    if (targetUser && targetUser.kelas_id) {
+      initialKelasValue = String(targetUser.kelas_id);
+      input_kelas.val(initialKelasValue).trigger("change.select2");
+    } else {
+      initialKelasValue = "----";
+    }
+
+    /* ===============================
+     EVENT HANDLER
+     =============================== */
+
+    // saat TYPE berubah → reset kelas ke nilai awal
+    input_type.on("change.select2", function () {
+      input_kelas.val(initialKelasValue).trigger("change.select2");
+
+      transfromKelas();
+    });
+
+    // kelas berubah → normal flow
+    input_kelas.on("change.select2", transfromKelas);
+
+    // initial render
+    transfromKelas();
+  });
+</script>
+{% endblock %}

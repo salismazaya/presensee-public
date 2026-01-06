@@ -6,8 +6,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
-from .base import (AbsensiManager, BaseManager, BaseModel, BaseQuerySet,
-                   CustomUserManager)
+from .base import (
+    AbsensiManager,
+    BaseManager,
+    BaseModel,
+    BaseQuerySet,
+    CustomUserManager,
+)
 
 
 def random_filename(instance, filename):
@@ -17,7 +22,7 @@ def random_filename(instance, filename):
 
 class User(BaseModel, AbstractUser):
     objects: CustomUserManager = CustomUserManager()
-    
+
     class Meta:
         verbose_name = verbose_name_plural = "Pengguna"
 
@@ -30,17 +35,23 @@ class User(BaseModel, AbstractUser):
     is_superuser = models.BooleanField(default=False, verbose_name="Apakah admin?")
     is_active = models.BooleanField(default=True, editable=False)
     is_staff = models.BooleanField(default=False, verbose_name="Akses admin panel?")
-    type = models.CharField(choices=TypeChoices.choices, max_length=20, null=True)
+    type = models.CharField(
+        choices=TypeChoices.choices, max_length=20, null=True, blank=True
+    )
     token = models.CharField(max_length=50, null=True, blank=True, editable=False)
     date_joined = models.DateTimeField(default=timezone.now, verbose_name="Daftar pada")
     photo = models.ImageField(null=True, blank=True, upload_to=random_filename)
 
-    def __str__(self):
+    @property
+    def display_name(self):
         display_name = self.username
         if self.first_name and self.last_name:
             display_name = "%s %s" % (self.first_name, self.last_name)
 
         return display_name
+
+    def __str__(self):
+        return self.display_name
 
 
 class KelasQuerySet(BaseQuerySet):
@@ -208,11 +219,12 @@ class Data(BaseModel):
         verbose_name = verbose_name_plural = "Data Sekolah"
 
     nama_sekolah = models.CharField(max_length=100)
-    logo_sekolah = models.ImageField(null=True, blank=True)
+    logo_sekolah = models.ImageField(null=True, blank=True, upload_to=random_filename)
     deskripsi_sekolah = models.TextField(null=True, blank=True)
     kop_sekolah = models.ImageField(
         null=True,
         blank=True,
         help_text="* Gunakan gambar format webp untuk kop sekolah",
+        upload_to=random_filename,
     )
     nama_aplikasi = models.CharField(max_length=50, default="Presensee")

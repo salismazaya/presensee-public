@@ -4,7 +4,8 @@ from django.urls import path, re_path
 
 from main.admin import admin_site
 from main.api import api
-from main.views import files, index_view, logo_view, migrate, redirect_factory, setup
+from main.views import (files, index_view, logo_view, migrate,
+                        redirect_factory, setup)
 
 urlpatterns = [
     path("admin", redirect_factory("/admin/")),
@@ -21,7 +22,8 @@ if settings.SERVE_MEDIA_USING_DJANGO:
     urlpatterns.extend(static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT))
 
 if not settings.DEBUG:
-    from main.views import spa_assets, spa_public, webmanifest, presensee_wasm_bg
+    from main.views import (presensee_wasm_bg, spa_assets, spa_public,
+                            webmanifest)
 
     urlpatterns.extend(
         [

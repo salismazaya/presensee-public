@@ -3,11 +3,11 @@ from tempfile import NamedTemporaryFile
 
 import pdfkit
 from bs4 import BeautifulSoup
+from django.db.models import F
 from django.utils import timezone
 
 from main.helpers.humanize import localize_month_to_string
 from main.models import Absensi, Kelas, Siswa
-from django.db.models import F
 
 HELPERS_DIR = Path(__file__).parent
 

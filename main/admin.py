@@ -1,22 +1,24 @@
 import json
 
 from django.contrib import admin, messages
-# from django.contrib.auth.admin import GroupAdmin as AuthGroupAdmin
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import OuterRef, Q, Subquery
+from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import path
-# from django.contrib.auth.forms import UserCreationForm
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
-# from django.contrib.auth.forms import UserChangeForm
-from main.forms import (AbsensiSessionForm, UserCreationForm, createKelasForm,
-                        createUserChangeForm)
-from main.models import (Absensi, AbsensiSession, Data, Kelas, KunciAbsensi,
-                         Siswa, User)
+from main.forms import (
+    AbsensiSessionForm,
+    UserCreationForm,
+    createKelasForm,
+    createUserChangeForm,
+)
+from main.models import Absensi, AbsensiSession, Data, Kelas, KunciAbsensi, Siswa, User
 
 
 class AdminSite(admin.AdminSite):
@@ -68,7 +70,7 @@ class FilterDomainMixin:
 
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     fieldsets = (
-        (None, {"fields": ("username", "password", "type")}),
+        (None, {"fields": ("id", "username", "password", "type", "kelas")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "photo")}),
         (
             _("Permissions"),
@@ -81,13 +83,130 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
         ),
         # (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
-    list_display = ("username", "type", "is_staff", "is_superuser")
+    list_display = (
+        "display_name",
+        "type",
+    )
+    change_form_template = "admin/user_change_form.html"
+
+    def display_name(self, obj):
+        return obj.display_name
+
+    display_name.short_description = "Nama"
 
     def get_form(self, request, obj=None, **kwargs):
         if obj is None:
             return UserCreationForm
 
         return createUserChangeForm(obj.pk)
+
+    def changeform_view(
+        self, request, object_id=None, form_url=None, extra_context=None
+    ):
+        extra_context = extra_context or {}
+
+        wali_kelas_queryset = User.objects.annotate(
+            kelas_id=Subquery(
+                Kelas.objects.filter(
+                    wali_kelas__pk=OuterRef("pk"),
+                )[:1].values("id"),
+            )
+        ).filter(type=User.TypeChoices.WALI_KELAS)
+
+        sekretariss_queryset = User.objects.annotate(
+            kelas_id=Subquery(
+                Kelas.objects.filter(
+                    sekretaris__pk__in=[OuterRef("pk")],
+                )[:1].values("id"),
+            )
+        ).filter(type=User.TypeChoices.SEKRETARIS)
+
+        sekretariss = []
+
+        for sekretaris in sekretariss_queryset:
+            sekretariss.append(
+                {
+                    **model_to_dict(sekretaris, fields=["id", "username"]),
+                    "name": sekretaris.display_name,
+                    "kelas_id": sekretaris.kelas_id,
+                }
+            )
+
+        extra_context["sekretariss"] = json.dumps(sekretariss)
+
+        wali_kelass = []
+        for wali_kelas in wali_kelas_queryset:
+            wali_kelass.append(
+                {
+                    **model_to_dict(wali_kelas, fields=["id", "username"]),
+                    "name": wali_kelas.display_name,
+                    "kelas_id": wali_kelas.kelas_id,
+                }
+            )
+
+        extra_context["wali_kelass"] = json.dumps(wali_kelass)
+
+        kelass_queryset = Kelas.objects.filter(active=True).prefetch_related(
+            "sekretaris"
+        )
+
+        kelass = []
+        for kelas in kelass_queryset:
+            kelass.append(
+                {
+                    **model_to_dict(kelas, fields=["id", "name"]),
+                    "sekretaris_ids": [s.id for s in kelas.sekretaris.all()],
+                    "wali_kelas_id": kelas.wali_kelas_id,
+                }
+            )
+
+        extra_context["kelass"] = json.dumps(kelass)
+
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def clear_role(self, user: User):
+        Kelas.objects.filter(wali_kelas__pk=user.pk).update(wali_kelas=None)
+        for k in Kelas.objects.filter(sekretaris__pk__in=[user.pk]):
+            k.sekretaris.remove(user)
+
+    @transaction.atomic
+    def save_model(self, request, obj, form, change):
+        def rv_func():
+            return super(CustomAuthUserAdmin, self).save_model(
+                request, obj, form, change
+            )
+
+        if not change:
+            return rv_func()
+
+        kelas_id = form.cleaned_data.get("kelas")
+        user_type = form.cleaned_data.get("type")
+        user_id = obj.pk
+
+        if not kelas_id or not user_type:
+            return rv_func()
+
+        kelas: Kelas = Kelas.objects.filter(pk=kelas_id).first()
+        if kelas is None:
+            return rv_func()
+
+        if user_type == User.TypeChoices.WALI_KELAS:
+            self.clear_role(obj)
+
+            kelas.wali_kelas_id = user_id
+            kelas.save()
+
+        elif user_type == User.TypeChoices.SEKRETARIS:
+            is_user_sekretaris = kelas.sekretaris.filter(pk=user_id).exists()
+            if not is_user_sekretaris:
+                self.clear_role(obj)
+                kelas.sekretaris.add(obj)
+                kelas.save()
+
+        else:
+            self.clear_role(obj)
+
+        return rv_func()
 
 
 class SiswaAdmin(FilterDomainMixin, admin.ModelAdmin):
@@ -135,16 +254,36 @@ class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
 class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ("name", "wali_kelas__first_name", "wali_kelas__last_name")
     list_filter = ("active",)
-    list_display = ("id", "name_", "wali_kelas", "jumlah_siswa", "active")
+    fields = ("name",)
+    list_display = ("id", "name_", "wali_kelas_", "sekretaris_", "active")
     ordering = ("-active",)
     inlines = (SiswaInlineAdmin,)
     change_form_template = "admin/kelas_change_form.html"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("wali_kelas")
+
     def name_(self, obj):
         return str(obj)
 
-    def jumlah_siswa(self, obj):
-        return obj.siswas.count()
+    def wali_kelas_(self, obj):
+        if obj.wali_kelas is None:
+            return "-"
+
+        return format_html(
+            f'<a href="/admin/main/user/{obj.wali_kelas_id}/change/">{obj.wali_kelas.display_name[:15]}</a>'
+        )
+
+    def sekretaris_(self, obj: Kelas):
+        output = []
+
+        for sekretaris in obj.sekretaris.all():
+            output.append(
+                f'<a href="/admin/main/user/{sekretaris.pk}/change/" target="_blank">{sekretaris.display_name[:15]}</a>'
+            )
+
+        output = ", ".join(output)
+        return format_html(output)
 
     def get_form(self, request, obj=None, *args, **kwargs):
         if obj is None:
@@ -153,8 +292,12 @@ class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
         return createKelasForm(obj.pk)
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields["wali_kelas"].queryset = User.objects
-        context["adminform"].form.fields["sekretaris"].queryset = User.objects
+        # context["adminform"].form.fields["wali_kelas"].queryset = User.objects.filter(
+        #     type=User.TypeChoices.WALI_KELAS
+        # )
+        # context["adminform"].form.fields["sekretaris"].queryset = User.objects.filter(
+        #     type=User.TypeChoices.SEKRETARIS
+        # )
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -191,14 +334,13 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         return (
-            super()
-            .get_queryset(request)
+            super().get_queryset(request)
             # .exclude(final_status=Absensi.StatusChoices.WAIT)
             # WAIT jangan di exclude karena akan di cek di line 180an
         )
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context["adminform"].form.fields["siswa"].queryset = Siswa.objects
+        context["adminform"].form.fields["siswa"].queryset = Siswa.objects.all()
         context["adminform"].form.fields["by"].queryset = User.objects.all()
 
         return super().render_change_form(request, context, *args, **kwargs)
