@@ -70,8 +70,21 @@ class FilterDomainMixin:
 
 class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
     fieldsets = (
-        (None, {"fields": ("id", "username", "password", "type", "kelas")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "photo")}),
+        (
+            "Umum",
+            {
+                "fields": (
+                    "id",
+                    "full_name",
+                    "username",
+                    "password",
+                    "type",
+                    "kelas",
+                    "photo",
+                )
+            },
+        ),
+        # (_("Personal info"), {"fields": ("first_name", "last_name")}),
         (
             _("Permissions"),
             {
