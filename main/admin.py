@@ -196,7 +196,7 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
         user_type = form.cleaned_data.get("type")
         user_id = obj.pk
 
-        if not kelas_id or not user_type:
+        if not kelas_id or kelas_id == '----' or not user_type:
             return rv_func()
 
         kelas: Kelas = Kelas.objects.filter(pk=kelas_id).first()
