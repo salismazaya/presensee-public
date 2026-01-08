@@ -4,18 +4,20 @@ from main.api.api import api
 from main.api.core.types import HttpRequest
 from main.models import User
 
-from ..schemas import (ChangePasswordSchema, ErrorSchema, LoginSchema,
-                       SuccessSchema)
+from ..schemas import ChangePasswordSchema, ErrorSchema, LoginSchema, SuccessSchema
 
 
 @api.post("/login", auth=None, response={403: ErrorSchema, 200: SuccessSchema})
 def login(request: HttpRequest, data: LoginSchema):
-    user = User.objects.filter(username=data.username).first()
+    username = data.username.lower().strip()
+    password = data.password
+
+    user = User.objects.filter(normalized_username=username).first()
 
     if user is None:
         return 403, {"detail": "Username/password salah"}
 
-    if not user.check_password(data.password):
+    if not user.check_password(password):
         return 403, {"detail": "Username/password salah"}
 
     user.token = get_random_string(20)

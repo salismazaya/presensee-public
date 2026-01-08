@@ -11,10 +11,14 @@ from lzstring import LZString
 
 from main.api.api import api
 from main.api.core.types import HttpRequest
-from main.models import Absensi, KunciAbsensi, Siswa
+from main.models import Absensi, KunciAbsensi, Siswa, Kelas, User
 
-from ..schemas import (DataCompressedUploadSchema, DataUploadSchema,
-                       ErrorSchema, SuccessSchema)
+from ..schemas import (
+    DataCompressedUploadSchema,
+    DataUploadSchema,
+    ErrorSchema,
+    SuccessSchema,
+)
 
 
 @api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
@@ -177,18 +181,23 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
                             conflicts.append(conflict)
 
-        elif x.action == "lock":
-            KunciAbsensi.objects.update_or_create(
-                date=date,
-                kelas__pk=payload["kelas"],
-                defaults={"locked": True, "date": date, "kelas_id": payload["kelas"]},
-            )
+        elif x.action in ["lock", "unlock"]:
+            if user.type != User.TypeChoices.WALI_KELAS:
+                transaction.set_rollback(True)
+                return 403, {"detail": "Ditolak"}
 
-        elif x.action == "unlock":
+            kelas_id = payload["kelas"]
+            is_kelas_owner = Kelas.objects.own(user.pk).filter(pk=kelas_id).exists()
+            if not is_kelas_owner:
+                transaction.set_rollback(True)
+                return 403, {"detail": "Ditolak"}
+
+            locked = x.action == "lock"
+
             KunciAbsensi.objects.update_or_create(
                 date=date,
-                kelas__pk=payload["kelas"],
-                defaults={"locked": False, "date": date, "kelas_id": payload["kelas"]},
+                kelas__pk=kelas_id,
+                defaults={"locked": locked, "date": date, "kelas_id": payload["kelas"]},
             )
 
     return {"data": {"conflicts": conflicts}}
