@@ -3,7 +3,7 @@ import json
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import transaction
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import OuterRef, Subquery
 from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -349,7 +349,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         return (
             super().get_queryset(request)
             # .exclude(final_status=Absensi.StatusChoices.WAIT)
-            # WAIT jangan di exclude karena akan di cek di line 180an
+            # WAIT jangan di exclude karena akan di cek di line 333an
         )
 
     def render_change_form(self, request, context, *args, **kwargs):
@@ -419,26 +419,27 @@ class AbsensiSessionAdmin(FilterDomainMixin, admin.ModelAdmin):
         )
         return super().render_change_form(request, context, *args, **kwargs)
 
-    def save_msodel(self, request, obj: AbsensiSession, form, change):
-        hari_query = Q(pk__isnull=False)
-        for hari in ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]:
-            exists = getattr(obj, hari)
-            if exists:
-                hari_query |= Q(**{hari: True})
+    # Validasi di form
+    # def save_msodel(self, request, obj: AbsensiSession, form, change):
+    #     hari_query = Q(pk__isnull=False)
+    #     for hari in ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu"]:
+    #         exists = getattr(obj, hari)
+    #         if exists:
+    #             hari_query |= Q(**{hari: True})
 
-        kelass = obj.kelas.all()
-        for kelas in kelass:
-            is_bentrok = (
-                AbsensiSession.objects.filter(
-                    kelas__contains=[kelas.pk],
-                )
-                .filter(hari_query)
-                .exists()
-            )
-            if is_bentrok:
-                pass
+    #     kelass = obj.kelas.all()
+    #     for kelas in kelass:
+    #         is_bentrok = (
+    #             AbsensiSession.objects.filter(
+    #                 kelas__contains=[kelas.pk],
+    #             )
+    #             .filter(hari_query)
+    #             .exists()
+    #         )
+    #         if is_bentrok:
+    #             pass
 
-        return super().save_model(request, obj, form, change)
+    #     return super().save_model(request, obj, form, change)
 
 
 admin_site = AdminSite()
