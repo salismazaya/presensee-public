@@ -6,6 +6,7 @@ from datetime import datetime
 from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from lzstring import LZString
 
@@ -40,8 +41,22 @@ def upload(request: HttpRequest, data: DataUploadSchema):
         r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
     )
 
-    for x in datas:
-        payload = json.loads(x.data)
+    siswa_ids_query = None
+    for absen_data in filter(lambda d: d.action == "absen", datas):
+        payload = json.loads(absen_data.data)
+        siswa_id = payload["siswa"]
+
+        if siswa_ids_query is None:
+            siswa_ids_query = Q(pk=siswa_id)
+        else:
+            siswa_ids_query |= Q(pk=siswa_id)
+
+    siswas = {}
+    for s in Siswa.objects.filter(siswa_ids_query).select_related("kelas"):
+        siswas[s.pk] = s
+
+    for data in datas:
+        payload = json.loads(data.data)
 
         if re.match(ddmmyy_pattern, payload["date"]):
             dd, mm, yy = payload["date"].split("-")
@@ -65,19 +80,22 @@ def upload(request: HttpRequest, data: DataUploadSchema):
         if date_is_invalid:
             continue
 
-        if x.action == "absen":
+        if data.action == "absen":
             updated_at_int = int(payload.get("updated_at", time.time()))
             updated_at = datetime.fromtimestamp(updated_at_int).astimezone(
                 settings.TIME_ZONE_OBJ
             )
 
-            siswa = Siswa.objects.filter(pk=payload["siswa"]).first()
+            siswa_id = payload["siswa"]
+            siswa = siswas.get(siswa_id)
+
             if not siswa:
                 continue
 
+            kelas_sekretaris_ids = siswa.kelas.sekretaris.values_list("id", flat=True)
             if (
-                siswa.kelas.wali_kelas and siswa.kelas.wali_kelas.pk == user.pk
-            ) or siswa.kelas.sekretaris.filter(pk=user.pk).exists():
+                siswa.kelas.wali_kelas_id == user.pk
+            ) or user.pk in kelas_sekretaris_ids:
                 lock = (
                     KunciAbsensi.objects.filter(date=date)
                     .filter(kelas__pk=siswa.kelas.pk)
@@ -181,7 +199,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
 
                             conflicts.append(conflict)
 
-        elif x.action in ["lock", "unlock"]:
+        elif data.action in ["lock", "unlock"]:
             if user.type != User.TypeChoices.WALI_KELAS:
                 transaction.set_rollback(True)
                 return 403, {"detail": "Ditolak"}
@@ -192,7 +210,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                 transaction.set_rollback(True)
                 return 403, {"detail": "Ditolak"}
 
-            locked = x.action == "lock"
+            locked = data.action == "lock"
 
             KunciAbsensi.objects.update_or_create(
                 date=date,
