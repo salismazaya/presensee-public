@@ -9,7 +9,6 @@ from main.helpers import redis
 from main.helpers.humanize import localize_month_to_string
 from main.models import Kelas, Absensi
 from datetime import date
-from django.core.serializers import serialize
 from ..schemas import ErrorSchema, SuccessSchema
 
 REKAP_THREADING_LOCK = threading.Lock()
@@ -49,8 +48,8 @@ def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
 
     absensi_hash = Absensi.objects.filter(
         siswa__kelas__pk=kelas, date__gte=date_start, date__lte=date_end
-    )
-    absensi_hash = serialize('python', absensi_hash)
+    ).values_list("pk", "_status")
+    absensi_hash = dict(absensi_hash)
     absensi_hash = str(absensi_hash).encode()
     absensi_hash = hashlib.md5(absensi_hash).hexdigest()
 
