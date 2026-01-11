@@ -180,7 +180,7 @@ cython_debug/
 
 staticfiles
 dev-dist
-testdata.pkl
+*.pkl
 
 media/*
 !media/.gitkeep
