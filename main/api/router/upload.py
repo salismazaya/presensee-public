@@ -6,7 +6,6 @@ from datetime import datetime
 from dateutil import parser as dateutil_parser
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 from lzstring import LZString
 
@@ -41,18 +40,14 @@ def upload(request: HttpRequest, data: DataUploadSchema):
         r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
     )
 
-    siswa_ids_query = None
+    siswa_ids = []
     for absen_data in filter(lambda d: d.action == "absen", datas):
         payload = json.loads(absen_data.data)
         siswa_id = payload["siswa"]
-
-        if siswa_ids_query is None:
-            siswa_ids_query = Q(pk=siswa_id)
-        else:
-            siswa_ids_query |= Q(pk=siswa_id)
+        siswa_ids.append(siswa_id)
 
     siswas = {}
-    for s in Siswa.objects.filter(siswa_ids_query).select_related("kelas"):
+    for s in Siswa.objects.filter(pk__in=siswa_ids).select_related("kelas"):
         siswas[s.pk] = s
 
     for data in datas:
@@ -93,59 +88,97 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                 continue
 
             kelas_sekretaris_ids = siswa.kelas.sekretaris.values_list("id", flat=True)
-            if (
+            can_access = (
                 siswa.kelas.wali_kelas_id == user.pk
-            ) or user.pk in kelas_sekretaris_ids:
-                lock = (
-                    KunciAbsensi.objects.filter(date=date)
-                    .filter(kelas__pk=siswa.kelas.pk)
-                    .first()
+            ) or user.pk in kelas_sekretaris_ids
+
+            if not can_access:
+                continue
+
+            lock = (
+                KunciAbsensi.objects.filter(date=date)
+                .filter(kelas__pk=siswa.kelas.pk)
+                .first()
+            )
+
+            if lock and lock.locked:
+                transaction.set_rollback(True)
+                return 403, {
+                    "detail": f"Tidak bisa melanjutkan aksi. Absen tanggal {date} sedang dikunci, coba hubungi wali kelas atau operator"
+                }
+
+            absensi: Absensi = Absensi.objects.filter(
+                siswa__pk=siswa.pk, date=date
+            ).first()
+
+            if absensi is None:
+                Absensi.objects.create(
+                    siswa_id=siswa.pk,
+                    date=date,
+                    status=payload["status"],
+                    # karena ini insert berarti updated_at=created_at
+                    created_at=updated_at,
+                    updated_at=updated_at,
+                    by_id=user.pk,
                 )
+            elif absensi.by is None:
+                # absensi bukan None karena sudah divalidasi diatas
+                absensi.status = payload["status"]
+                absensi.updated_at = updated_at
+                absensi.by_id = user.pk
+                absensi.save()
+            else:
+                current_absensi_status = absensi.status
+                absensi_status = payload["status"]
+                previous_absensi_status = payload.get("previous_status")
 
-                if lock and lock.locked:
-                    transaction.set_rollback(True)
-                    return 403, {
-                        "detail": f"Tidak bisa melanjutkan aksi. Absen tanggal {date} sedang dikunci, coba hubungi wali kelas atau operator"
-                    }
+                is_absensi_status_same = current_absensi_status == absensi_status
+                is_user_same = user.pk == absensi.by.pk
 
-                absensi: Absensi = Absensi.objects.filter(
-                    siswa__pk=siswa.pk, date=date
-                ).first()
-
-                if absensi is None:
-                    Absensi.objects.create(
-                        siswa_id=siswa.pk,
-                        date=date,
-                        status=payload["status"],
-                        # karena ini insert berarti updated_at=created_at
-                        created_at=updated_at,
-                        updated_at=updated_at,
-                        by_id=user.pk,
-                    )
-                elif absensi.by is None:
-                    # absensi bukan None karena sudah divalidasi diatas
+                if not is_absensi_status_same and is_user_same:
                     absensi.status = payload["status"]
                     absensi.updated_at = updated_at
-                    absensi.by_id = user.pk
                     absensi.save()
-                else:
-                    current_absensi_status = absensi.status
-                    absensi_status = payload["status"]
-                    previous_absensi_status = payload.get("previous_status")
 
-                    is_absensi_status_same = current_absensi_status == absensi_status
-                    is_user_same = user.pk == absensi.by.pk
+                elif (
+                    not is_absensi_status_same
+                    and not is_user_same
+                    and previous_absensi_status is None
+                ):
+                    conflict = {
+                        "type": "absensi",
+                        "absensi_id": absensi.pk,
+                        "absensi_siswa": absensi.siswa.fullname,
+                        "absensi_siswa_id": absensi.siswa.pk,
+                        "absensi_kelas_id": absensi.siswa.kelas.pk,
+                        "absensi_date": absensi.date,
+                        "other": {
+                            "display_name": str(absensi.by),
+                            "absensi_status": current_absensi_status,
+                        },
+                        "self": {
+                            "display_name": str(user),
+                            "absensi_status": absensi_status,
+                        },
+                    }
 
-                    if not is_absensi_status_same and is_user_same:
+                    conflicts.append(conflict)
+
+                elif (
+                    not is_absensi_status_same
+                    and not is_user_same
+                    and previous_absensi_status
+                ):
+                    if (previous_absensi_status == current_absensi_status) or (
+                        current_absensi_status == Absensi.StatusChoices.WAIT
+                        # jika status absensi adalah wait, berarti diabsen guru piket
+                        # jadi boleh ditimpa
+                    ):
                         absensi.status = payload["status"]
                         absensi.updated_at = updated_at
+                        absensi.by = user
                         absensi.save()
-
-                    elif (
-                        not is_absensi_status_same
-                        and not is_user_same
-                        and previous_absensi_status is None
-                    ):
+                    else:
                         conflict = {
                             "type": "absensi",
                             "absensi_id": absensi.pk,
@@ -164,40 +197,6 @@ def upload(request: HttpRequest, data: DataUploadSchema):
                         }
 
                         conflicts.append(conflict)
-
-                    elif (
-                        not is_absensi_status_same
-                        and not is_user_same
-                        and previous_absensi_status
-                    ):
-                        if (previous_absensi_status == current_absensi_status) or (
-                            current_absensi_status == Absensi.StatusChoices.WAIT
-                            # jika status absensi adalah wait, berarti diabsen guru piket
-                            # jadi boleh ditimpa
-                        ):
-                            absensi.status = payload["status"]
-                            absensi.updated_at = updated_at
-                            absensi.by = user
-                            absensi.save()
-                        else:
-                            conflict = {
-                                "type": "absensi",
-                                "absensi_id": absensi.pk,
-                                "absensi_siswa": absensi.siswa.fullname,
-                                "absensi_siswa_id": absensi.siswa.pk,
-                                "absensi_kelas_id": absensi.siswa.kelas.pk,
-                                "absensi_date": absensi.date,
-                                "other": {
-                                    "display_name": str(absensi.by),
-                                    "absensi_status": current_absensi_status,
-                                },
-                                "self": {
-                                    "display_name": str(user),
-                                    "absensi_status": absensi_status,
-                                },
-                            }
-
-                            conflicts.append(conflict)
 
         elif data.action in ["lock", "unlock"]:
             if user.type != User.TypeChoices.WALI_KELAS:
