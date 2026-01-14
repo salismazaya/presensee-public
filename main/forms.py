@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.core.validators import RegexValidator
 
 from main.models import AbsensiSession, Kelas, User
 
@@ -17,6 +18,18 @@ class UserCreationForm(BaseUserCreationForm):
         )
 
     usable_password = forms.CharField(widget=forms.HiddenInput(attrs={"value": "1"}))
+    username = forms.CharField(
+        validators=[
+            RegexValidator(
+                r"^[a-zA-Z0-9]+$", message="Hanya karakter dan angka yang diperbolehkan"
+            ),
+            RegexValidator(
+                r"^.{5,15}$",
+                message="Username maksimal 15 karakter, minimal 5 karakter",
+            ),
+        ]
+    )
+
 
 # TODO: hapus form factory karena user dan kelas sudah dalam satu interface
 def createKelasForm(kelas_id: int):
@@ -77,6 +90,18 @@ def createUserChangeForm(user_id: int = None):
             fields = "__all__"
 
         id = forms.IntegerField(widget=forms.HiddenInput())
+        username = forms.CharField(
+            validators=[
+                RegexValidator(
+                    r"^[a-zA-Z0-9]+$",
+                    message="Hanya karakter dan angka yang diperbolehkan",
+                ),
+                RegexValidator(
+                    r"^.{5,15}$",
+                    message="Username maksimal 15 karakter, minimal 5 karakter",
+                ),
+            ]
+        )
         date_joined = forms.DateTimeField(required=False)
         type = forms.ChoiceField(
             choices=[(None, "----"), *User.TypeChoices.choices],

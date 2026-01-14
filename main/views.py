@@ -12,6 +12,7 @@ from django.shortcuts import redirect, render
 # from django.contrib import messages
 from main.forms import SetupForm
 from main.helpers import redis
+
 # from main.helpers.auth import require_superuser_basic_auth
 from main.models import Data, User
 
@@ -171,7 +172,7 @@ def migrate(request: HttpRequest):
 
 def logo_view(request: HttpRequest, *args):
     data: Data = Data.objects.last()
-    if data is None:
+    if data is None or not data.logo_sekolah:
         with open(settings.BASE_DIR / "main/static/img/logo.png", "rb") as f:
             return HttpResponse(f.read(), content_type="image/png")
 

@@ -32,6 +32,12 @@ class User(BaseModel, AbstractUser):
         SEKRETARIS = "sekretaris", "Sekretaris"
         GURU_PIKET = "guru_piket", "Guru Piket"
 
+    # django sebenarnya ada field first_name+last_name namun tidak dipakai
+    full_name = models.CharField(
+        max_length=100,
+        verbose_name="Nama Lengkap",
+        null=True,
+    )
     is_superuser = models.BooleanField(default=False, verbose_name="Apakah admin?")
     is_active = models.BooleanField(default=True, editable=False)
     is_staff = models.BooleanField(default=False, verbose_name="Akses admin panel?")
@@ -45,8 +51,14 @@ class User(BaseModel, AbstractUser):
     @property
     def display_name(self):
         display_name = self.username
-        if self.first_name and self.last_name:
-            display_name = "%s %s" % (self.first_name, self.last_name)
+
+        if self.full_name:
+            display_name = self.full_name
+
+        # elif self.first_name:
+        #     display_name = self.first_name
+        #     if self.last_name:
+        #         display_name += " " + self.last_name
 
         return display_name
 

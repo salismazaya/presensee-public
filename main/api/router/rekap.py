@@ -1,13 +1,14 @@
 import threading
-import uuid
+import calendar
+import hashlib
 
 from main.api.api import api
 from main.api.core.types import HttpRequest
 from main.helpers import pdf as helpers_pdf
 from main.helpers import redis
 from main.helpers.humanize import localize_month_to_string
-from main.models import Kelas
-
+from main.models import Kelas, Absensi
+from datetime import date
 from ..schemas import ErrorSchema, SuccessSchema
 
 REKAP_THREADING_LOCK = threading.Lock()
@@ -17,8 +18,6 @@ REKAP_THREADING_LOCK = threading.Lock()
     "/get-rekap", response={404: ErrorSchema, 500: ErrorSchema, 200: SuccessSchema}
 )
 def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
-    cache_key = f"rekap_{bulan}_{tahun}_{kelas}"
-
     kelas_obj = Kelas.objects.filter(pk=kelas).first()
 
     bulan_str = localize_month_to_string(bulan)
@@ -35,16 +34,32 @@ def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
         and kelas_obj.sekretaris.filter(pk=request.auth.pk).exists()
     )
 
+    if tahun <= 99:
+        tahun += 2000
+
     can_access = is_kesiswaan or is_wali_kelas or is_sekretaris
 
     if not can_access:
         return 404, {"detail": "kelas not found"}
 
+    date_start = date(tahun, bulan, 1)
+    last_day_of_month = calendar.monthrange(tahun, bulan)[1]
+    date_end = date(tahun, bulan, last_day_of_month)
+
+    absensi_hash = Absensi.objects.filter(
+        siswa__kelas__pk=kelas, date__gte=date_start, date__lte=date_end
+    ).values_list("pk", "_status")
+    absensi_hash = dict(absensi_hash)
+    absensi_hash = str(absensi_hash).encode()
+    absensi_hash = hashlib.md5(absensi_hash).hexdigest()
+
+    file_id = f"rekap-{absensi_hash}"
+
     # CACHING FILE ID
     with redis.get_client() as redis_client:
-        cached_file_id = redis_client.get(cache_key)
+        cached_file_id = redis_client.exists(file_id)
         if cached_file_id:
-            return {"data": {"file_id": cached_file_id.decode()}}
+            return {"data": {"file_id": file_id}}
 
     with REKAP_THREADING_LOCK:  # hanya 1 pembuatan pdf dalam 1 waktu (per worker)
         file = helpers_pdf.generate_pdf(kelas_obj, bulan, tahun)
@@ -59,13 +74,7 @@ def get_rekap(request: HttpRequest, bulan: int, kelas: int, tahun: int):
     file_with_filename = filename_with_padding + mimetype_with_padding + file
 
     with redis.get_client() as redis_client:
-        file_id = str(uuid.uuid4())
-
         # file akan kadaluarsa/terhapus dalam 24 jam
         redis_client.set(file_id, file_with_filename, ex=3600 * 24)
-
-        # cache file_id agar tidak diproses ulang. cek sekitar line 153
-        # cache diatur 6 jam
-        redis_client.set(cache_key, file_id, ex=3600 * 6)
 
     return {"data": {"file_id": file_id}}
