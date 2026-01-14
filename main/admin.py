@@ -196,7 +196,7 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
         user_type = form.cleaned_data.get("type")
         user_id = obj.pk
 
-        if not kelas_id or kelas_id == '----' or not user_type:
+        if not kelas_id or kelas_id == "----" or not user_type:
             return rv_func()
 
         kelas: Kelas = Kelas.objects.filter(pk=kelas_id).first()
@@ -267,7 +267,7 @@ class SiswaInlineAdmin(FilterDomainMixin, admin.TabularInline):
 class KelasAdmin(FilterDomainMixin, admin.ModelAdmin):
     search_fields = ("name", "wali_kelas__first_name", "wali_kelas__last_name")
     list_filter = ("active",)
-    fields = ("name",)
+    fields = ("name", "active")
     list_display = ("id", "name_", "wali_kelas_", "sekretaris_", "active")
     ordering = ("-active",)
     inlines = (SiswaInlineAdmin,)
