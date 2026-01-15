@@ -7,7 +7,7 @@ import {
   non_blocking_db_get_as_object,
   non_blocking_db_prepare,
   non_blocking_db_step,
-  remove_statement_ptr
+  remove_statement_ptr,
 } from "./worker";
 
 // --- CONFIGURATION ---
@@ -93,11 +93,13 @@ export function saveDatabaseToOPFS(db: any): Promise<void> {
 // ==========================================
 // 2. FUNGSI UPDATE: EKSEKUSI & SIMPAN
 // ==========================================
-export function insertToLocalDatabase(db: any, sql: string) {
+export function insertToLocalDatabase(db: any, sqls: string[]) {
   try {
     // 1. Eksekusi di Memory (Cepat, Synchronous)
     // Agar UI langsung terupdate tanpa menunggu disk write
-    db.run(sql);
+    for (const sql of sqls) {
+      db.run(sql);
+    }
 
     // 2. Simpan ke File (Background, Asynchronous)
     saveDatabaseToOPFS(db);
@@ -164,7 +166,7 @@ export function lockAbsensi(data: LockAbsensiProps) {
   });
 
   // Panggil fungsi baru: Jalanin SQL di db object, lalu save file
-  insertToLocalDatabase(data.db, sql);
+  insertToLocalDatabase(data.db, [sql]);
 }
 
 export interface InsertAbsensProps {
@@ -187,7 +189,7 @@ export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
   datas.forEach((data) => {
     const datetime = new Date(data.date);
     const yyyy = datetime.getFullYear();
-    const mm = datetime.getMonth() + 1;
+    const mm = (datetime.getMonth() + 1).toString().padStart(2, "0");
     const dd = datetime.getDate().toString().padStart(2, "0");
     const date = `${yyyy}-${mm}-${dd}`;
 
@@ -215,11 +217,7 @@ export function insertAbsens(db: any, datas: InsertAbsensProps[]) {
 
   // Update staging (logika sinkronisasi server)
   insertStagingAbsens(datasWithUpdatedAt);
-
-  // Eksekusi SQL dan Simpan ke File
-  // Kita gabung string SQL agar 1 kali save saja (opsional, tapi lebih efisien)
-  const combinedSql = `${deleteSql} ${insertSql}`;
-  insertToLocalDatabase(db, combinedSql);
+  insertToLocalDatabase(db, [deleteSql, insertSql]);
 }
 
 export function unlockAbsensi(data: LockAbsensiProps) {
@@ -231,7 +229,7 @@ export function unlockAbsensi(data: LockAbsensiProps) {
     data: { date: data.date, kelas: data.kelas_id },
   });
 
-  insertToLocalDatabase(data.db, sql);
+  insertToLocalDatabase(data.db, [sql]);
 }
 
 export async function getLocalDatabase(): Promise<{
