@@ -11,7 +11,7 @@ def get_siswa(request: HttpRequest):
         return 403, {"detail": "Forbidden"}
 
     results = {}
-    siswas: list[Siswa] = Siswa.objects.prefetch_related("kelas")
+    siswas: list[Siswa] = Siswa.objects.select_related("kelas")
     for siswa in siswas:
         results[siswa.pk] = {
             "name": siswa.fullname,

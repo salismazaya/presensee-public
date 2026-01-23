@@ -5,7 +5,7 @@ from main.models import Kelas
 
 @api.get("/me")
 def get_me(request: HttpRequest):
-    kelas_obj: Kelas = Kelas.objects.own(request.auth.pk).first()
+    kelas_obj: Kelas = Kelas.objects.only_active().own(request.auth.pk).first()
     kelas = None
 
     if kelas_obj:

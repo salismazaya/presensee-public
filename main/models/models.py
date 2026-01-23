@@ -79,6 +79,9 @@ class KelasQuerySet(BaseQuerySet):
             | models.Q(_type_user=User.TypeChoices.KESISWAAN)
         )
 
+    def only_active(self):
+        return self.filter(active=True)
+
 
 class KelasManager(BaseManager):
     def get_queryset(self, filtered_by_domain=None):
@@ -89,10 +92,13 @@ class KelasManager(BaseManager):
     def own(self, user_id: int):
         return self.get_queryset().own(user_id)
 
+    def only_active(self):
+        return self.get_queryset().only_active()
+
 
 class Kelas(BaseModel):
-    extra_objects = KelasManager()
-    objects = KelasManager()
+    extra_objects: KelasManager = KelasManager()
+    objects: KelasManager = KelasManager()
 
     class Meta:
         verbose_name = verbose_name_plural = "Kelas"
