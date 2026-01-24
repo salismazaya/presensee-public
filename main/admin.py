@@ -159,9 +159,7 @@ class CustomAuthUserAdmin(FilterDomainMixin, AuthUserAdmin):
 
         extra_context["wali_kelass"] = json.dumps(wali_kelass)
 
-        kelass_queryset = Kelas.objects.filter(active=True).prefetch_related(
-            "sekretaris"
-        )
+        kelass_queryset = Kelas.objects.only_active().prefetch_related("sekretaris")
 
         kelass = []
         for kelas in kelass_queryset:
@@ -324,7 +322,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
         "date",
         "siswa__kelas",
     )
-    search_fields = ("siswa__fullname", "status")
+    search_fields = ("siswa__fullname", "_status")
     readonly_fields = ("created_at", "updated_at")
 
     def final_status_(self, obj):
@@ -347,7 +345,7 @@ class AbsensiAdmin(FilterDomainMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         return (
-            super().get_queryset(request)
+            super().get_queryset(request).select_related("siswa", "siswa__kelas")
             # .exclude(final_status=Absensi.StatusChoices.WAIT)
             # WAIT jangan di exclude karena akan di cek di line 333an
         )
