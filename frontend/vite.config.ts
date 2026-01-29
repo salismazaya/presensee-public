@@ -77,6 +77,7 @@ export default defineConfig({
           /^\/setup/,
           /^\/migrate/,
           /^\/static/,
+          /^\/media/,
         ],
         runtimeCaching: [
           {
