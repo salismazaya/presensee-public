@@ -11,7 +11,7 @@ from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
 
 @api.get("/data")
 def get_data(request: HttpRequest):
-    kelas_qs = Kelas.objects.filter(active=True)
+    kelas_qs = Kelas.objects.only_active()
 
     absensi_qs = Absensi.objects.filter(siswa__kelas__active=True)
 
