@@ -72,5 +72,10 @@ def get_data(request: HttpRequest):
     )
     dump_database_str = ";\n".join(conn.iterdump()) + ";"
     conn.close()
+    
+    minimize_dump_database_str = helpers_database.minimize_sql_dump(dump_database_str)
 
-    return HttpResponse(dump_database_str)
+    # print(minimize_dump_database_str)
+
+    response = HttpResponse(minimize_dump_database_str, content_type="text/plain")
+    return response
