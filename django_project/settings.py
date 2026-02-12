@@ -72,7 +72,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django.middleware.gzip.GZipMiddleware",
+    # "django.middleware.gzip.GZipMiddleware",
+    # middleware gzip dinonaktifkan karena hanya endpoint spesifik yang di-compress
 ]
 
 ROOT_URLCONF = "django_project.urls"
@@ -218,6 +219,8 @@ JAZZMIN_SETTINGS = {
         "main.data": "fa fa-home",
     },
 }
+
+HELPER_WORKERS = int(os.environ.get("HELPER_WORKERS", "0"))
 
 REDIS_URL = os.environ.get("REDIS_URL")
 
