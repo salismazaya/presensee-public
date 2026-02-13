@@ -220,8 +220,6 @@ JAZZMIN_SETTINGS = {
     },
 }
 
-HELPER_WORKERS = int(os.environ.get("HELPER_WORKERS", "0"))
-
 REDIS_URL = os.environ.get("REDIS_URL")
 
 CACHEOPS_REDIS = REDIS_URL
