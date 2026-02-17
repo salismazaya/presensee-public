@@ -1,5 +1,7 @@
 from dateutil import parser as dateutil_parser
 
+from django.db.models import Count, Q, Subquery, OuterRef
+
 from main.api.api import api
 from main.api.core.types import HttpRequest
 from main.models import Absensi, Kelas, Siswa
@@ -14,19 +16,24 @@ def get_absensies(request: HttpRequest, date: str, kelas_id: int):
     except dateutil_parser._parser.ParserError:
         return 403, {"detail": "Tanggal tidak valid"}
 
-    kelas = Kelas.extra_objects.own(request.auth.pk).filter(pk=kelas_id).first()
+    kelas = Kelas.objects.own(request.auth.pk).filter(pk=kelas_id).first()
 
     if kelas is None:
         return 404, {"detail": "kelas tidak ditemukan"}
 
     result = {}
-    siswas = kelas.siswas.all()
+    siswas = kelas.siswas.annotate(
+        absensi_status=Subquery(
+            Absensi.objects.filter(date=date, siswa__pk=OuterRef("pk")).values(
+                "_status"
+            )[:1]
+        )
+    )
 
     for siswa in siswas:
-        absensi = Absensi.objects.filter(date=date, siswa__pk=siswa.pk).first()
-
-        if absensi:
-            result[siswa.pk] = absensi.status
+        absensi_status = siswa.absensi_status
+        if absensi_status:
+            result[siswa.pk] = absensi_status
         else:
             result[siswa.pk] = None
 
@@ -43,6 +50,7 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
     total_siswa = Siswa.objects.filter(kelas__pk=kelas_id).count()
 
     result = {}
+    queries = {}
 
     for date in dates:
         try:
@@ -50,21 +58,27 @@ def get_absensi_progress(request: HttpRequest, kelas_id: int, dates: str):
         except ValueError:
             return 400, {"detail": "gagal parsing %s" % date}
 
-        total_absensi = (
-            Absensi.objects.filter(siswa__kelas__pk=kelas_id)
-            .filter(date=date_obj)
-            .count()
+        total_absensi = Count(
+            "pk", filter=Q(siswa__kelas__pk=kelas_id) & Q(date=date_obj)
         )
 
-        total_tidak_masuk = (
-            Absensi.objects.filter(date=date_obj)
-            .filter(siswa__kelas__pk=kelas_id)
-            .exclude(_status=Absensi.StatusChoices.HADIR)
-            .count()
+        total_tidak_masuk = Count(
+            "pk",
+            filter=Q(siswa__kelas__pk=kelas_id)
+            & Q(date=date_obj)
+            & ~Q(_status=Absensi.StatusChoices.HADIR),
         )
+
+        queries["date_%s_total_absensi" % date] = total_absensi
+        queries["date_%s_total_tidak_masuk" % date] = total_tidak_masuk
+
+    query_result = Absensi.objects.aggregate(**queries)
+
+    for date in dates:
+        total_absensi = query_result["date_%s_total_absensi" % date]
+        total_tidak_masuk = query_result["date_%s_total_tidak_masuk" % date]
 
         is_complete = total_absensi == total_siswa
-
         result[date] = {
             "total_tidak_masuk": total_tidak_masuk,
             "is_complete": is_complete,

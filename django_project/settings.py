@@ -226,4 +226,5 @@ CACHEOPS_REDIS = REDIS_URL
 
 CACHEOPS = {
     "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
+    "main.absensi": {"ops": "aggregate", "timeout": 60 * 60 * 2},
 }
