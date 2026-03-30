@@ -38,10 +38,7 @@ class UploadView:
         self.data = data
         self.locks = {}
         self.absensies = {}
-        self.absensies_obj = []
-
-    def get_absensies(self) -> List[AbsensiClass]:
-        return self.absensies_obj
+        self._parsed = False
 
     @staticmethod
     def parse_date(date_str: str):
@@ -73,6 +70,9 @@ class UploadView:
         return date
 
     def _parse_data(self):
+        if self._parsed:
+            return
+
         data = self.data
 
         # urutan: unlock, absen, lock
@@ -94,49 +94,85 @@ class UploadView:
         for s in Siswa.objects.filter(pk__in=siswa_ids).select_related("kelas"):
             siswas[s.pk] = s
 
+        self.absensies_obj = []
+        lock_filter_query = None
         absensi_filter_query = None
 
-        for data in datas:
-            payload = json.loads(data.data)
+        for d in datas:
+            payload = json.loads(d.data)
             date_str = payload["date"]
-            date = self.parse_date(date_str)
 
-            siswa_id = payload["siswa"]
-            siswa = siswas.get(siswa_id)
+            try:
+                date = self.parse_date(date_str)
+            except ValueError:
+                continue
 
-            absensi_obj = AbsensiClass(
-                date=date, siswa=siswa, payload=payload, action=data.action
-            )
-            self.absensies_obj.append(absensi_obj)
+            if d.action == "absen":
+                siswa_id = payload["siswa"]
+                siswa = siswas.get(siswa_id)
 
-            if absensi_filter_query is None:
-                absensi_filter_query = Q(kelas__pk=siswa.kelas.pk) & Q(date=date)
-            else:
-                absensi_filter_query |= Q(kelas__pk=siswa.kelas.pk) & Q(date=date)
+                if not siswa:
+                    continue
 
-        for lock in KunciAbsensi.objects.filter(absensi_filter_query):
-            date_string = lock.date.strftime("%d-%m-%Y")
-            self.locks[f"{date_string}_{lock.kelas_id}"] = True
+                absensi_obj = AbsensiClass(
+                    date=date, siswa=siswa, payload=payload, action=d.action
+                )
+                self.absensies_obj.append(absensi_obj)
 
-        for absensi in Absensi.objects.filter(absensi_filter_query):
-            date_string = absensi.date.strftime("%d-%m-%Y")
-            self.absensies[f"{date_string}_{absensi.kelas_id}"] = absensi
+                q = Q(siswa__kelas__pk=siswa.kelas.pk) & Q(date=date)
+                if absensi_filter_query is None:
+                    absensi_filter_query = q
+                else:
+                    absensi_filter_query |= q
+
+                lq = Q(kelas__pk=siswa.kelas.pk) & Q(date=date)
+                if lock_filter_query is None:
+                    lock_filter_query = lq
+                else:
+                    lock_filter_query |= lq
+
+            elif d.action in ("lock", "unlock"):
+                kelas_id = payload["kelas"]
+                absensi_obj = AbsensiClass(
+                    date=date, siswa=None, payload=payload, action=d.action
+                )
+                self.absensies_obj.append(absensi_obj)
+
+                lq = Q(kelas__pk=kelas_id) & Q(date=date)
+                if lock_filter_query is None:
+                    lock_filter_query = lq
+                else:
+                    lock_filter_query |= lq
+
+        if lock_filter_query:
+            for lock in KunciAbsensi.objects.filter(lock_filter_query):
+                date_string = lock.date.strftime("%d-%m-%Y")
+                key = f"{date_string}_{lock.kelas_id}"
+                self.locks[key] = lock.locked
+
+        if absensi_filter_query:
+            for absensi in Absensi.objects.filter(absensi_filter_query):
+                date_string = absensi.date.strftime("%d-%m-%Y")
+                key = f"{date_string}_{absensi.siswa_id}"
+                self.absensies[key] = absensi
+
+        self._parsed = True
+
+    def get_absensies(self) -> List[AbsensiClass]:
+        self._parse_data()
+        return self.absensies_obj
 
     def is_absensi_locked(self, date, kelas_id):
-        if not self.locks:
-            self._parse_data()
+        date_string = date.date().strftime("%d-%m-%Y") if isinstance(date, datetime) else date.strftime("%d-%m-%Y")
+        return self.locks.get(f"{date_string}_{kelas_id}", False)
 
-        date_string = date.strftime("%d-%m-%Y")
-        return self.locks.get(f"{date_string}_{kelas_id}") == True  # noqa: E712
-
-    def get_absensi(self, date, kelas_id):
-        if not self.absensies:
-            self._parse_data()
-
-        date_string = date.strftime("%d-%m-%Y")
-        return self.absensies.get(f"{date_string}_{kelas_id}")
+    def get_absensi(self, date, siswa_id):
+        date_string = date.date().strftime("%d-%m-%Y") if isinstance(date, datetime) else date.strftime("%d-%m-%Y")
+        return self.absensies.get(f"{date_string}_{siswa_id}")
 
     def handle(self):
+        user = self.request.auth
+
         try:
             absensies = self.get_absensies()
         except ValueError as e:
@@ -146,23 +182,10 @@ class UploadView:
 
         for absensi_data in absensies:
             payload = absensi_data.payload
-            is_locked = self.is_absensi_locked(
-                absensi_data.date, absensi_data.siswa.kelas_id
-            )
-            if is_locked:
-                return 403, {
-                    "detail": f"Tidak bisa melanjutkan aksi. Absen tanggal {absensi_data.date} sedang dikunci, coba hubungi wali kelas atau operator"
-                }
+            date = absensi_data.date
 
             if absensi_data.action == "absen":
-                updated_at_int = int(payload.get("updated_at", time.time()))
-                updated_at = datetime.fromtimestamp(updated_at_int).astimezone(
-                    settings.TIME_ZONE_OBJ
-                )
-
-                # siswa_id = payload["siswa"]
-                # siswa = siswas.get(siswa_id)
-                siswa = self.get_absensi()
+                siswa = absensi_data.siswa
 
                 if not siswa:
                     continue
@@ -177,21 +200,19 @@ class UploadView:
                 if not can_access:
                     continue
 
-                lock = (
-                    KunciAbsensi.objects.filter(date=date)
-                    .filter(kelas__pk=siswa.kelas.pk)
-                    .first()
-                )
-
-                if lock and lock.locked:
+                is_locked = self.is_absensi_locked(date, siswa.kelas_id)
+                if is_locked:
                     transaction.set_rollback(True)
                     return 403, {
                         "detail": f"Tidak bisa melanjutkan aksi. Absen tanggal {date} sedang dikunci, coba hubungi wali kelas atau operator"
                     }
 
-                absensi: Absensi = Absensi.objects.filter(
-                    siswa__pk=siswa.pk, date=date
-                ).first()
+                updated_at_int = int(payload.get("updated_at", time.time()))
+                updated_at = datetime.fromtimestamp(updated_at_int).astimezone(
+                    settings.TIME_ZONE_OBJ
+                )
+
+                absensi = self.get_absensi(date, siswa.pk)
 
                 if absensi is None:
                     Absensi.objects.create(
@@ -280,7 +301,27 @@ class UploadView:
 
                             conflicts.append(conflict)
 
-        return {"data":{"conflicts": conflicts}}
+            elif absensi_data.action in ("lock", "unlock"):
+                if user.type != User.TypeChoices.WALI_KELAS:
+                    transaction.set_rollback(True)
+                    return 403, {"detail": "Ditolak"}
+
+                kelas_id = payload["kelas"]
+                is_kelas_owner = Kelas.objects.own(user.pk).filter(pk=kelas_id).exists()
+                if not is_kelas_owner:
+                    transaction.set_rollback(True)
+                    return 403, {"detail": "Ditolak"}
+
+                locked = absensi_data.action == "lock"
+
+                KunciAbsensi.objects.update_or_create(
+                    date=date,
+                    kelas__pk=kelas_id,
+                    defaults={"locked": locked, "date": date, "kelas_id": kelas_id},
+                )
+
+        return {"data": {"conflicts": conflicts}}
+
 
 @api.post("/upload", response={403: ErrorSchema, 400: ErrorSchema, 200: SuccessSchema})
 @transaction.atomic
@@ -288,6 +329,7 @@ def upload(request: HttpRequest, data: DataUploadSchema):
     view = UploadView(request, data)
     rv = view.handle()
     return rv
+
 
 @api.post("/compressed-upload", response={403: ErrorSchema, 200: SuccessSchema})
 def compressed_upload(request: HttpRequest, data: DataCompressedUploadSchema):
