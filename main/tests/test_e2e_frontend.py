@@ -7,6 +7,10 @@ Prerequisites:
   3. Run: uv run python manage.py test main.tests.test_e2e_frontend
 """
 
+import subprocess
+import os
+import signal
+import socket
 import time
 from datetime import date, timedelta
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -29,17 +33,70 @@ WAIT_TIMEOUT = 10
 @override_settings(DEBUG=True, CACHEOPS_ENABLED=False)
 class FrontendE2ETest(StaticLiveServerTestCase):
     """
-    E2E tests that run against the Vite dev server (frontend)
-    which proxies API calls to the Django LiveServer (backend).
-
-    The Vite dev server must be started manually before running these tests.
+    The Vite dev server will be started automatically if it's not already running.
     The Django test server binds to port 8000 to match the frontend .env config.
     """
 
     port = 8000  # Match VITE_DJANGO_BASE_API_URL in frontend/.env
+    vite_process = None
+
+    @classmethod
+    def _is_vite_running(cls):
+        """Check if port 5173 is already in use."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(("localhost", 5173)) == 0
+
+    @classmethod
+    def _start_vite(cls):
+        """Start the Vite development server."""
+        if cls._is_vite_running():
+            print("\n[E2E] Vite is already running on port 5173.")
+            return
+
+        print("\n[E2E] Starting Vite dev server...")
+        frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+        
+        # Try different commands
+        commands = [
+            ["bun", "run", "dev"],
+            ["npm", "run", "dev"],
+            ["npx", "vite"]
+        ]
+        
+        for cmd in commands:
+            try:
+                cls.vite_process = subprocess.Popen(
+                    cmd,
+                    cwd=frontend_dir,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid  # To kill the entire process tree
+                )
+                
+                # Wait for it to be ready
+                for _ in range(20):  # 10 seconds timeout
+                    if cls._is_vite_running():
+                        print(f"[E2E] Vite started successfully using {' '.join(cmd)}.")
+                        return
+                    time.sleep(0.5)
+                
+                # If we get here, this command failed to start within timeout
+                print(f"[E2E] Warning: {' '.join(cmd)} failed to respond on port 5173.")
+                os.killpg(os.getpgid(cls.vite_process.pid), signal.SIGTERM)
+                cls.vite_process = None
+            except FileNotFoundError:
+                continue
+            except Exception as e:
+                print(f"[E2E] Error starting Vite with {' '.join(cmd)}: {e}")
+                continue
+
+        raise RuntimeError("Failed to start Vite dev server using any of the available commands.")
 
     @classmethod
     def setUpClass(cls):
+        # Start Vite before anything else
+        cls._start_vite()
+        
         super().setUpClass()
 
         options = FirefoxOptions()
@@ -53,6 +110,15 @@ class FrontendE2ETest(StaticLiveServerTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.browser.quit()
+        
+        # Stop Vite if we started it
+        if cls.vite_process:
+            print("\n[E2E] Stopping Vite dev server...")
+            try:
+                os.killpg(os.getpgid(cls.vite_process.pid), signal.SIGTERM)
+            except Exception as e:
+                print(f"[E2E] Error stopping Vite: {e}")
+
         super().tearDownClass()
 
     def setUp(self):
