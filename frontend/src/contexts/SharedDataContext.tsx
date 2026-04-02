@@ -72,7 +72,7 @@ export function _SharedDataContextConsumer({
   }
 
   const [lastRefresh, setLastRefresh] = useState<number | undefined>(
-    currentLastRefresh
+    currentLastRefresh,
   );
 
   const [siswasKelasName, _setSiswasKelasName] = useState<
@@ -95,7 +95,7 @@ export function _SharedDataContextConsumer({
     localStorage.setItem("LAST_REFRESH", lastRefresh.toString());
     setLastRefresh(lastRefresh);
   };
- 
+
   useEffect(() => {
     if (!token) {
       setIsLogout(true);

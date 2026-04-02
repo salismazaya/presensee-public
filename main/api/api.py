@@ -1,3 +1,4 @@
+import sys
 from django.conf import settings
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
@@ -6,7 +7,7 @@ from main.api.core.auth import AuthBearer
 
 throttle = []
 
-if not settings.DEBUG:
+if not settings.DEBUG and "test" not in sys.argv:
     throttle.extend(
         [
             # TODO: ganti ke redis. throttle seperti ini tidak akurat jika multi worker

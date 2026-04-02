@@ -1,7 +1,6 @@
-import asyncio
-
-from asgiref.sync import async_to_sync, sync_to_async
 from django.http import HttpResponse
+from django.views.decorators.gzip import gzip_page
+# from django.db.models import Prefetch
 
 from main.api.api import api
 from main.api.core.types import HttpRequest
@@ -10,12 +9,28 @@ from main.models import Absensi, Kelas, KunciAbsensi, Siswa, User
 
 
 @api.get("/data")
+@gzip_page
 def get_data(request: HttpRequest):
-    kelas_qs = Kelas.objects.only_active()
+    # sekretaris_qs = User.objects.filter(type=User.TypeChoices.SEKRETARIS)
 
-    absensi_qs = Absensi.objects.filter(siswa__kelas__active=True)
-
-    siswa_qs = Siswa.objects.filter(kelas__active=True)
+    kelas_qs = (
+        Kelas.objects.only_active()
+        # .select_related("wali_kelas")
+        # .prefetch_related(Prefetch("sekretaris", sekretaris_qs))
+    )
+    siswa_qs = (
+        Siswa.objects.filter(kelas__active=True)
+        # .select_related("kelas", "kelas__wali_kelas")
+        # .prefetch_related(Prefetch("kelas__sekretaris", sekretaris_qs))
+    )
+    absensi_qs = (
+        Absensi.objects.filter(siswa__kelas__active=True)
+        # .select_related(
+        #     "by",
+        # )
+        # .prefetch_related(Prefetch("siswa", siswa_qs))
+        # .prefetch_related(Prefetch("siswa__kelas", kelas_qs))
+    )
 
     lock_absensi_qs = KunciAbsensi.objects.filter(kelas__active=True).filter(
         locked=True
@@ -43,34 +58,13 @@ def get_data(request: HttpRequest):
         absensi_qs = absensi_qs.none()
         siswa_qs = siswa_qs.none()
 
-    @async_to_sync
-    async def hit_database():
-        """
-        menggunakan async agar 4 tabel dieksekusi secara bersamaan
-        """
-
-        # queryset di django itu lazy. salah satu cara untuk mengeksekusinya
-        # adalah menghitung row-nya (len)
-        #
-        # tidak menggunakan thread-sensitive (=False)
-        # karena tetap aman meskipun terjadi race condition
-        execute = sync_to_async(len, thread_sensitive=False)
-        # TODO: atur agar threading tidak bengkak saat banyak user hit endpoint ini
-
-        await asyncio.gather(
-            execute(kelas_qs),
-            execute(absensi_qs),
-            execute(siswa_qs),
-            execute(lock_absensi_qs),
-        )
-
-    # call in sync context
-    hit_database()
-
     conn = helpers_database.dump_to_sqlite(
         kelas_qs, siswa_qs, absensi_qs, lock_absensi_qs
     )
     dump_database_str = ";\n".join(conn.iterdump()) + ";"
     conn.close()
 
-    return HttpResponse(dump_database_str)
+    minimize_dump_database_str = helpers_database.minimize_sql_dump(dump_database_str)
+
+    response = HttpResponse(minimize_dump_database_str, content_type="text/plain")
+    return response

@@ -72,7 +72,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django.middleware.gzip.GZipMiddleware",
+    # "django.middleware.gzip.GZipMiddleware",
+    # middleware gzip dinonaktifkan karena hanya endpoint spesifik yang di-compress
 ]
 
 ROOT_URLCONF = "django_project.urls"
@@ -225,4 +226,5 @@ CACHEOPS_REDIS = REDIS_URL
 
 CACHEOPS = {
     "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
+    "main.absensi": {"ops": "aggregate", "timeout": 60 * 60 * 2},
 }

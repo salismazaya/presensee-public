@@ -30,11 +30,16 @@ function waktuLaluUnix(unixTime: number) {
 
 export default function useLastRefresh(): [
   string | undefined,
-  (l: number) => void
+  (l: number) => void,
 ] {
   const { lastRefresh, setLastRefresh } = useContext(SharedDataContext);
   const [lastRefreshString, setLastRefreshString] = useState<string>();
   const lastRefreshRef = useRef(lastRefresh);
+  // useEffect(() => {
+  //   if (!lastRefreshRef.current) return;
+  //   const time = waktuLaluUnix(lastRefreshRef.current);
+  //   setLastRefreshString(time);
+  // }, [lastRefreshRef.current]);
 
   useEffect(() => {
     const interval = setInterval(() => {
