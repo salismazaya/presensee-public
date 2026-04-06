@@ -15,10 +15,10 @@ import {
 import useKelas from "../hooks/useKelas";
 import useUser from "../hooks/useUser";
 import { type InsertAbsensProps } from "../helpers/database";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
+import { useConfirm } from "../contexts/ConfirmContext";
 import useToken from "../hooks/useToken";
 import { getAbsensi } from "../helpers/api";
-import { toast } from "react-toastify";
 import useGlobalLoading from "../hooks/useGlobalLoading";
 
 // Helper untuk format tanggal header
@@ -65,6 +65,7 @@ export default function AbsensiDetail() {
   const navigate = useNavigate();
 
   const [, setIsLoading] = useGlobalLoading();
+  const askConfirm = useConfirm();
 
   const statusSiswaChangedRef = useRef<number[]>([]);
 
@@ -111,22 +112,10 @@ export default function AbsensiDetail() {
           const siswa = getSiswa({ db, whereQuery: "id=" + x.siswaId })[0];
 
           if (x.status) {
-            let statusColor = "text-error";
-            if (x.status == "sakit") statusColor = "text-warning";
-            if (x.status == "izin") statusColor = "text-info";
-
-            const tidakHadir = `<div class="flex justify-between border-b border-base-200 py-1">
-            <span class="font-medium">${siswa.fullname}</span>
-            <span class="${statusColor} font-bold uppercase">${x.status}</span>
-        </div>`;
-
+            const tidakHadir = `- ${siswa.fullname} (${x.status.toUpperCase()})`;
             siswasTidakHadir.push(tidakHadir);
           } else {
-            const tidakHadir = `<div class="flex justify-between border-b border-base-200 py-1">
-            <span class="font-medium">${siswa.fullname}</span>
-            <span class="font-bold uppercase">BELUM DIABSEN</span>
-        </div>`;
-
+            const tidakHadir = `- ${siswa.fullname} (BELUM DIABSEN)`;
             siswasTidakHadir.push(tidakHadir);
           }
         }
@@ -142,34 +131,41 @@ export default function AbsensiDetail() {
       })
       .filter((x): x is InsertAbsensProps => x !== undefined);
 
-    const html =
-      siswasTidakHadir.length > 0
-        ? `<div class="text-left text-sm max-h-60 overflow-y-auto">${siswasTidakHadir.join(
-            ""
-          )}</div>`
-        : `<p class="text-success font-bold">Semua siswa Hadir!</p>`;
+    const isConfirmed = await askConfirm({
+      title: "Simpan Absensi",
+      message: (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className={`badge badge-sm ${siswasTidakHadir.length > 0 ? 'badge-warning' : 'badge-success'}`}></div>
+            <p className="font-bold">
+              {siswasTidakHadir.length > 0 ? "Siswa Tidak Hadir:" : "Semua siswa Hadir!"}
+            </p>
+          </div>
 
-    Swal.fire({
-      title: "Konfirmasi Absensi",
-      html,
-      icon: siswasTidakHadir.length > 0 ? "warning" : "info",
-      showCancelButton: true,
-      confirmButtonText: "Simpan Data",
-      cancelButtonText: "Batal",
-      confirmButtonColor: "#3b82f6", // Primary Blue
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        insertAbsens(db, absensiesToSave);
-        Swal.fire({
-          title: "Tersimpan!",
-          text: "Data absensi berhasil disimpan.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        navigate("/absensi");
-      }
+          {siswasTidakHadir.length > 0 && (
+            <div className="bg-base-200/50 rounded-xl p-3 border border-base-300 max-h-48 overflow-y-auto scrollbar-thin">
+              <ul className="space-y-1">
+                {siswasTidakHadir.map((s, i) => (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className="text-error">•</span>
+                    <span>{s.replace("- ", "")}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="text-base text-base-content/80">Simpan data absensi sekarang?</p>
+        </div>
+      ),
+      confirmText: "Simpan Sekarang",
+      cancelText: "Cek Kembali",
     });
+
+    if (isConfirmed) {
+      insertAbsens(db, absensiesToSave);
+      toast.success("Data absensi berhasil disimpan.");
+      navigate("/absensi");
+    }
   };
 
   // --- EFFECTS ---
@@ -441,9 +437,8 @@ export default function AbsensiDetail() {
                     Status:
                     {absensi.status ? (
                       <span
-                        className={`ml-1 font-bold ${
-                          currentStatusObj?.activeClass.split(" ")[1] || ""
-                        }`}
+                        className={`ml-1 font-bold ${currentStatusObj?.activeClass.split(" ")[1] || ""
+                          }`}
                       >
                         {currentStatusObj?.labelFull}
                       </span>
@@ -464,16 +459,14 @@ export default function AbsensiDetail() {
                         onClick={() => handleClick(siswa.id, opt.val as any)}
                         className={`
                                             join-item btn btn-sm md:btn-md flex-1
-                                            ${
-                                              absensi.status === opt.val
-                                                ? opt.activeClass
-                                                : "btn-ghost bg-base-200/50 hover:bg-base-200"
-                                            }
-                                            ${
-                                              locked
-                                                ? "opacity-50 cursor-not-allowed"
-                                                : opt.colorClass
-                                            }
+                                            ${absensi.status === opt.val
+                            ? opt.activeClass
+                            : "btn-ghost bg-base-200/50 hover:bg-base-200"
+                          }
+                                            ${locked
+                            ? "opacity-50 cursor-not-allowed"
+                            : opt.colorClass
+                          }
                                             border-base-300
                                         `}
                       >

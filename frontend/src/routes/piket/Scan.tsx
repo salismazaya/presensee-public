@@ -1,7 +1,7 @@
 import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
 import Navbar from "../../components/Navbar";
 import { useEffect, useRef, useState } from "react";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import PiketFooter from "../../components/PiketFooter";
 
 import { getJadwal, getSiswas, uploadPiketDatabase } from "../../helpers/api";
@@ -223,13 +223,9 @@ export default function Scan() {
     const newLogs = logs.filter((log) => log.siswaId !== siswaId);
     setLogs(newLogs);
     setActiveSiswaId(null);
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "info",
-      title: "Log dihapus dari tampilan",
-      showConfirmButton: false,
-      timer: 1500,
+    toast.info("Log dihapus dari tampilan", {
+      position: "top-right",
+      autoClose: 1500,
     });
   };
 

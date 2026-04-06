@@ -5,7 +5,6 @@ import {
   clearStagingDatabase,
   getStagingDatabase,
 } from "../helpers/stagingDatabase";
-import Swal from "sweetalert2";
 import {
   getAbsensies,
   getSiswa,
@@ -27,6 +26,7 @@ import useKelas from "../hooks/useKelas";
 import ConflictsList from "../components/ConflictsList";
 import { toast } from "react-toastify";
 import useOnline from "../hooks/useOnline";
+import { useConfirm } from "../contexts/ConfirmContext";
 
 export default function Dashboard() {
   const db = useDatabase();
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const stagingDatabase = getStagingDatabase();
   const loaded = useRef(false);
   const isOnline = useOnline();
+  const askConfirm = useConfirm();
 
   useEffect(() => {
     if (loaded.current) return;
@@ -88,31 +89,23 @@ export default function Dashboard() {
         });
       }
     }, 0);
-    // .finally(() => {
-    //   loaded.current = true;
-    // });
   }, [db, kelasId, token, isOnline]);
 
   const handleRefresh = async () => {
-    const { isConfirmed } = await Swal.fire({
-      icon: "question",
-      text: "Konfirmasi untuk Refresh data dari server?",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Refresh",
-      cancelButtonText: "Batal",
+    const isConfirmed = await askConfirm({
+      title: "Sinkronisasi Data",
+      message: "Apakah Anda yakin ingin menyegarkan data dari server?",
     });
+
+    if (!isConfirmed) return;
 
     const stagingDatabase = getStagingDatabase();
     if (stagingDatabase.length !== 0) {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Refresh",
-        text: "Masih ada data lokal yang belum di-upload. Silakan upload terlebih dahulu.",
-      });
+      toast.error(
+        "Masih ada data lokal yang belum di-upload. Silakan upload terlebih dahulu.",
+      );
       return;
     }
-
-    if (!isConfirmed) return;
 
     if (token && db) {
       setIsLoading(true);
@@ -124,15 +117,10 @@ export default function Dashboard() {
         refreshLocalDatabase();
         setLastRefresh(new Date().getTime());
 
-        Swal.fire({
-          title: "Berhasil",
-          text: "Data berhasil diperbaharui",
-          icon: "success",
-        }).finally(() => {
-          setTimeout(() => {
-            window.location.reload();
-          }, 150);
-        });
+        toast.success("Data berhasil diperbaharui");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } finally {
         setIsLoading(false);
       }
@@ -140,21 +128,16 @@ export default function Dashboard() {
   };
 
   const handleUpload = async () => {
-    const { isConfirmed } = await Swal.fire({
-      icon: "question",
-      text: "Konfirmasi untuk Upload data ke server?",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Upload",
+    const isConfirmed = await askConfirm({
+      title: "Upload Data",
+      message: "Apakah Anda yakin ingin mengunggah data ke server?",
     });
 
     if (!isConfirmed) return;
 
     const stagingDatabase = getStagingDatabase();
     if (stagingDatabase.length === 0) {
-      Swal.fire({
-        icon: "info",
-        text: "Tidak ada data baru yang perlu di-upload",
-      });
+      toast.info("Tidak ada data baru yang perlu di-upload");
       return;
     }
 
@@ -172,33 +155,19 @@ export default function Dashboard() {
         setLastRefresh(new Date().getTime());
 
         if (response.conflicts.length == 0) {
-          Swal.fire({
-            title: "Upload Berhasil!",
-            text: "Semua data telah disinkronisasi.",
-            icon: "success",
-          });
+          toast.success("Semua data telah disinkronisasi.");
         } else {
           response.conflicts.forEach((conflict) => {
             insertConflictAbsensi(conflict);
           });
 
-          Swal.fire({
-            title: "Upload Berhasil!",
-            text: "Data telah disinkronisasi.",
-            icon: "success",
-            iconColor: "blue",
-          }).finally(() => {
-            setTimeout(() => {
-              window.location.reload();
-            }, 300);
-          });
+          toast.success("Data telah disinkronisasi.");
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         }
       } catch (e: any) {
-        Swal.fire({
-          title: "Upload Gagal",
-          text: e.toString(),
-          icon: "error",
-        });
+        toast.error("Upload Gagal: " + e.toString());
       } finally {
         setIsLoading(false);
       }
@@ -362,7 +331,9 @@ export default function Dashboard() {
           <div className="flex justify-end px-2">
             <p className="text-xs text-base-content/50 italic">
               Terakhir diperbaharui:{" "}
-              <span className="font-medium">{lastRefresh}</span>
+              <span className="font-medium text-base-content/80">
+                {lastRefresh ? new Date(lastRefresh).toLocaleString("id-ID") : "-"}
+              </span>
             </p>
           </div>
 

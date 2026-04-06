@@ -7,7 +7,7 @@ import useGlobalLoading from "../hooks/useGlobalLoading";
 import { getRekap } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import { useState } from "react";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 
 export default function MintaRekapDetail() {
   const { bulan_tahun } = useParams();
@@ -25,14 +25,7 @@ export default function MintaRekapDetail() {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
 
-      // Opsional: Toast kecil
-      const toast = Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      toast.fire({ icon: "success", title: "Link disalin" });
+      toast.success("Link disalin");
     } catch (err) {
       console.error("Gagal menyalin link: ", err);
     }
@@ -59,11 +52,9 @@ export default function MintaRekapDetail() {
       }
     } else {
       // Fallback jika browser tidak support (misal di PC lama)
-      handleCopy();
-      Swal.fire({
-        text: "Browser tidak mendukung fitur share native, link telah disalin ke clipboard.",
-        icon: "info",
-      });
+      toast.info(
+        "Browser tidak mendukung fitur share native, link telah disalin ke clipboard."
+      );
     }
   };
 
@@ -101,7 +92,7 @@ export default function MintaRekapDetail() {
       const url = hostWithScheme + "/files/" + fileId + "/";
       setResultUrl(url);
     } catch (e) {
-      Swal.fire({ title: "Gagal", text: "Gagal membuat rekap", icon: "error" });
+      toast.error("Gagal membuat rekap");
     } finally {
       setLoading(false);
     }

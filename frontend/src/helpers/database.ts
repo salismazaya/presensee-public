@@ -1,4 +1,4 @@
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import { refreshDatabase } from "./api";
 import { insert, insertStagingAbsens } from "./stagingDatabase";
 import type { ConflictData } from "../components/ConflictsList";
@@ -134,10 +134,7 @@ export function refreshRemoteDatabase(
         }
       })
       .catch((e) => {
-        Swal.fire({
-          icon: "error",
-          text: e.toString(),
-        });
+        toast.error(e.toString());
         reject();
       });
   });
@@ -301,11 +298,7 @@ export async function downloadLocalDatabase() {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Gagal mendownload database:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Gagal",
-      text: "File database belum ada atau terjadi kesalahan.",
-    });
+    toast.error("File database belum ada atau terjadi kesalahan.");
   }
 }
 

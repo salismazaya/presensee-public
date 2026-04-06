@@ -1,4 +1,4 @@
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import { useState } from "react";
 import { changePassword } from "../helpers/api";
 import useToken from "../hooks/useToken";
@@ -13,18 +13,12 @@ export default function PiketChangePassword() {
 
   const handleClick = async () => {
     if (!oldPassword || !newPassword || !confirmNewPassword) {
-      Swal.fire({
-        icon: "error",
-        text: "Tolong isi semua field",
-      });
+      toast.error("Tolong isi semua field");
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      Swal.fire({
-        icon: "error",
-        text: "Password baru dan konfirmasi password tidak sama",
-      });
+      toast.error("Password baru dan konfirmasi password tidak sama");
       return;
     }
 
@@ -35,21 +29,13 @@ export default function PiketChangePassword() {
 
       const success = await changePassword(token, oldPassword, newPassword);
       if (success) {
-        Swal.fire({
-          titleText: "Sukses",
-          text: "Password telah diganti",
-          icon: "success",
-        });
+        toast.success("Password telah diganti");
         setOldPassword("");
         setNewPassword("");
         setConfirmNewPassword("");
       }
     } catch (e: any) {
-      Swal.fire({
-        titleText: "Gagal",
-        text: e.toString(),
-        icon: "error",
-      });
+      toast.error("Gagal: " + e.toString());
     } finally {
       setLoading(false);
     }

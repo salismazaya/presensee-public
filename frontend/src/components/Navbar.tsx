@@ -1,9 +1,10 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import ThemeToggle from "./ThemeToggle";
 import { useEffect, useState } from "react";
 import useOnline from "../hooks/useOnline";
 import useUser from "../hooks/useUser";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
+import { useConfirm } from "../contexts/ConfirmContext";
 
 export default function Navbar() {
   const [statusColor, setStatusColor] = useState<
@@ -12,6 +13,8 @@ export default function Navbar() {
 
   const isOnline = useOnline();
   const [user] = useUser();
+  const navigate = useNavigate();
+  const askConfirm = useConfirm();
 
   useEffect(() => {
     setTimeout(() => {
@@ -23,22 +26,20 @@ export default function Navbar() {
     }, 500);
   }, [isOnline]);
 
-  const handleLogout = () => {
-    Swal.fire({
-      title: "Logout?",
-      text: "Apakah Anda yakin ingin keluar dari akun?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Keluar",
-      confirmButtonColor: "#d33",
-      cancelButtonText: "Batal",
-    }).then((a) => {
-      if (a.isConfirmed) {
-        localStorage.removeItem("USER");
-        localStorage.removeItem("TOKEN");
-        window.location.href = "/login";
-      }
+  const handleLogout = async () => {
+    const isConfirmed = await askConfirm({
+      title: "Konfirmasi Logout",
+      message: "Apakah Anda yakin ingin keluar dari akun?",
+      danger: true,
+      confirmText: "Ya, Logout",
     });
+
+    if (isConfirmed) {
+      localStorage.removeItem("PRESENSEE_TOKEN");
+      localStorage.removeItem("USER");
+      toast.success("Berhasil keluar");
+      navigate("/login");
+    }
   };
 
   const formatUserType = (type?: string) => {
@@ -87,7 +88,7 @@ export default function Navbar() {
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl border border-base-200 mt-2"
+                className="dropdown-content menu bg-base-100 rounded-box z-51 p-2 shadow-xl border border-base-200 mt-2"
               >
                 <li>
                   <Link to="/change-password">
