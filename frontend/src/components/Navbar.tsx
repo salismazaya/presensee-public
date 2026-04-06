@@ -2,6 +2,8 @@ import { Link } from "react-router";
 import ThemeToggle from "./ThemeToggle";
 import { useEffect, useState } from "react";
 import useOnline from "../hooks/useOnline";
+import useUser from "../hooks/useUser";
+import Swal from "sweetalert2";
 
 export default function Navbar() {
   const [statusColor, setStatusColor] = useState<
@@ -9,6 +11,7 @@ export default function Navbar() {
   >("text-primary");
 
   const isOnline = useOnline();
+  const [user] = useUser();
 
   useEffect(() => {
     setTimeout(() => {
@@ -19,6 +22,37 @@ export default function Navbar() {
       }
     }, 500);
   }, [isOnline]);
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Logout?",
+      text: "Apakah Anda yakin ingin keluar dari akun?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Keluar",
+      confirmButtonColor: "#d33",
+      cancelButtonText: "Batal",
+    }).then((a) => {
+      if (a.isConfirmed) {
+        localStorage.removeItem("USER");
+        localStorage.removeItem("TOKEN");
+        window.location.href = "/login";
+      }
+    });
+  };
+
+  const formatUserType = (type?: string) => {
+    switch (type) {
+      case "kesiswaan":
+        return "Kesiswaan";
+      case "sekretaris":
+        return "Sekretaris";
+      case "wali_kelas":
+        return "Wali Kelas";
+      default:
+        return type;
+    }
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full bg-base-100/90 backdrop-blur-lg border-b border-base-200 transition-all duration-300">
@@ -36,7 +70,66 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className="flex-none">
+        <div className="flex-none flex items-center gap-2">
+          {user && (
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost btn-sm normal-case flex flex-col items-end gap-1 h-auto py-1.5"
+              >
+                <span className="text-sm font-bold leading-none">
+                  {user.username}
+                </span>
+                <span className="text-[10px] opacity-60 leading-none">
+                  {formatUserType(user.type)}
+                </span>
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl border border-base-200 mt-2"
+              >
+                <li>
+                  <Link to="/change-password">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                      />
+                    </svg>
+                    Ganti Password
+                  </Link>
+                </li>
+                <li>
+                  <button onClick={handleLogout} className="text-error font-bold">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+                      />
+                    </svg>
+                    Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
           <ThemeToggle />
         </div>
       </div>
