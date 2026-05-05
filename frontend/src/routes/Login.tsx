@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { login } from "../helpers/api";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import useToken from "../hooks/useToken";
 import ThemeToggle from "../components/ThemeToggle";
 import serviceWorkerUtils from "../helpers/serviceWorker";
@@ -25,21 +25,12 @@ export default function Login() {
         // await serviceWorkerUtils.register();
         window.location.href = "/";
       } catch (e: any) {
-        Swal.fire({
-          title: "Gagal Masuk",
-          text: "Username atau password salah.",
-          icon: "error",
-          confirmButtonText: "Coba Lagi",
-        });
+        toast.error("Username atau password salah.");
         setIsLoading(false);
       } finally {
       }
     } else {
-      Swal.fire({
-        icon: "warning",
-        title: "Form Belum Lengkap",
-        text: "Mohon isi username dan password terlebih dahulu.",
-      });
+      toast.warning("Mohon isi username dan password terlebih dahulu.");
     }
   };
 

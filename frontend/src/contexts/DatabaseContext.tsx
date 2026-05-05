@@ -8,7 +8,7 @@ import {
 } from "react";
 import { refreshDatabase } from "../helpers/api";
 import useToken from "../hooks/useToken";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import useGlobalLoading from "../hooks/useGlobalLoading";
 import { getLocalDatabase } from "../helpers/database";
 import initSqlJs, { type Database } from "sql.js";
@@ -44,10 +44,9 @@ export function DatabaseContextConsumer({ children }: { children: any }) {
           setIsLoading(false);
         }, 500);
       } catch {
-        Swal.fire({
-          icon: "error",
-          text: "Gagal mendapatkan database, coba periksa koneksi internet atau mungkin PC server sedang mati",
-        });
+        toast.error(
+          "Gagal mendapatkan database, coba periksa koneksi internet atau mungkin PC server sedang mati"
+        );
         setIsLoading(false);
       } finally {
         setDb(db);

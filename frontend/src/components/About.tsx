@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import useConstants from "../hooks/useConstants";
 import { ConstantsContextConsumer } from "../contexts/ConstantsContext";
 import parse from "html-react-parser";
+import { useConfirm } from "../contexts/ConfirmContext";
 
 function _About() {
   const navigate = useNavigate();
@@ -11,25 +12,21 @@ function _About() {
 
   const constants = useConstants();
 
-  const handleLogout = () => {
-    Swal.fire({
-      title: "Logout?",
-      text: "Apakah Anda yakin ingin keluar dari akun?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Keluar",
-      confirmButtonColor: "#d33",
-      cancelButtonText: "Batal",
-    }).then((a) => {
-      if (a.isConfirmed) {
-        // Hapus data sesi
-        localStorage.removeItem("USER");
-        localStorage.removeItem("TOKEN");
+  const askConfirm = useConfirm();
 
-        // Redirect
-        window.location.href = "/login";
-      }
+  const handleLogout = async () => {
+    const isConfirmed = await askConfirm({
+      title: "Konfirmasi Logout",
+      message: "Apakah Anda yakin ingin keluar dari akun?",
+      danger: true,
+      confirmText: "Ya, Logout",
     });
+
+    if (isConfirmed) {
+      localStorage.removeItem("PRESENSEE_TOKEN");
+      toast.success("Berhasil keluar");
+      navigate("/login");
+    }
   };
   return (
     <main className="max-w-2xl mx-auto p-4 md:p-6 space-y-6">
