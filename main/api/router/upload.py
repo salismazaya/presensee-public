@@ -25,9 +25,7 @@ from ..schemas import (
 )
 
 # Compile regex sekali di module level, bukan setiap request
-_DDMMYY_PATTERN = re.compile(
-    r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$"
-)
+_DDMMYY_PATTERN = re.compile(r"^\b(0?[1-9]|[12][0-9]|3[01])-(0?[1-9]|1[0-2])-\d{2}\b$")
 
 
 @dataclass
@@ -43,9 +41,9 @@ class UploadView:
         self.request = request
         self.data = data
         self._parsed = False
-        self.locks = {}                              # "{dd-mm-yyyy}_{kelas_id}" → bool
-        self.absensies = {}                          # "{dd-mm-yyyy}_{siswa_id}" → Absensi
-        self.kelas_sekretaris = defaultdict(set)     # kelas_id → {user_id, ...}
+        self.locks = {}  # "{dd-mm-yyyy}_{kelas_id}" → bool
+        self.absensies = {}  # "{dd-mm-yyyy}_{siswa_id}" → Absensi
+        self.kelas_sekretaris = defaultdict(set)  # kelas_id → {user_id, ...}
         self.parsed_actions: List[ParsedAction] = []
 
     @staticmethod
@@ -136,13 +134,17 @@ class UploadView:
                     continue
 
                 self.parsed_actions.append(
-                    ParsedAction(siswa=siswa, date=date, payload=payload, action="absen")
+                    ParsedAction(
+                        siswa=siswa, date=date, payload=payload, action="absen"
+                    )
                 )
                 kelas_ids_for_sek.add(siswa.kelas_id)
 
                 # Filter langsung per siswa_id (tanpa JOIN ke kelas)
                 q = Q(siswa_id=siswa.pk) & Q(date=date)
-                absensi_filter_q = q if absensi_filter_q is None else absensi_filter_q | q
+                absensi_filter_q = (
+                    q if absensi_filter_q is None else absensi_filter_q | q
+                )
 
                 lq = Q(kelas_id=siswa.kelas_id) & Q(date=date)
                 lock_filter_q = lq if lock_filter_q is None else lock_filter_q | lq
@@ -150,7 +152,9 @@ class UploadView:
             elif d.action in ("lock", "unlock"):
                 kelas_id = payload["kelas"]
                 self.parsed_actions.append(
-                    ParsedAction(siswa=None, date=date, payload=payload, action=d.action)
+                    ParsedAction(
+                        siswa=None, date=date, payload=payload, action=d.action
+                    )
                 )
 
                 lq = Q(kelas_id=kelas_id) & Q(date=date)
@@ -159,8 +163,7 @@ class UploadView:
         # --- Query 2: Batch load sekretaris per kelas (2 queries via prefetch) ---
         if kelas_ids_for_sek:
             kelas_qs = (
-                Kelas.objects
-                .filter(pk__in=kelas_ids_for_sek)
+                Kelas.objects.filter(pk__in=kelas_ids_for_sek)
                 .only("id", "wali_kelas_id")
                 .prefetch_related("sekretaris")
             )
@@ -176,10 +179,8 @@ class UploadView:
 
         # --- Query 4: Batch load existing absensies + relasi (1 query) ---
         if absensi_filter_q:
-            absensi_qs = (
-                Absensi.objects
-                .filter(absensi_filter_q)
-                .select_related("by", "siswa", "siswa__kelas")
+            absensi_qs = Absensi.objects.filter(absensi_filter_q).select_related(
+                "by", "siswa", "siswa__kelas"
             )
             for a in absensi_qs:
                 key = f"{self._date_key(a.date)}_{a.siswa_id}"
@@ -233,14 +234,16 @@ class UploadView:
 
                 if absensi is None:
                     # Kumpulkan untuk bulk_create (bukan individual .create())
-                    new_absensies.append(Absensi(
-                        siswa_id=siswa.pk,
-                        date=date,
-                        _status=payload["status"],
-                        created_at=updated_at,
-                        updated_at=updated_at,
-                        by_id=user.pk,
-                    ))
+                    new_absensies.append(
+                        Absensi(
+                            siswa_id=siswa.pk,
+                            date=date,
+                            _status=payload["status"],
+                            created_at=updated_at,
+                            updated_at=updated_at,
+                            by_id=user.pk,
+                        )
+                    )
                 elif absensi.by is None:
                     absensi.status = payload["status"]
                     absensi.updated_at = updated_at
@@ -261,19 +264,13 @@ class UploadView:
                         updated_absensies.append(absensi)
 
                     elif (
-                        not is_same_status
-                        and not is_same_user
-                        and prev_status is None
+                        not is_same_status and not is_same_user and prev_status is None
                     ):
                         conflicts.append(
                             self._build_conflict(absensi, user, new_status)
                         )
 
-                    elif (
-                        not is_same_status
-                        and not is_same_user
-                        and prev_status
-                    ):
+                    elif not is_same_status and not is_same_user and prev_status:
                         if (prev_status == current_status) or (
                             current_status == Absensi.StatusChoices.WAIT
                         ):
@@ -310,9 +307,14 @@ class UploadView:
                 lock_key = f"{self._date_key(date)}_{kelas_id}"
                 self.locks[lock_key] = locked
 
-        # --- Batch DB operations (2 query max, bukan N) ---
-        if new_absensies:
-            Absensi.objects.bulk_create(new_absensies)
+        new_absensies_distinct = {}
+        for a in new_absensies:
+            key = f"{self._date_key(a.date)}_{a.siswa_id}"
+            if key not in new_absensies_distinct:
+                new_absensies_distinct[key] = a
+
+        if new_absensies_distinct:
+            Absensi.objects.bulk_create(new_absensies_distinct.values())
 
         if updated_absensies:
             Absensi.objects.bulk_update(
