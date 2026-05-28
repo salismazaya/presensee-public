@@ -332,7 +332,7 @@ export default function Dashboard() {
             <p className="text-xs text-base-content/50 italic">
               Terakhir diperbaharui:{" "}
               <span className="font-medium text-base-content/80">
-                {lastRefresh ? new Date(lastRefresh).toLocaleString("id-ID") : "-"}
+                {lastRefresh || "-"}
               </span>
             </p>
           </div>
