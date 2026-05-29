@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -228,3 +229,21 @@ CACHEOPS = {
     "main.*": {"ops": ("fetch", "get", "exists"), "timeout": 60 * 60 * 12},
     "main.absensi": {"ops": "aggregate", "timeout": 60 * 60 * 2},
 }
+
+if "test" in sys.argv:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "loggers": {
+            "django.request": {
+                "handlers": ["console"],
+                "level": "ERROR",
+                "propagate": False,
+            },
+        },
+    }
