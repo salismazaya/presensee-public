@@ -14,6 +14,7 @@ Backend menggunakan **Django 5.2** dengan package manager **uv**.
     uv python install
     uv sync
     cp .env.example .env
+    make migrate  # atau: uv run python manage.py migrate
     ```
 *   **Menjalankan Server Pengembangan (Dev):**
     ```bash

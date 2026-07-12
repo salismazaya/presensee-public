@@ -8,7 +8,7 @@ import { useConfirm } from "../contexts/ConfirmContext";
 function _About() {
   const navigate = useNavigate();
 
-  const version = localStorage.getItem("VERSION") || "";
+  // const version = localStorage.getItem("VERSION") || "";
 
   const constants = useConstants();
 
@@ -53,9 +53,9 @@ function _About() {
           <h1 className="text-3xl font-bold text-primary tracking-tight">
             Presensee
           </h1>
-          <p className="text-sm font-medium opacity-50 uppercase tracking-widest mb-4">
+          {/* <p className="text-sm font-medium opacity-50 uppercase tracking-widest mb-4">
             Ver {version}
-          </p>
+          </p> */}
 
           <p className="text-base-content/80 leading-relaxed text-justify">
             {parse(constants.WELCOME_MESSAGE)}
