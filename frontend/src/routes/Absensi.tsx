@@ -14,10 +14,10 @@ import {
 import useDatabase from "../hooks/useDatabase";
 import useKelas from "../hooks/useKelas";
 import useRefreshDatabase from "../hooks/useRefreshDatebase";
-import Swal from "sweetalert2";
 import { getAbsensiesProgress } from "../helpers/api";
 import useToken from "../hooks/useToken";
 import { toast } from "react-toastify";
+import { useConfirm } from "../contexts/ConfirmContext";
 
 // Helper Display
 function formatDisplayDate(dateStr: string) {
@@ -81,6 +81,7 @@ export default function Absensi() {
   const [allDates] = useState(getDates());
   const db = useDatabase();
   const refreshDb = useRefreshDatabase();
+  const confirm = useConfirm();
   const [kelas] = useKelas();
   const [kelasName, setKelasName] = useState("");
   const [viewDate, setViewDate] = useState(new Date());
@@ -236,7 +237,7 @@ export default function Absensi() {
     });
   }, [db, kelas]);
 
-  const handleToggleLock = (
+  const handleToggleLock = async (
     date: string,
     kelasId: number,
     isLocked: boolean
@@ -244,20 +245,18 @@ export default function Absensi() {
     const action = isLocked ? "Buka Kunci" : "Kunci Absensi";
     const fn = isLocked ? unlockAbsensi : lockAbsensi;
 
-    Swal.fire({
-      title: `${action}?`,
-      text: isLocked
-        ? "Data bisa diedit kembali."
-        : "Data tidak akan bisa diedit.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Lakukan",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fn({ db, date, kelas_id: kelasId });
-        refreshDb();
-      }
+    const isConfirmed = await confirm({
+      title: action,
+      message: isLocked
+        ? "Apakah Anda yakin ingin membuka kunci absensi? Data bisa diedit kembali."
+        : "Apakah Anda yakin ingin mengunci absensi? Data tidak akan bisa diedit.",
+      danger: !isLocked,
     });
+
+    if (isConfirmed) {
+      fn({ db, date, kelas_id: kelasId });
+      refreshDb();
+    }
   };
 
   return (

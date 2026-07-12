@@ -1,7 +1,7 @@
 import { useEffect, type JSX } from "react";
 import useUser from "../hooks/useUser";
 import { useNavigate } from "react-router";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 
 export default function AuthenticatedLayout({ child }: { child: JSX.Element }) {
   const [, isLogout] = useUser();
@@ -10,10 +10,7 @@ export default function AuthenticatedLayout({ child }: { child: JSX.Element }) {
 
   useEffect(() => {
     if (isLogout) {
-      Swal.fire({
-        title: "Mohon masuk terlebih dahulu",
-        icon: "info",
-      });
+      toast.info("Mohon masuk terlebih dahulu");
       navigate("/login");
     }
   }, [isLogout]);

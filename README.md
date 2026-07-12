@@ -16,13 +16,14 @@ _Software ini GRATIS_
 [![Django](https://img.shields.io/badge/Django-5.2-green)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-Bundler-purple)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS%204.0-38bdf8)](https://tailwindcss.com/)
+[![DaisyUI](https://img.shields.io/badge/DaisyUI-5.0-1ad1a5)](https://daisyui.com/)
 [![uv](https://img.shields.io/badge/uv-Python_Manager-de5fe7)](https://github.com/astral-sh/uv)
 [![Bun](https://img.shields.io/badge/Bun-Frontend_Runtime-black)](https://bun.sh/)
 
 **Presensee** adalah aplikasi **(web based)** absensi siswa untuk sekolah yang dirancang dengan arsitektur **Offline-First**. Antarmuka dibuat interaktif agar memudahkan proses absensi.
 
-Dibangun menggunakan stack modern: **Django** di backend, **React (Vite)** di frontend.
+Dibangun menggunakan stack modern: **Django & Django Ninja** di backend, **React 19 (Vite + PWA)** di frontend dengan **Tailwind CSS 4 & DaisyUI 5**.
 
 ![Preview](screenshots/preview.jpg "Presensee Preview")
 
@@ -80,6 +81,9 @@ uv sync
 
 # Setup environment variables
 cp .env.example .env
+
+# Jalankan migrasi database
+uv run python manage.py migrate
 ```
 
 ---

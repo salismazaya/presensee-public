@@ -6,9 +6,10 @@ import {
   type InsertAbsensProps,
 } from "../helpers/database";
 import useDatabase from "../hooks/useDatabase";
-import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 import useConflicts from "../hooks/useConflicts";
 import useLastRefresh from "../hooks/useLastRefresh";
+import { useConfirm } from "../contexts/ConfirmContext";
 
 // --- Interfaces ---
 export interface ConflictData {
@@ -246,20 +247,25 @@ export default function ConflictsList() {
   }, [setConflicts, lastRefresh]);
 
 
-  const handleSave = (conflicts: InsertAbsensProps[]) => {
-    insertAbsens(db, conflicts);
-    purgeConflictAbsensi();
-    setShow(false);
+  const askConfirm = useConfirm();
 
-    Swal.fire({
-      title: "Sukses",
-      // text: "Silahkan upload jika sedang tersedia internet",
-      icon: "success",
-    }).finally(() => {
+  const handleSave = async (conflicts: InsertAbsensProps[]) => {
+    const isConfirmed = await askConfirm({
+      title: "Selesaikan Konflik",
+      message: "Apakah Anda yakin ingin menyelesaikan konflik ini? Data yang Anda pilih akan menimpa data lainnya.",
+      danger: true,
+      confirmText: "Ya, Selesaikan",
+    });
+
+    if (isConfirmed) {
+      insertAbsens(db, conflicts);
+      purgeConflictAbsensi();
+      setShow(false);
+      toast.success("Konflik berhasil diselesaikan");
       setTimeout(() => {
         window.location.reload();
-      }, 300);
-    });
+      }, 500);
+    }
   };
 
   return (
